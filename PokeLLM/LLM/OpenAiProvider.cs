@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PokeLLM.Game.Configuration;
 using PokeLLM.Game.LLM.Interfaces;
 using PokeLLM.Game.Plugins;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,63 @@ public class OpenAiProvider : ILLMProvider
 
     public async Task<string> GetCompletionAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
     {
-        // Add system message if it's a new conversation to explain plugin usage
+        AddSystemPromptIfNewConversation(history);
+
+        history.AddUserMessage(prompt);
+
+        // Use kernel.InvokePromptAsync to enable function calling (OpenAI function calling support)
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+            MaxTokens = 10000
+        };
+
+        var result = await _kernel.InvokePromptAsync(
+            promptTemplate: string.Join("\n", history.Select(msg => $"{msg.Role}: {msg.Content}")),
+            arguments: new KernelArguments(executionSettings),
+            cancellationToken: cancellationToken
+        );
+
+        var response = result.ToString();
+
+        // Add the assistant's response to history
+        history.AddAssistantMessage(response);
+
+        return response;
+    }
+
+    public async IAsyncEnumerable<string> GetCompletionStreamingAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
+    {
+        AddSystemPromptIfNewConversation(history);
+
+        history.AddUserMessage(prompt);
+
+        // Use kernel.InvokePromptAsync to enable function calling (OpenAI function calling support)
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+            MaxTokens = 10000
+        };
+
+        var result = _kernel.InvokePromptStreamingAsync(
+            promptTemplate: string.Join("\n", history.Select(msg => $"{msg.Role}: {msg.Content}")),
+            arguments: new KernelArguments(executionSettings),
+            cancellationToken: cancellationToken
+        );
+
+        await foreach (var chunk in result)
+        {
+            yield return chunk.ToString();
+        }
+    }
+
+    public ChatHistory CreateHistory()
+    {
+        return new ChatHistory();
+    }
+
+    private void AddSystemPromptIfNewConversation(ChatHistory history)
+    {
         if (history.Count == 0)
         {
             var systemPrompt = @"
@@ -80,32 +137,5 @@ NEVER end a turn with only the player's attack - always complete the full exchan
 ";
             history.AddSystemMessage(systemPrompt);
         }
-
-        history.AddUserMessage(prompt);
-
-        // Use kernel.InvokePromptAsync to enable function calling (OpenAI function calling support)
-        var executionSettings = new OpenAIPromptExecutionSettings
-        {
-            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-            MaxTokens = 10000
-        };
-
-        var result = await _kernel.InvokePromptAsync(
-            promptTemplate: string.Join("\n", history.Select(msg => $"{msg.Role}: {msg.Content}")),
-            arguments: new KernelArguments(executionSettings),
-            cancellationToken: cancellationToken
-        );
-
-        var response = result.ToString();
-
-        // Add the assistant's response to history
-        history.AddAssistantMessage(response);
-
-        return response;
-    }
-
-    public ChatHistory CreateHistory()
-    {
-        return new ChatHistory();
     }
 }

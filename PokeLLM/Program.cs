@@ -31,7 +31,7 @@ Console.WriteLine("Enter your message. Finish with a blank line to send.\n");
 
 while (true)
 {
-    Console.WriteLine("You (multi-line, end with blank line):");
+    Console.WriteLine("\nYou (multi-line, end with blank line):");
     var lines = new List<string>();
     while (true)
     {
@@ -41,13 +41,24 @@ while (true)
         lines.Add(line);
     }
 
+    Console.WriteLine("\nSending...");
     var input = string.Join('\n', lines);
     if (string.IsNullOrWhiteSpace(input) || input.Trim().ToLower() == "exit")
         break;
 
-    // Get LLM response
-    var response = await llm.GetCompletionAsync(input, history);
-    Console.WriteLine($"LLM: {response}\n");
+    //// Get LLM response
+    //var response = await llm.GetCompletionAsync(input, history);
+    //Console.WriteLine($"LLM: {response}\n");
+    var response = llm.GetCompletionStreamingAsync(input, history);
+
+    Console.WriteLine($"LLM: ");
+    string fullResponse = "";
+    await foreach (var chunk in response)
+    {
+        Console.Write(chunk);
+        fullResponse += chunk;
+    }
+
     // Add LLM response to history
-    history.AddAssistantMessage(response);
+    history.AddAssistantMessage(fullResponse);
 }

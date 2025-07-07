@@ -110,4 +110,9 @@ NEVER end a turn with only the player's attack - always complete the full exchan
         var history = new ChatHistory();
         return history;
     }
+
+    public IAsyncEnumerable<string> GetCompletionStreamingAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 }
