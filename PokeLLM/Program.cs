@@ -1,9 +1,14 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel.Connectors.Qdrant;
 using PokeLLM.Game.Configuration;
+using PokeLLM.Game.Data;
 using PokeLLM.Game.LLM;
 using PokeLLM.Game.LLM.Interfaces;
+using PokeLLM.Game.VectorStore;
+using PokeLLM.Game.VectorStore.Interfaces;
+using Qdrant.Client;
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -15,11 +20,17 @@ var config = new ConfigurationBuilder()
 var services = new ServiceCollection();
 services.AddSingleton<IConfiguration>(config);
 services.Configure<ModelConfig>(config.GetSection("OpenAi"));
+services.Configure<QdrantConfig>(config.GetSection("Qdrant"));
 
-services.AddSingleton<ILLMProvider, OpenAiProvider>();
-//services.AddSingleton<GameStateRepository>(_ => new GameStateRepository("game.db"));
-//services.AddSingleton<IRetriever, Retriever>();
+services.AddTransient<ILLMProvider, OpenAiProvider>();
+services.AddTransient<IVectorStoreService, VectorStoreService>();
+
 var provider = services.BuildServiceProvider();
+
+//var store = provider.GetRequiredService<IVectorStoreService>();
+
+//var collection = await store.GetGameHistory();
+//await store.Upsert(collection, "test", "This is a test to see if upert works");
 
 var llm = provider.GetRequiredService<ILLMProvider>();
 

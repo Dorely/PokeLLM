@@ -1,3 +1,4 @@
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -112,6 +113,11 @@ NEVER end a turn with only the player's attack - always complete the full exchan
     }
 
     public IAsyncEnumerable<string> GetCompletionStreamingAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEmbeddingGenerator GetEmbeddingGenerator()
     {
         throw new NotImplementedException();
     }

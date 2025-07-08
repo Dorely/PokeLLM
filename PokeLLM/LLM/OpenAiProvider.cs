@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Embeddings;
 using PokeLLM.Game.Configuration;
 using PokeLLM.Game.LLM.Interfaces;
 using PokeLLM.Game.Plugins;
@@ -15,24 +17,39 @@ namespace PokeLLM.Game.LLM;
 public class OpenAiProvider : ILLMProvider
 {
     private readonly Kernel _kernel;
-    private readonly string _modelId;
-    private readonly string _apiKey;
     private readonly IChatCompletionService _chatService;
 
     public OpenAiProvider(IOptions<ModelConfig> options)
     {
-        _apiKey = options.Value.ApiKey;
-        _modelId = options.Value.ModelId;
+        var apiKey = options.Value.ApiKey;
+        var modelId = options.Value.ModelId;
+        var embeddingModelId = options.Value.EmbeddingModelId;
 
         IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.AddOpenAIChatCompletion(
-            modelId: _modelId,
-            apiKey: _apiKey
+            modelId: modelId,
+            apiKey: apiKey
         );
+
+#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        kernelBuilder.AddOpenAIEmbeddingGenerator(
+            modelId: embeddingModelId,
+            apiKey: apiKey
+        );
+#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
         _kernel = kernelBuilder.Build();
 
         _chatService = _kernel.GetRequiredService<IChatCompletionService>();
         _kernel.Plugins.AddFromType<PokemonBattlePlugin>();
+    }
+
+    public IEmbeddingGenerator GetEmbeddingGenerator()
+    {
+        //var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator>();
+        var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+
+        return embeddingGenerator;
     }
 
     public async Task<string> GetCompletionAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
