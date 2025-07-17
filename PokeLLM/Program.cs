@@ -30,7 +30,7 @@ var provider = services.BuildServiceProvider();
 //var store = provider.GetRequiredService<IVectorStoreService>();
 
 //var collection = await store.GetGameHistory();
-//await store.Upsert(collection, "test", "This is a test to see if upert works");
+//await store.Upsert(collection, "test", "This is a test to see if upsert works");
 
 var llm = provider.GetRequiredService<ILLMProvider>();
 
