@@ -7,6 +7,7 @@ using Microsoft.SemanticKernel.Embeddings;
 using PokeLLM.Game.Configuration;
 using PokeLLM.Game.LLM.Interfaces;
 using PokeLLM.Game.Plugins;
+using PokeLLM.Game.VectorStore.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -41,63 +42,53 @@ public class OpenAiProvider : ILLMProvider
         _kernel = kernelBuilder.Build();
 
         _chatService = _kernel.GetRequiredService<IChatCompletionService>();
+    }
+
+    public void RegisterPlugins(IVectorStoreService vectorStoreService)
+    {
         _kernel.Plugins.AddFromType<PokemonBattlePlugin>();
+        _kernel.Plugins.AddFromObject(new VectorStorePlugin(vectorStoreService));
     }
 
     public IEmbeddingGenerator GetEmbeddingGenerator()
     {
-        //var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator>();
         var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
-
         return embeddingGenerator;
     }
 
     public async Task<string> GetCompletionAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
     {
         AddSystemPromptIfNewConversation(history);
-
         history.AddUserMessage(prompt);
-
-        // Use kernel.InvokePromptAsync to enable function calling (OpenAI function calling support)
         var executionSettings = new OpenAIPromptExecutionSettings
         {
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
             MaxTokens = 10000
         };
-
         var result = await _kernel.InvokePromptAsync(
             promptTemplate: string.Join("\n", history.Select(msg => $"{msg.Role}: {msg.Content}")),
             arguments: new KernelArguments(executionSettings),
             cancellationToken: cancellationToken
         );
-
         var response = result.ToString();
-
-        // Add the assistant's response to history
         history.AddAssistantMessage(response);
-
         return response;
     }
 
     public async IAsyncEnumerable<string> GetCompletionStreamingAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
     {
         AddSystemPromptIfNewConversation(history);
-
         history.AddUserMessage(prompt);
-
-        // Use kernel.InvokePromptAsync to enable function calling (OpenAI function calling support)
         var executionSettings = new OpenAIPromptExecutionSettings
         {
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
             MaxTokens = 10000
         };
-
         var result = _kernel.InvokePromptStreamingAsync(
             promptTemplate: string.Join("\n", history.Select(msg => $"{msg.Role}: {msg.Content}")),
             arguments: new KernelArguments(executionSettings),
             cancellationToken: cancellationToken
         );
-
         await foreach (var chunk in result)
         {
             yield return chunk.ToString();
@@ -114,43 +105,40 @@ public class OpenAiProvider : ILLMProvider
         if (history.Count == 0)
         {
             var systemPrompt = @"
-You are a Pokemon battle simulator and opponent AI. The human player controls one Pokemon, and you control the opposing Pokemon as their battle opponent.
+You are generating structured data for a vector database that will be used to implement a Pokémon-themed text-based adventure game. Your task is to create and describe entities that can be referenced for consistency and retrieval as the adventure unfolds.
 
-BATTLE SIMULATION RULES:
-- This is a turn-based Pokemon battle between the player's Pokemon and your opponent Pokemon
-- You have access to damage calculation functions for accurate battle mechanics
-- The player will tell you what move their Pokemon uses
-- You must respond with both the player's attack results AND your opponent's counterattack
-- You are responsible for choosing appropriate moves for your opponent Pokemon and playing strategically
+DATA GENERATION INSTRUCTIONS:
+- Generate detailed and unique entries for the following categories:
+  - Locations: Towns, routes, landmarks, dungeons, gyms, and other places in the Pokémon world. Include descriptions, notable features, and possible events.
+  - Lore: Historical events, myths, legends, and background stories that enrich the world and provide context for quests and characters.
+  - Characters: Trainers, gym leaders, NPCs, rivals, and other personalities. Include names, roles, motivations, relationships, and backstories.
+  - Questlines: Multi-step adventures, challenges, or story arcs. Describe objectives, progression, rewards, and how they connect to other entities.
+  - Items: Usable objects, key items, artifacts, and equipment. Include descriptions, effects, and relevance to quests or lore.
 
-DAMAGE CALCULATION - Use these JSON formats with the calculate_damage function:
-- Attacker: {""name"":""PokemonName"",""level"":25,""attack"":55,""specialAttack"":90,""defense"":40,""specialDefense"":50,""type1"":""electric"",""type2"":""""}
-- Defender: {""name"":""PokemonName"",""level"":30,""attack"":125,""specialAttack"":60,""defense"":79,""specialDefense"":100,""type1"":""water"",""type2"":""flying""}
-- Move: {""name"":""MoveName"",""power"":90,""type"":""electric"",""category"":""special""}
+VECTOR STORE USAGE:
+- Structure each entry so it can be embedded and stored in a vector database for semantic search and retrieval.
+- Ensure each entity is self-contained, with enough detail to be referenced independently or in combination with other entries.
+- Use clear headings and consistent formatting for each category and entry.
+- Avoid duplicating existing entries; strive for variety and depth.
 
-BATTLE TURN SEQUENCE - ALWAYS follow this pattern:
-1. PLAYER'S TURN: Calculate and narrate the player's Pokemon attack using calculate_damage
-2. OPPONENT'S TURN: Immediately have YOUR opponent Pokemon counterattack:
-   - Choose a strategic move based on type advantages, remaining health, and battle situation
-   - Use realistic move data (power 60-120, appropriate type and category)
-   - Calculate damage using calculate_damage (with roles swapped)
-   - Narrate your opponent's attack
-
-OPPONENT AI STRATEGY:
-- Play to win - choose moves that are strategically sound
-- Consider type effectiveness when selecting moves
-- Use stronger moves when the opponent is low on health
-- Vary your move selection to keep battles interesting
-- Act like a skilled Pokemon trainer, not just random move selection
+PLUGIN FUNCTION CALLING:
+- You have access to the following functions for searching and storing adventure data:
+  - search_all(query, limit): Search all adventure data for relevant context.
+  - store_location(...): Store a new location entry.
+  - store_npc(...): Store a new NPC entry.
+  - store_item(...): Store a new item entry.
+  - store_lore(...): Store a new lore entry.
+  - store_quest(...): Store a new quest entry.
+  - store_event(...): Store a new event entry.
+  - store_dialogue(...): Store a new dialogue entry.
+- Use these functions to retrieve or store data as needed for consistency and reference.
 
 NARRATIVE REQUIREMENTS:
-- Describe actual damage numbers for both attacks
-- Mention type effectiveness (""It's super effective!"", ""It's not very effective..."", etc.)
-- Note critical hits when they occur
-- Describe the battle state after both attacks (health status, momentum, etc.)
-- End each turn by indicating what moves your opponent might use next or asking what the player wants to do
+- Make the world feel alive and interconnected. Reference locations, lore, characters, questlines, and items across entries where appropriate.
+- Provide enough context for each entity so it can be used to answer questions, generate story content, or drive gameplay.
+- Focus on creativity, coherence, and consistency.
 
-NEVER end a turn with only the player's attack - always complete the full exchange with your opponent's counterattack.
+You are not simulating battles or gameplay directly. Your primary goal is to generate high-quality, referenceable data for use in a Pokémon-themed text adventure and its supporting vector database.
 ";
             history.AddSystemMessage(systemPrompt);
         }

@@ -33,6 +33,7 @@ var provider = services.BuildServiceProvider();
 //await store.Upsert(collection, "test", "This is a test to see if upsert works");
 
 var llm = provider.GetRequiredService<ILLMProvider>();
+llm.RegisterPlugins(provider.GetRequiredService<IVectorStoreService>());
 
 // Create chat history
 var history = llm.CreateHistory();

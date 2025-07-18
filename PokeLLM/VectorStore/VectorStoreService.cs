@@ -177,7 +177,8 @@ public class VectorStoreService : IVectorStoreService
 
     public async Task<IEnumerable<VectorSearchResult>> SearchLocationsAsync(string query, int limit = 10)
     {
-        var collection = _vectorStore.GetCollection<string, LocationVectorModel>(VectorCollections.LOCATIONS);
+        var collection = _vectorStore.GetCollection<Guid, LocationVectorModel>(VectorCollections.LOCATIONS);
+        await collection.EnsureCollectionExistsAsync();
         var results = collection.SearchAsync<string>(query, limit);
         
         var resultCollection = new List<VectorSearchResult>();
@@ -207,7 +208,8 @@ public class VectorStoreService : IVectorStoreService
 
     public async Task<IEnumerable<VectorSearchResult>> SearchNPCsAsync(string query, int limit = 10)
     {
-        var collection = _vectorStore.GetCollection<string, NPCVectorModel>(VectorCollections.NPCS);
+        var collection = _vectorStore.GetCollection<Guid, NPCVectorModel>(VectorCollections.NPCS);
+        await collection.EnsureCollectionExistsAsync();
         var results = collection.SearchAsync<string>(query, limit);
         var resultCollection = new List<VectorSearchResult>();
         await foreach (var item in results)
@@ -236,7 +238,8 @@ public class VectorStoreService : IVectorStoreService
 
     public async Task<IEnumerable<VectorSearchResult>> SearchItemsAsync(string query, int limit = 10)
     {
-        var collection = _vectorStore.GetCollection<string, ItemVectorModel>(VectorCollections.ITEMS);
+        var collection = _vectorStore.GetCollection<Guid, ItemVectorModel>(VectorCollections.ITEMS);
+        await collection.EnsureCollectionExistsAsync();
         var results = collection.SearchAsync<string>(query, limit);
         var resultCollection = new List<VectorSearchResult>();
         await foreach (var item in results)
@@ -264,7 +267,8 @@ public class VectorStoreService : IVectorStoreService
 
     public async Task<IEnumerable<VectorSearchResult>> SearchLoreAsync(string query, int limit = 10)
     {
-        var collection = _vectorStore.GetCollection<string, LoreVectorModel>(VectorCollections.LORE);
+        var collection = _vectorStore.GetCollection<Guid, LoreVectorModel>(VectorCollections.LORE);
+        await collection.EnsureCollectionExistsAsync();
         var results = collection.SearchAsync<string>(query, limit);
         var resultCollection = new List<VectorSearchResult>();
         await foreach (var item in results)
@@ -293,7 +297,8 @@ public class VectorStoreService : IVectorStoreService
 
     public async Task<IEnumerable<VectorSearchResult>> SearchQuestsAsync(string query, int limit = 10)
     {
-        var collection = _vectorStore.GetCollection<string, QuestVectorModel>(VectorCollections.QUESTS);
+        var collection = _vectorStore.GetCollection<Guid, QuestVectorModel>(VectorCollections.QUESTS);
+        await collection.EnsureCollectionExistsAsync();
         var results = collection.SearchAsync<string>(query, limit);
         var resultCollection = new List<VectorSearchResult>();
         await foreach (var item in results)
@@ -322,7 +327,8 @@ public class VectorStoreService : IVectorStoreService
 
     public async Task<IEnumerable<VectorSearchResult>> SearchEventsAsync(string query, int limit = 10)
     {
-        var collection = _vectorStore.GetCollection<string, EventVectorModel>(VectorCollections.EVENTS);
+        var collection = _vectorStore.GetCollection<Guid, EventVectorModel>(VectorCollections.EVENTS);
+        await collection.EnsureCollectionExistsAsync();
         var results = collection.SearchAsync<string>(query, limit);
         var resultCollection = new List<VectorSearchResult>();
         await foreach (var item in results)
@@ -349,7 +355,8 @@ public class VectorStoreService : IVectorStoreService
 
     public async Task<IEnumerable<VectorSearchResult>> SearchDialogueAsync(string query, int limit = 10)
     {
-        var collection = _vectorStore.GetCollection<string, DialogueVectorModel>(VectorCollections.DIALOGUE);
+        var collection = _vectorStore.GetCollection<Guid, DialogueVectorModel>(VectorCollections.DIALOGUE);
+        await collection.EnsureCollectionExistsAsync();
         var results = collection.SearchAsync<string>(query, limit);
         var resultCollection = new List<VectorSearchResult>();
         await foreach (var item in results)
@@ -375,24 +382,23 @@ public class VectorStoreService : IVectorStoreService
 
     public async Task<IEnumerable<VectorSearchResult>> SearchAllAsync(string query, int limit = 10)
     {
-        var locationTask = SearchLocationsAsync(query, limit);
-        var npcTask = SearchNPCsAsync(query, limit);
-        var itemTask = SearchItemsAsync(query, limit);
-        var loreTask = SearchLoreAsync(query, limit);
-        var questTask = SearchQuestsAsync(query, limit);
-        var eventTask = SearchEventsAsync(query, limit);
-        var dialogueTask = SearchDialogueAsync(query, limit);
+        var locationResult = await SearchLocationsAsync(query, limit);
+        var npcResult = await SearchNPCsAsync(query, limit);
+        var itemResult = await  SearchItemsAsync(query, limit);
+        var loreResult = await SearchLoreAsync(query, limit);
+        var questResult = await SearchQuestsAsync(query, limit);
+        var eventResult = await SearchEventsAsync(query, limit);
+        var dialogueResult = await SearchDialogueAsync(query, limit);
 
-        await Task.WhenAll(locationTask, npcTask, itemTask, loreTask, questTask, eventTask, dialogueTask);
 
         var allResults = new List<VectorSearchResult>();
-        allResults.AddRange(locationTask.Result);
-        allResults.AddRange(npcTask.Result);
-        allResults.AddRange(itemTask.Result);
-        allResults.AddRange(loreTask.Result);
-        allResults.AddRange(questTask.Result);
-        allResults.AddRange(eventTask.Result);
-        allResults.AddRange(dialogueTask.Result);
+        allResults.AddRange(locationResult);
+        allResults.AddRange(npcResult);
+        allResults.AddRange(itemResult);
+        allResults.AddRange(loreResult);
+        allResults.AddRange(questResult);
+        allResults.AddRange(eventResult);
+        allResults.AddRange(dialogueResult);
 
         return allResults;
     }
