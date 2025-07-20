@@ -8,6 +8,8 @@ using PokeLLM.Game.LLM;
 using PokeLLM.Game.LLM.Interfaces;
 using PokeLLM.Game.VectorStore;
 using PokeLLM.Game.VectorStore.Interfaces;
+using PokeLLM.GameState;
+using PokeLLM.GameState.Interfaces;
 using Qdrant.Client;
 
 var config = new ConfigurationBuilder()
@@ -24,6 +26,7 @@ services.Configure<QdrantConfig>(config.GetSection("Qdrant"));
 
 services.AddTransient<ILLMProvider, OpenAiProvider>();
 services.AddTransient<IVectorStoreService, VectorStoreService>();
+services.AddSingleton<IGameStateRepository, GameStateRepository>();
 
 var provider = services.BuildServiceProvider();
 

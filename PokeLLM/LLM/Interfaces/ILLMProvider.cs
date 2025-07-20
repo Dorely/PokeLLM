@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.ChatCompletion;
 using PokeLLM.Game.VectorStore.Interfaces;
+using PokeLLM.GameState.Interfaces;
 
 namespace PokeLLM.Game.LLM.Interfaces;
 
