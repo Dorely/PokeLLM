@@ -3,8 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PokeLLM.GameState.Interfaces;
-using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Game.Plugins;
 
@@ -26,12 +24,12 @@ public class GameStatePlugin
     }
 
     [KernelFunction("create_new_game")]
-    [Description("Create a new game state with a fresh character and adventure")]
+    [Description("Create a new game state with a fresh trainer and world")]
     public async Task<string> CreateNewGame(
-        [Description("Name for the player character")] string characterName = "Trainer")
+        [Description("Name for the player trainer")] string trainerName = "Trainer")
     {
-        Debug.WriteLine($"[GameStatePlugin] CreateNewGame called with characterName: '{characterName}'");
-        var gameState = await _repository.CreateNewGameStateAsync(characterName);
+        Debug.WriteLine($"[GameStatePlugin] CreateNewGame called with trainerName: '{trainerName}'");
+        var gameState = await _repository.CreateNewGameStateAsync(trainerName);
         return JsonSerializer.Serialize(gameState, _jsonOptions);
     }
 
@@ -68,42 +66,26 @@ public class GameStatePlugin
         }
     }
 
-    [KernelFunction("update_character_health")]
-    [Description("Update character's current health")]
-    public async Task<string> UpdateCharacterHealth(
-        [Description("New current health value")] int currentHealth)
-    {
-        Debug.WriteLine($"[GameStatePlugin] UpdateCharacterHealth called with currentHealth: {currentHealth}");
-        await _repository.UpdateCharacterAsync(character =>
-        {
-            character.CurrentHealth = Math.Max(0, Math.Min(currentHealth, character.MaxHealth));
-        });
-        return $"Character health updated to {currentHealth}.";
-    }
-
-    [KernelFunction("update_character_experience")]
-    [Description("Add experience to the character and handle level ups")]
-    public async Task<string> UpdateCharacterExperience(
+    [KernelFunction("update_trainer_experience")]
+    [Description("Add experience to the trainer and handle level ups")]
+    public async Task<string> UpdateTrainerExperience(
         [Description("Amount of experience to add")] int experienceGain)
     {
-        Debug.WriteLine($"[GameStatePlugin] UpdateCharacterExperience called with experienceGain: {experienceGain}");
+        Debug.WriteLine($"[GameStatePlugin] UpdateTrainerExperience called with experienceGain: {experienceGain}");
         var leveledUp = false;
         var newLevel = 0;
 
-        await _repository.UpdateCharacterAsync(character =>
+        await _repository.UpdateTrainerAsync(trainer =>
         {
-            character.Experience += experienceGain;
+            trainer.Experience += experienceGain;
             
-            // Handle level ups (simple calculation)
-            while (character.Experience >= character.ExperienceToNextLevel)
+            // Simple level calculation: every 1000 exp = level up
+            var targetLevel = (trainer.Experience / 1000) + 1;
+            if (targetLevel > trainer.Level)
             {
-                character.Experience -= character.ExperienceToNextLevel;
-                character.Level++;
-                character.ExperienceToNextLevel = (int)(character.ExperienceToNextLevel * 1.2); // 20% increase each level
-                character.MaxHealth += 10; // Gain 10 HP per level
-                character.CurrentHealth = character.MaxHealth; // Full heal on level up
+                trainer.Level = targetLevel;
                 leveledUp = true;
-                newLevel = character.Level;
+                newLevel = trainer.Level;
             }
         });
 
@@ -113,15 +95,84 @@ public class GameStatePlugin
             return $"Gained {experienceGain} experience.";
     }
 
+    [KernelFunction("update_trainer_stat")]
+    [Description("Update a trainer's stat level")]
+    public async Task<string> UpdateTrainerStat(
+        [Description("The stat to update (Strength, Agility, Social, Intelligence)")] string statName,
+        [Description("The new stat level (-2 to 7)")] int statLevel)
+    {
+        Debug.WriteLine($"[GameStatePlugin] UpdateTrainerStat called with statName: '{statName}', statLevel: {statLevel}");
+        
+        if (statLevel < -2 || statLevel > 7)
+            return "Stat level must be between -2 (Hopeless) and 7 (Legendary).";
+
+        var statLevelEnum = (StatLevel)statLevel;
+        var updated = false;
+
+        await _repository.UpdateTrainerAsync(trainer =>
+        {
+            switch (statName.ToLower())
+            {
+                case "strength":
+                    trainer.Stats.Strength = statLevelEnum;
+                    updated = true;
+                    break;
+                case "agility":
+                    trainer.Stats.Agility = statLevelEnum;
+                    updated = true;
+                    break;
+                case "social":
+                    trainer.Stats.Social = statLevelEnum;
+                    updated = true;
+                    break;
+                case "intelligence":
+                    trainer.Stats.Intelligence = statLevelEnum;
+                    updated = true;
+                    break;
+            }
+        });
+
+        return updated ? $"Updated {statName} to {statLevelEnum}." : "Invalid stat name.";
+    }
+
+    [KernelFunction("add_trainer_condition")]
+    [Description("Add a condition to the trainer")]
+    public async Task<string> AddTrainerCondition(
+        [Description("The condition type")] string conditionType,
+        [Description("Duration in turns (-1 for permanent)")] int duration = -1,
+        [Description("Severity level (1-10)")] int severity = 1)
+    {
+        Debug.WriteLine($"[GameStatePlugin] AddTrainerCondition called with conditionType: '{conditionType}', duration: {duration}, severity: {severity}");
+        
+        if (!Enum.TryParse<TrainerCondition>(conditionType, true, out var condition))
+            return "Invalid condition type.";
+
+        await _repository.UpdateTrainerAsync(trainer =>
+        {
+            // Remove existing condition of same type
+            trainer.Conditions.RemoveAll(c => c.Type == condition);
+            
+            // Add new condition
+            trainer.Conditions.Add(new ActiveCondition
+            {
+                Type = condition,
+                Duration = duration,
+                Severity = severity
+            });
+        });
+
+        return $"Added condition {condition} with duration {duration} and severity {severity}.";
+    }
+
     [KernelFunction("add_pokemon_to_team")]
-    [Description("Add a new Pokemon to the character's team")]
+    [Description("Add a new Pokemon to the trainer's team")]
     public async Task<string> AddPokemonToTeam(
-        [Description("JSON string with Pokemon data: {name, species, level, primaryType, secondaryType?, currentHealth, maxHealth}")] string pokemonJson)
+        [Description("JSON string with Pokemon data: {name, species, level, type1, type2?, currentVigor, maxVigor, caughtLocation, friendship?}")] string pokemonJson)
     {
         Debug.WriteLine($"[GameStatePlugin] AddPokemonToTeam called with pokemonJson: '{pokemonJson}'");
         try
         {
-            var pokemon = JsonSerializer.Deserialize<Pokemon>(pokemonJson, _jsonOptions);
+            var pokemon = JsonSerializer.Deserialize<TeamPokemon>(pokemonJson, _jsonOptions);
             if (pokemon == null)
                 return "Invalid Pokemon data provided.";
 
@@ -134,52 +185,46 @@ public class GameStatePlugin
         }
     }
 
-    [KernelFunction("update_pokemon_health")]
-    [Description("Update a Pokemon's health by ID")]
-    public async Task<string> UpdatePokemonHealth(
-        [Description("ID of the Pokemon to update")] string pokemonId,
-        [Description("New current health value")] int currentHealth)
+    [KernelFunction("update_pokemon_vigor")]
+    [Description("Update a Pokemon's vigor (health/energy) by name")]
+    public async Task<string> UpdatePokemonVigor(
+        [Description("Name of the Pokemon to update")] string pokemonName,
+        [Description("New current vigor value")] int currentVigor)
     {
-        Debug.WriteLine($"[GameStatePlugin] UpdatePokemonHealth called with pokemonId: '{pokemonId}', currentHealth: {currentHealth}");
+        Debug.WriteLine($"[GameStatePlugin] UpdatePokemonVigor called with pokemonName: '{pokemonName}', currentVigor: {currentVigor}");
         var found = false;
-        var pokemonName = "";
 
-        await _repository.UpdateCharacterAsync(character =>
+        var state = await _repository.LoadLatestStateAsync();
+        if (state != null)
         {
-            var pokemon = character.PokemonTeam.FirstOrDefault(p => p.Id == pokemonId) ??
-                         character.StoredPokemon.FirstOrDefault(p => p.Id == pokemonId);
+            var pokemon = state.PokemonTeam.ActivePokemon.FirstOrDefault(p => p.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase)) ??
+                         state.PokemonTeam.BoxedPokemon.FirstOrDefault(p => p.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase));
             
             if (pokemon != null)
             {
-                pokemon.CurrentHealth = Math.Max(0, Math.Min(currentHealth, pokemon.MaxHealth));
-                if (pokemon.CurrentHealth == 0)
-                    pokemon.Status = PokemonStatus.Fainted;
-                else if (pokemon.Status == PokemonStatus.Fainted)
-                    pokemon.Status = PokemonStatus.Healthy;
-                
+                pokemon.CurrentVigor = Math.Max(0, Math.Min(currentVigor, pokemon.MaxVigor));
                 found = true;
-                pokemonName = pokemon.Name;
+                await _repository.SaveStateAsync(state);
             }
-        });
+        }
 
-        return found ? $"Updated {pokemonName}'s health to {currentHealth}." : "Pokemon not found.";
+        return found ? $"Updated {pokemonName}'s vigor to {currentVigor}." : "Pokemon not found.";
     }
 
     [KernelFunction("change_location")]
-    [Description("Move the character to a new location")]
+    [Description("Move the trainer to a new location")]
     public async Task<string> ChangeLocation(
         [Description("Name of the new location")] string newLocation,
         [Description("Region where the location is (optional)")] string region = "")
     {
         Debug.WriteLine($"[GameStatePlugin] ChangeLocation called with newLocation: '{newLocation}', region: '{region}'");
-        await _repository.UpdateAdventureAsync(adventure =>
+        await _repository.UpdateWorldStateAsync(worldState =>
         {
-            adventure.CurrentLocation = newLocation;
+            worldState.CurrentLocation = newLocation;
             if (!string.IsNullOrEmpty(region))
-                adventure.CurrentRegion = region;
+                worldState.CurrentRegion = region;
             
-            adventure.VisitedLocations[newLocation] = true;
-            adventure.LocationVisitTimes[newLocation] = DateTime.UtcNow;
+            worldState.VisitedLocations.Add(newLocation);
         });
 
         return $"Moved to {newLocation}" + (string.IsNullOrEmpty(region) ? "" : $" in {region}") + ".";
@@ -188,118 +233,175 @@ public class GameStatePlugin
     [KernelFunction("update_npc_relationship")]
     [Description("Update relationship with an NPC")]
     public async Task<string> UpdateNPCRelationship(
-        [Description("ID or name of the NPC")] string npcId,
-        [Description("Name of the NPC for display")] string npcName,
-        [Description("Change in relationship level (-100 to 100)")] int relationshipChange,
-        [Description("Type of relationship (Enemy, Hostile, Neutral, Friendly, Ally)")] string relationshipType = "Neutral")
+        [Description("Name or ID of the NPC")] string npcId,
+        [Description("Change in relationship level (-100 to 100)")] int relationshipChange)
     {
         Debug.WriteLine($"[GameStatePlugin] UpdateNPCRelationship called with npcId: '{npcId}', relationshipChange: {relationshipChange}");
-        await _repository.UpdateAdventureAsync(adventure =>
+        await _repository.UpdateWorldStateAsync(worldState =>
         {
-            if (!adventure.NPCRelationships.ContainsKey(npcId))
-            {
-                adventure.NPCRelationships[npcId] = new NPCRelationship
-                {
-                    NPCId = npcId,
-                    NPCName = npcName,
-                    FirstMet = DateTime.UtcNow,
-                    RelationshipType = relationshipType
-                };
-            }
-
-            var relationship = adventure.NPCRelationships[npcId];
-            relationship.RelationshipLevel = Math.Max(-100, Math.Min(100, relationship.RelationshipLevel + relationshipChange));
-            relationship.LastInteraction = DateTime.UtcNow;
-            relationship.TimesEncountered++;
-            
-            // Auto-update relationship type based on level
-            if (relationship.RelationshipLevel >= 75)
-                relationship.RelationshipType = "Ally";
-            else if (relationship.RelationshipLevel >= 25)
-                relationship.RelationshipType = "Friendly";
-            else if (relationship.RelationshipLevel >= -25)
-                relationship.RelationshipType = "Neutral";
-            else if (relationship.RelationshipLevel >= -75)
-                relationship.RelationshipType = "Hostile";
-            else
-                relationship.RelationshipType = "Enemy";
+            var currentLevel = worldState.NPCRelationships.GetValueOrDefault(npcId, 0);
+            worldState.NPCRelationships[npcId] = Math.Max(-100, Math.Min(100, currentLevel + relationshipChange));
         });
 
-        return $"Relationship with {npcName} updated by {relationshipChange:+#;-#;0}. New type: {relationshipType}";
+        return $"Relationship with {npcId} updated by {relationshipChange:+#;-#;0}.";
+    }
+
+    [KernelFunction("update_faction_reputation")]
+    [Description("Update reputation with a faction")]
+    public async Task<string> UpdateFactionReputation(
+        [Description("Name of the faction")] string factionName,
+        [Description("Change in reputation (-100 to 100)")] int reputationChange)
+    {
+        Debug.WriteLine($"[GameStatePlugin] UpdateFactionReputation called with factionName: '{factionName}', reputationChange: {reputationChange}");
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            var currentRep = worldState.FactionReputations.GetValueOrDefault(factionName, 0);
+            worldState.FactionReputations[factionName] = Math.Max(-100, Math.Min(100, currentRep + reputationChange));
+        });
+
+        return $"Reputation with {factionName} updated by {reputationChange:+#;-#;0}.";
     }
 
     [KernelFunction("add_to_inventory")]
-    [Description("Add items to the character's inventory")]
+    [Description("Add items to the trainer's inventory")]
     public async Task<string> AddToInventory(
         [Description("Name of the item")] string itemName,
-        [Description("Quantity to add")] int quantity = 1,
-        [Description("Type of item (Items, KeyItems, Pokeballs, Medicine, TMsHMs, Berries)")] string itemType = "Items")
+        [Description("Quantity to add")] int quantity = 1)
     {
-        Debug.WriteLine($"[GameStatePlugin] AddToInventory called with itemName: '{itemName}', quantity: {quantity}, itemType: '{itemType}'");
-        await _repository.UpdateCharacterAsync(character =>
+        Debug.WriteLine($"[GameStatePlugin] AddToInventory called with itemName: '{itemName}', quantity: {quantity}");
+        await _repository.UpdateTrainerAsync(trainer =>
         {
-            var inventory = character.Inventory;
-            Dictionary<string, int> targetCollection = itemType.ToLower() switch
-            {
-                "keyitems" => inventory.KeyItems,
-                "pokeballs" => inventory.Pokeballs,
-                "medicine" => inventory.Medicine,
-                "tmshms" => inventory.TMsHMs,
-                "berries" => inventory.Berries,
-                _ => inventory.Items
-            };
-
-            targetCollection[itemName] = targetCollection.GetValueOrDefault(itemName, 0) + quantity;
+            trainer.Inventory[itemName] = trainer.Inventory.GetValueOrDefault(itemName, 0) + quantity;
         });
 
         return $"Added {quantity} {itemName}(s) to inventory.";
     }
 
-    [KernelFunction("add_game_event")]
-    [Description("Add an event to the game history")]
-    public async Task<string> AddGameEvent(
-        [Description("Type of event")] string eventType,
-        [Description("Description of what happened")] string description,
-        [Description("Location where the event occurred")] string location = "")
+    [KernelFunction("update_money")]
+    [Description("Update the trainer's money")]
+    public async Task<string> UpdateMoney(
+        [Description("Amount to add or subtract")] int amount)
     {
-        Debug.WriteLine($"[GameStatePlugin] AddGameEvent called with eventType: '{eventType}', description: '{description}'");
-        var gameEvent = new GameEvent
+        Debug.WriteLine($"[GameStatePlugin] UpdateMoney called with amount: {amount}");
+        var newAmount = 0;
+        
+        await _repository.UpdateTrainerAsync(trainer =>
         {
-            EventType = eventType,
-            Description = description,
-            Location = location
-        };
+            trainer.Money = Math.Max(0, trainer.Money + amount);
+            newAmount = trainer.Money;
+        });
 
-        await _repository.AddEventToHistoryAsync(gameEvent);
-        return "Event added to history.";
+        return $"Money updated by {amount:+#;-#;0}. Current money: {newAmount}.";
     }
 
-    [KernelFunction("get_character_summary")]
-    [Description("Get a summary of the character's current state")]
-    public async Task<string> GetCharacterSummary()
+    [KernelFunction("earn_gym_badge")]
+    [Description("Award a gym badge to the trainer")]
+    public async Task<string> EarnGymBadge(
+        [Description("Name of the gym")] string gymName,
+        [Description("Name of the gym leader")] string leaderName,
+        [Description("Location of the gym")] string location,
+        [Description("Badge type (Fire, Water, etc.)")] string badgeType)
     {
-        Debug.WriteLine($"[GameStatePlugin] GetCharacterSummary called");
+        Debug.WriteLine($"[GameStatePlugin] EarnGymBadge called with gymName: '{gymName}', leaderName: '{leaderName}'");
+        
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            // Check if badge already exists
+            if (!worldState.GymBadges.Any(b => b.GymName.Equals(gymName, StringComparison.OrdinalIgnoreCase)))
+            {
+                worldState.GymBadges.Add(new GymBadge
+                {
+                    GymName = gymName,
+                    LeaderName = leaderName,
+                    Location = location,
+                    BadgeType = badgeType
+                });
+            }
+        });
+
+        return $"Earned the {badgeType} Badge from {gymName} in {location}!";
+    }
+
+    [KernelFunction("discover_lore")]
+    [Description("Add discovered lore to the game world")]
+    public async Task<string> DiscoverLore(
+        [Description("The lore entry to add")] string loreEntry)
+    {
+        Debug.WriteLine($"[GameStatePlugin] DiscoverLore called with loreEntry: '{loreEntry}'");
+        
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            worldState.DiscoveredLore.Add(loreEntry);
+        });
+
+        return $"Discovered new lore: {loreEntry}";
+    }
+
+    [KernelFunction("set_time_and_weather")]
+    [Description("Update the time of day and weather")]
+    public async Task<string> SetTimeAndWeather(
+        [Description("Time of day (Morning, Afternoon, Evening, Night)")] string timeOfDay,
+        [Description("Weather condition")] string weather = "Clear")
+    {
+        Debug.WriteLine($"[GameStatePlugin] SetTimeAndWeather called with timeOfDay: '{timeOfDay}', weather: '{weather}'");
+        
+        if (!Enum.TryParse<TimeOfDay>(timeOfDay, true, out var time))
+            return "Invalid time of day.";
+
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            worldState.TimeOfDay = time;
+            worldState.WeatherCondition = weather;
+        });
+
+        return $"Time set to {time}, weather set to {weather}.";
+    }
+
+    [KernelFunction("get_trainer_summary")]
+    [Description("Get a summary of the trainer's current state")]
+    public async Task<string> GetTrainerSummary()
+    {
+        Debug.WriteLine($"[GameStatePlugin] GetTrainerSummary called");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
-            return "No character found. Create a new game first.";
+            return "No trainer found. Create a new game first.";
 
-        var character = gameState.Character;
+        var trainer = gameState.Trainer;
         var summary = new
         {
-            name = character.Name,
-            level = character.Level,
-            health = $"{character.CurrentHealth}/{character.MaxHealth}",
-            experience = character.Experience,
-            experienceToNext = character.ExperienceToNextLevel,
-            pokemonTeam = character.PokemonTeam.Select(p => new { 
+            name = trainer.Name,
+            level = trainer.Level,
+            experience = trainer.Experience,
+            stats = new
+            {
+                strength = trainer.Stats.Strength.ToString(),
+                agility = trainer.Stats.Agility.ToString(),
+                social = trainer.Stats.Social.ToString(),
+                intelligence = trainer.Stats.Intelligence.ToString()
+            },
+            archetype = trainer.Archetype.ToString(),
+            conditions = trainer.Conditions.Select(c => new { 
+                type = c.Type.ToString(), 
+                duration = c.Duration,
+                severity = c.Severity
+            }),
+            pokemonTeam = gameState.PokemonTeam.ActivePokemon.Select(p => new { 
                 name = p.Name, 
                 species = p.Species, 
                 level = p.Level,
-                health = $"{p.CurrentHealth}/{p.MaxHealth}"
+                vigor = $"{p.CurrentVigor}/{p.MaxVigor}",
+                type1 = p.Type1,
+                type2 = p.Type2,
+                friendship = p.Friendship
             }),
-            money = character.Inventory.Money,
-            location = gameState.Adventure.CurrentLocation,
-            region = gameState.Adventure.CurrentRegion
+            money = trainer.Money,
+            location = gameState.WorldState.CurrentLocation,
+            region = gameState.WorldState.CurrentRegion,
+            timeOfDay = gameState.WorldState.TimeOfDay.ToString(),
+            weather = gameState.WorldState.WeatherCondition,
+            gymBadges = gameState.WorldState.GymBadges.Count,
+            renown = trainer.GlobalRenown,
+            notoriety = trainer.GlobalNotoriety
         };
 
         return JsonSerializer.Serialize(summary, _jsonOptions);

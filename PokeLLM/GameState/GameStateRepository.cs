@@ -1,7 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PokeLLM.GameState.Models;
-using PokeLLM.GameState.Interfaces;
 
 namespace PokeLLM.GameState;
 
@@ -35,20 +33,41 @@ public class GameStateRepository : IGameStateRepository
         Directory.CreateDirectory(_backupDirectory);
     }
 
-    public async Task<GameStateModel> CreateNewGameStateAsync(string characterName = "Trainer")
+    public async Task<GameStateModel> CreateNewGameStateAsync(string trainerName = "Trainer")
     {
         var gameState = new GameStateModel
         {
-            Character = new Character
+            Trainer = new TrainerState
             {
-                Name = characterName,
-                CurrentHealth = 100,
-                MaxHealth = 100
+                Name = trainerName,
+                Level = 1,
+                Experience = 0,
+                Money = 3000,
+                Stats = new Stats(),
+                Archetype = TrainerArchetype.None,
+                Conditions = new List<ActiveCondition>(),
+                Inventory = new Dictionary<string, int>(),
+                GlobalRenown = 0,
+                GlobalNotoriety = 0
             },
-            Adventure = new Adventure
+            PokemonTeam = new PokemonTeam
             {
-                CurrentLocation = "Pallet Town",
-                CurrentRegion = "Kanto"
+                ActivePokemon = new List<TeamPokemon>(),
+                BoxedPokemon = new List<TeamPokemon>(),
+                MaxPartySize = 6
+            },
+            WorldState = new GameWorldState
+            {
+                CurrentLocation = "unknown",
+                CurrentRegion = "unknown",
+                VisitedLocations = new HashSet<string>(),
+                GymBadges = new List<GymBadge>(),
+                WorldFlags = new Dictionary<string, object>(),
+                NPCRelationships = new Dictionary<string, int>(),
+                FactionReputations = new Dictionary<string, int>(),
+                DiscoveredLore = new HashSet<string>(),
+                TimeOfDay = TimeOfDay.Morning,
+                WeatherCondition = "Clear"
             }
         };
 
@@ -61,8 +80,6 @@ public class GameStateRepository : IGameStateRepository
         if (gameState == null)
             throw new ArgumentNullException(nameof(gameState));
 
-        gameState.LastUpdated = DateTime.UtcNow;
-
         // Create backup of current state if it exists
         if (File.Exists(_currentStateFile))
         {
@@ -73,7 +90,7 @@ public class GameStateRepository : IGameStateRepository
         await File.WriteAllTextAsync(_currentStateFile, json);
     }
 
-    public async Task<GameStateModel?> LoadLatestStateAsync()
+    public async Task<GameStateModel> LoadLatestStateAsync()
     {
         if (!File.Exists(_currentStateFile))
             return null;
@@ -92,7 +109,7 @@ public class GameStateRepository : IGameStateRepository
         }
     }
 
-    public async Task<GameStateModel?> LoadStateByIdAsync(string stateId)
+    public async Task<GameStateModel> LoadStateByIdAsync(string stateId)
     {
         var backupFiles = Directory.GetFiles(_backupDirectory, "*.json")
             .OrderByDescending(f => File.GetCreationTime(f));
@@ -103,7 +120,7 @@ public class GameStateRepository : IGameStateRepository
             {
                 var json = await File.ReadAllTextAsync(file);
                 var gameState = JsonSerializer.Deserialize<GameStateModel>(json, _jsonOptions);
-                if (gameState?.Id == stateId)
+                if (gameState?.GetHashCode().ToString() == stateId) // Simple ID based on hash
                     return gameState;
             }
             catch (JsonException)
@@ -136,7 +153,7 @@ public class GameStateRepository : IGameStateRepository
             {
                 var json = await File.ReadAllTextAsync(file);
                 var gameState = JsonSerializer.Deserialize<GameStateModel>(json, _jsonOptions);
-                if (gameState != null && (currentState == null || gameState.Id != currentState.Id))
+                if (gameState != null)
                     states.Add(gameState);
             }
             catch (JsonException)
@@ -146,7 +163,7 @@ public class GameStateRepository : IGameStateRepository
             }
         }
 
-        return states.OrderByDescending(s => s.LastUpdated).ToList();
+        return states.Take(limit).ToList();
     }
 
     public async Task DeleteStateAsync(string stateId)
@@ -160,7 +177,7 @@ public class GameStateRepository : IGameStateRepository
             {
                 var json = await File.ReadAllTextAsync(file);
                 var gameState = JsonSerializer.Deserialize<GameStateModel>(json, _jsonOptions);
-                if (gameState?.Id == stateId)
+                if (gameState?.GetHashCode().ToString() == stateId)
                 {
                     File.Delete(file);
                     break;
@@ -186,7 +203,7 @@ public class GameStateRepository : IGameStateRepository
             
             if (currentState != null)
             {
-                var backupFileName = $"gamestate_{currentState.Id}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json";
+                var backupFileName = $"gamestate_{currentState.GetHashCode()}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json";
                 var backupPath = Path.Combine(_backupDirectory, backupFileName);
                 await File.WriteAllTextAsync(backupPath, currentJson);
 
@@ -247,56 +264,41 @@ public class GameStateRepository : IGameStateRepository
     }
 
     // Helper methods for common operations
-    public async Task UpdateCharacterAsync(Action<Character> updateAction)
+    public async Task UpdateTrainerAsync(Action<TrainerState> updateAction)
     {
         var state = await LoadLatestStateAsync();
         if (state != null)
         {
-            updateAction(state.Character);
+            updateAction(state.Trainer);
             await SaveStateAsync(state);
         }
     }
 
-    public async Task UpdateAdventureAsync(Action<Adventure> updateAction)
+    public async Task UpdateWorldStateAsync(Action<GameWorldState> updateAction)
     {
         var state = await LoadLatestStateAsync();
         if (state != null)
         {
-            updateAction(state.Adventure);
+            updateAction(state.WorldState);
             await SaveStateAsync(state);
         }
     }
 
-    public async Task AddPokemonToTeamAsync(Pokemon pokemon)
+    public async Task AddPokemonToTeamAsync(TeamPokemon pokemon)
     {
-        await UpdateCharacterAsync(character =>
+        var state = await LoadLatestStateAsync();
+        if (state != null)
         {
-            if (character.PokemonTeam.Count < 6)
+            if (state.PokemonTeam.ActivePokemon.Count < state.PokemonTeam.MaxPartySize)
             {
-                character.PokemonTeam.Add(pokemon);
+                state.PokemonTeam.ActivePokemon.Add(pokemon);
             }
             else
             {
-                character.StoredPokemon.Add(pokemon);
+                state.PokemonTeam.BoxedPokemon.Add(pokemon);
             }
-        });
-    }
-
-    public async Task AddEventToHistoryAsync(GameEvent gameEvent)
-    {
-        await UpdateAdventureAsync(adventure =>
-        {
-            adventure.EventHistory.Add(gameEvent);
-            
-            // Keep only the last 1000 events to prevent excessive memory usage
-            if (adventure.EventHistory.Count > 1000)
-            {
-                adventure.EventHistory = adventure.EventHistory
-                    .OrderByDescending(e => e.Timestamp)
-                    .Take(1000)
-                    .ToList();
-            }
-        });
+            await SaveStateAsync(state);
+        }
     }
 
     public async Task<bool> HasGameStateAsync()

@@ -1,6 +1,4 @@
 using Microsoft.SemanticKernel;
-using PokeLLM.Game.VectorStore.Interfaces;
-using PokeLLM.Game.Data;
 using System.ComponentModel;
 using System;
 using System.Diagnostics;

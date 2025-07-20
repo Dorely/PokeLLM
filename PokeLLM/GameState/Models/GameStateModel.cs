@@ -4,277 +4,228 @@ namespace PokeLLM.GameState.Models;
 
 public class GameStateModel
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-    public Character Character { get; set; } = new();
-    public Adventure Adventure { get; set; } = new();
-    public GameSettings Settings { get; set; } = new();
+    [JsonPropertyName("trainer")]
+    public TrainerState Trainer { get; set; } = new();
+
+    [JsonPropertyName("pokemonTeam")]
+    public PokemonTeam PokemonTeam { get; set; } = new();
+
+    [JsonPropertyName("worldState")]
+    public GameWorldState WorldState { get; set; } = new();
 }
 
-public class Character
+public class TrainerState
 {
-    public string Name { get; set; } = "";
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("level")]
     public int Level { get; set; } = 1;
+
+    [JsonPropertyName("experience")]
     public int Experience { get; set; } = 0;
-    public int ExperienceToNextLevel { get; set; } = 100;
-    
-    // Health and Status
-    public int CurrentHealth { get; set; } = 100;
-    public int MaxHealth { get; set; } = 100;
-    public CharacterStatus Status { get; set; } = CharacterStatus.Healthy;
-    
-    // Stats
-    public CharacterStats Stats { get; set; } = new();
-    
-    // Skills and Abilities
-    public Dictionary<string, int> Skills { get; set; } = new();
-    public List<string> Abilities { get; set; } = new();
-    
-    // Inventory and Equipment
-    public Inventory Inventory { get; set; } = new();
-    public Equipment Equipment { get; set; } = new();
-    
-    // Pokemon Team
-    public List<Pokemon> PokemonTeam { get; set; } = new();
-    public List<Pokemon> StoredPokemon { get; set; } = new();
-    
-    // Progression
-    public List<string> BadgesEarned { get; set; } = new();
-    public List<string> AchievementsUnlocked { get; set; } = new();
+
+    [JsonPropertyName("stats")]
+    public Stats Stats { get; set; } = new();
+
+    [JsonPropertyName("archetype")]
+    public TrainerArchetype Archetype { get; set; } = TrainerArchetype.None;
+
+    [JsonPropertyName("conditions")]
+    public List<ActiveCondition> Conditions { get; set; } = new();
+
+    [JsonPropertyName("inventory")]
+    public Dictionary<string, int> Inventory { get; set; } = new();
+
+    [JsonPropertyName("money")]
+    public int Money { get; set; } = 0;
+
+    [JsonPropertyName("globalRenown")]
+    public int GlobalRenown { get; set; } = 0; // positive reputation
+
+    [JsonPropertyName("globalNotoriety")]
+    public int GlobalNotoriety { get; set; } = 0; // negative reputation
 }
 
-public class CharacterStats
+public class Stats
 {
-    public int Strength { get; set; } = 10;
-    public int Intelligence { get; set; } = 10;
-    public int Charisma { get; set; } = 10;
-    public int Dexterity { get; set; } = 10;
-    public int Constitution { get; set; } = 10;
-    public int Wisdom { get; set; } = 10;
-    public int Luck { get; set; } = 10;
+    [JsonPropertyName("strength")]
+    public StatLevel Strength { get; set; } = StatLevel.Novice;
+
+    [JsonPropertyName("agility")]
+    public StatLevel Agility { get; set; } = StatLevel.Novice;
+
+    [JsonPropertyName("social")]
+    public StatLevel Social { get; set; } = StatLevel.Novice;
+
+    [JsonPropertyName("intelligence")]
+    public StatLevel Intelligence { get; set; } = StatLevel.Novice;
 }
 
-public class Inventory
+public class ActiveCondition
 {
-    public int Money { get; set; } = 1000;
-    public Dictionary<string, int> Items { get; set; } = new();
-    public Dictionary<string, int> KeyItems { get; set; } = new();
-    public Dictionary<string, int> Pokeballs { get; set; } = new()
-    {
-        ["Pokeball"] = 5,
-        ["Great Ball"] = 0,
-        ["Ultra Ball"] = 0
-    };
-    public Dictionary<string, int> Medicine { get; set; } = new()
-    {
-        ["Potion"] = 3
-    };
-    public Dictionary<string, int> TMsHMs { get; set; } = new();
-    public Dictionary<string, int> Berries { get; set; } = new();
+    [JsonPropertyName("type")]
+    public TrainerCondition Type { get; set; }
+
+    [JsonPropertyName("duration")]
+    public int Duration { get; set; } = -1; // -1 = permanent until removed
+
+    [JsonPropertyName("severity")]
+    public int Severity { get; set; } = 1; // For conditions with varying intensity
 }
 
-public class Equipment
+public class PokemonTeam
 {
-    public string? Weapon { get; set; }
-    public string? Armor { get; set; }
-    public string? Accessory { get; set; }
-    public Dictionary<string, string> SpecialEquipment { get; set; } = new();
+    [JsonPropertyName("activePokemon")]
+    public List<TeamPokemon> ActivePokemon { get; set; } = new();
+
+    [JsonPropertyName("boxedPokemon")]
+    public List<TeamPokemon> BoxedPokemon { get; set; } = new();
+
+    [JsonPropertyName("maxPartySize")]
+    public int MaxPartySize { get; set; } = 6;
 }
 
-public class Pokemon
+public class TeamPokemon
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string Name { get; set; } = "";
-    public string Species { get; set; } = "";
-    public string Nickname { get; set; } = "";
-    
-    // Core Stats
-    public int Level { get; set; } = 5;
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("species")]
+    public string Species { get; set; } = string.Empty;
+
+    [JsonPropertyName("level")]
+    public int Level { get; set; } = 1;
+
+    [JsonPropertyName("experience")]
     public int Experience { get; set; } = 0;
-    public int ExperienceToNextLevel { get; set; } = 100;
-    
-    // Health
-    public int CurrentHealth { get; set; }
-    public int MaxHealth { get; set; }
-    public PokemonStatus Status { get; set; } = PokemonStatus.Healthy;
-    
-    // Types
-    public string PrimaryType { get; set; } = "";
-    public string? SecondaryType { get; set; }
-    
-    // Battle Stats
-    public PokemonStats Stats { get; set; } = new();
-    public PokemonStats IVs { get; set; } = new(); // Individual Values
-    public PokemonStats EVs { get; set; } = new(); // Effort Values
-    
-    // Moves and Abilities
-    public List<PokemonMove> Moves { get; set; } = new();
-    public List<PokemonMove> LearnableMoves { get; set; } = new();
-    public string Ability { get; set; } = "";
-    public string? HiddenAbility { get; set; }
-    
-    // Other Properties
-    public string Nature { get; set; } = "";
-    public string Gender { get; set; } = "";
-    public bool IsShiny { get; set; } = false;
-    public string? HeldItem { get; set; }
-    public int Happiness { get; set; } = 70;
-    public string OriginalTrainer { get; set; } = "";
-    public DateTime CaughtDate { get; set; } = DateTime.UtcNow;
-    public string CaughtLocation { get; set; } = "";
-    public Dictionary<string, object> CustomProperties { get; set; } = new();
+
+    [JsonPropertyName("knownMoves")]
+    public HashSet<string> KnownMoves { get; set; } = new();
+
+    [JsonPropertyName("currentVigor")]
+    public int CurrentVigor { get; set; }
+
+    [JsonPropertyName("maxVigor")]
+    public int MaxVigor { get; set; }
+
+    [JsonPropertyName("stats")]
+    public Stats Stats { get; set; } = new();
+
+    [JsonPropertyName("type1")]
+    public string Type1 { get; set; } = string.Empty;
+
+    [JsonPropertyName("type2")]
+    public string Type2 { get; set; }
+
+    [JsonPropertyName("caughtLocation")]
+    public string CaughtLocation { get; set; } = string.Empty;
+
+    [JsonPropertyName("friendship")]
+    public int Friendship { get; set; } = 50; // 0-100 scale
 }
 
-public class PokemonStats
+public class GameWorldState
 {
-    public int Health { get; set; } = 0;
-    public int Attack { get; set; } = 0;
-    public int Defense { get; set; } = 0;
-    public int SpecialAttack { get; set; } = 0;
-    public int SpecialDefense { get; set; } = 0;
-    public int Speed { get; set; } = 0;
+    [JsonPropertyName("currentLocation")]
+    public string CurrentLocation { get; set; }
+
+    [JsonPropertyName("currentRegion")]
+    public string CurrentRegion { get; set; }
+
+    [JsonPropertyName("visitedLocations")]
+    public HashSet<string> VisitedLocations { get; set; } = new();
+
+    [JsonPropertyName("gymBadges")]
+    public List<GymBadge> GymBadges { get; set; } = new();
+
+    [JsonPropertyName("worldFlags")]
+    public Dictionary<string, object> WorldFlags { get; set; } = new();
+
+    [JsonPropertyName("npcRelationships")]
+    public Dictionary<string, int> NPCRelationships { get; set; } = new();
+
+    [JsonPropertyName("factionReputations")]
+    public Dictionary<string, int> FactionReputations { get; set; } = new();
+
+    [JsonPropertyName("discoveredLore")]
+    public HashSet<string> DiscoveredLore { get; set; } = new();
+
+    [JsonPropertyName("timeOfDay")]
+    public TimeOfDay TimeOfDay { get; set; } = TimeOfDay.Morning;
+
+    [JsonPropertyName("weatherCondition")]
+    public string WeatherCondition { get; set; } = "Clear";
 }
 
-public class PokemonMove
+public class GymBadge
 {
-    public string Name { get; set; } = "";
-    public string Type { get; set; } = "";
-    public string Category { get; set; } = ""; // Physical, Special, Status
-    public int Power { get; set; } = 0;
-    public int Accuracy { get; set; } = 100;
-    public int CurrentPP { get; set; } = 0;
-    public int MaxPP { get; set; } = 0;
-    public string Description { get; set; } = "";
-    public Dictionary<string, object> Effects { get; set; } = new();
-}
+    [JsonPropertyName("gymName")]
+    public string GymName { get; set; } = string.Empty;
 
-public class Adventure
-{
-    // Location and World State
-    public string CurrentLocation { get; set; } = "";
-    public string CurrentRegion { get; set; } = "";
-    public Dictionary<string, bool> VisitedLocations { get; set; } = new();
-    public Dictionary<string, DateTime> LocationVisitTimes { get; set; } = new();
-    
-    // NPC Relationships and Encounters
-    public Dictionary<string, NPCRelationship> NPCRelationships { get; set; } = new();
-    public Dictionary<string, DateTime> NPCLastEncountered { get; set; } = new();
-    
-    // Story and Quest Progress
-    public Dictionary<string, QuestProgress> ActiveQuests { get; set; } = new();
-    public Dictionary<string, QuestProgress> CompletedQuests { get; set; } = new();
-    public List<string> StoryFlags { get; set; } = new();
-    public Dictionary<string, object> StoryVariables { get; set; } = new();
-    
-    // World State
-    public Dictionary<string, bool> WorldFlags { get; set; } = new();
-    public Dictionary<string, object> WorldVariables { get; set; } = new();
-    public List<string> UnlockedAreas { get; set; } = new();
-    
-    // Time and Events
-    public DateTime GameTime { get; set; } = DateTime.UtcNow;
-    public List<ScheduledEvent> ScheduledEvents { get; set; } = new();
-    public List<GameEvent> EventHistory { get; set; } = new();
-}
+    [JsonPropertyName("leaderName")]
+    public string LeaderName { get; set; } = string.Empty;
 
-public class NPCRelationship
-{
-    public string NPCId { get; set; } = "";
-    public string NPCName { get; set; } = "";
-    public int RelationshipLevel { get; set; } = 0; // -100 to 100
-    public string RelationshipType { get; set; } = "Neutral"; // Enemy, Hostile, Neutral, Friendly, Ally
-    public Dictionary<string, object> RelationshipFlags { get; set; } = new();
-    public List<string> DialogueHistory { get; set; } = new();
-    public DateTime FirstMet { get; set; }
-    public DateTime LastInteraction { get; set; }
-    public int TimesEncountered { get; set; } = 0;
-}
+    [JsonPropertyName("location")]
+    public string Location { get; set; } = string.Empty;
 
-public class QuestProgress
-{
-    public string QuestId { get; set; } = "";
-    public string QuestName { get; set; } = "";
-    public string Description { get; set; } = "";
-    public QuestStatus Status { get; set; } = QuestStatus.NotStarted;
-    public DateTime StartedAt { get; set; }
-    public DateTime? CompletedAt { get; set; }
-    public Dictionary<string, object> QuestVariables { get; set; } = new();
-    public List<string> CompletedObjectives { get; set; } = new();
-    public List<string> FailedObjectives { get; set; } = new();
-    public Dictionary<string, object> Rewards { get; set; } = new();
-}
-
-public class ScheduledEvent
-{
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string Name { get; set; } = "";
-    public string Description { get; set; } = "";
-    public DateTime ScheduledTime { get; set; }
-    public string EventType { get; set; } = "";
-    public Dictionary<string, object> EventData { get; set; } = new();
-    public bool IsRepeating { get; set; } = false;
-    public TimeSpan? RepeatInterval { get; set; }
-}
-
-public class GameEvent
-{
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-    public string EventType { get; set; } = "";
-    public string Description { get; set; } = "";
-    public string Location { get; set; } = "";
-    public Dictionary<string, object> EventData { get; set; } = new();
-}
-
-public class GameSettings
-{
-    public DifficultyLevel Difficulty { get; set; } = DifficultyLevel.Normal;
-    public bool AutoSave { get; set; } = true;
-    public TimeSpan AutoSaveInterval { get; set; } = TimeSpan.FromMinutes(5);
-    public Dictionary<string, object> CustomSettings { get; set; } = new();
+    [JsonPropertyName("badgeType")]
+    public string BadgeType { get; set; } = string.Empty; // Fire, Water, etc.
 }
 
 // Enums
-public enum CharacterStatus
+public enum StatType
+{
+    Strength,
+    Agility,
+    Social,
+    Intelligence
+}
+
+public enum StatLevel
+{
+    Hopeless = -2,
+    Incompetent = -1,
+    Novice = 0,
+    Trained = 1,
+    Experienced = 2,
+    Expert = 3,
+    Veteran = 4,
+    Master = 5,
+    Grandmaster = 6,
+    Legendary = 7
+}
+
+public enum TrainerCondition
 {
     Healthy,
+    Tired,
+    Injured,
     Poisoned,
-    Paralyzed,
-    Sleeping,
-    Frozen,
-    Burned,
-    Confused,
-    Dead
+    Inspired,
+    Focused,
+    Exhausted,
+    Confident,
+    Intimidated
 }
 
-public enum PokemonStatus
+public enum TrainerArchetype
 {
-    Healthy,
-    Poisoned,
-    BadlyPoisoned,
-    Paralyzed,
-    Sleeping,
-    Frozen,
-    Burned,
-    Confused,
-    Fainted
+    None,
+    BugCatcher,
+    Hiker,
+    Psychic,
+    Medium,
+    AceTrainer,
+    Researcher,
+    Coordinator,
+    Ranger
 }
 
-public enum QuestStatus
+public enum TimeOfDay
 {
-    NotStarted,
-    Available,
-    InProgress,
-    Completed,
-    Failed,
-    Cancelled
-}
-
-public enum DifficultyLevel
-{
-    Easy,
-    Normal,
-    Hard,
-    Expert
+    Morning,
+    Afternoon,
+    Evening,
+    Night
 }

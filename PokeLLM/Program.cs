@@ -2,14 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
-using PokeLLM.Game.Configuration;
-using PokeLLM.Game.Data;
-using PokeLLM.Game.LLM;
-using PokeLLM.Game.LLM.Interfaces;
-using PokeLLM.Game.VectorStore;
-using PokeLLM.Game.VectorStore.Interfaces;
-using PokeLLM.GameState;
-using PokeLLM.GameState.Interfaces;
 using Qdrant.Client;
 
 var config = new ConfigurationBuilder()
@@ -36,7 +28,7 @@ var provider = services.BuildServiceProvider();
 //await store.Upsert(collection, "test", "This is a test to see if upsert works");
 
 var llm = provider.GetRequiredService<ILLMProvider>();
-llm.RegisterPlugins(provider.GetRequiredService<IVectorStoreService>());
+llm.RegisterPlugins(provider.GetRequiredService<IVectorStoreService>(), provider.GetRequiredService<IGameStateRepository>());
 
 // Create chat history
 var history = llm.CreateHistory();

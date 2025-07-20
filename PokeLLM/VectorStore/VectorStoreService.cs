@@ -1,9 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
-using PokeLLM.Game.Configuration;
-using PokeLLM.Game.Data;
-using PokeLLM.Game.LLM.Interfaces;
-using PokeLLM.Game.VectorStore.Interfaces;
 using Qdrant.Client;
 
 namespace PokeLLM.Game.VectorStore;

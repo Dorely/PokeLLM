@@ -4,12 +4,6 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Embeddings;
-using PokeLLM.Game.Configuration;
-using PokeLLM.Game.LLM.Interfaces;
-using PokeLLM.Game.Plugins;
-using PokeLLM.Game.VectorStore.Interfaces;
-using PokeLLM.GameState;
-using PokeLLM.GameState.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -21,11 +15,9 @@ public class OpenAiProvider : ILLMProvider
 {
     private readonly Kernel _kernel;
     private readonly IChatCompletionService _chatService;
-    private readonly IGameStateRepository _stateRepository;
 
-    public OpenAiProvider(IOptions<ModelConfig> options, IGameStateRepository gameStateRepository)
+    public OpenAiProvider(IOptions<ModelConfig> options)
     {
-        _stateRepository = gameStateRepository;
         var apiKey = options.Value.ApiKey;
         var modelId = options.Value.ModelId;
         var embeddingModelId = options.Value.EmbeddingModelId;
@@ -48,11 +40,11 @@ public class OpenAiProvider : ILLMProvider
         _chatService = _kernel.GetRequiredService<IChatCompletionService>();
     }
 
-    public void RegisterPlugins(IVectorStoreService vectorStoreService)
+    public void RegisterPlugins(IVectorStoreService vectorStoreService, IGameStateRepository gameStateRepository)
     {
         _kernel.Plugins.AddFromType<PokemonBattlePlugin>();
         _kernel.Plugins.AddFromObject(new VectorStorePlugin(vectorStoreService));
-        _kernel.Plugins.AddFromObject(new GameStatePlugin(_stateRepository));
+        _kernel.Plugins.AddFromObject(new GameStatePlugin(gameStateRepository));
     }
 
     public IEmbeddingGenerator GetEmbeddingGenerator()
@@ -115,19 +107,24 @@ This game plays similarly to other tabletop RPGs with character progression, adv
 You manage both the narrative experience and the mechanical aspects of the game.
 
 GAME STATE MANAGEMENT:
-- You have access to comprehensive game state management functions:
-  - create_new_game(characterName): Start a new adventure with a fresh character
-  - load_game_state(): Get the current game state including character stats, inventory, Pokemon team, and adventure progress
+- You have access to comprehensive trainer and world state management functions:
+  - create_new_game(trainerName): Start a new adventure with a fresh trainer
+  - load_game_state(): Get the current game state including trainer stats, inventory, Pokemon team, and world progress
   - has_game_state(): Check if a saved game exists
-  - get_character_summary(): Get a quick overview of the character's current status
-  - update_character_health(currentHealth): Modify character health
-  - update_character_experience(experienceGain): Add experience and handle level ups
-  - add_pokemon_to_team(pokemonJson): Add new Pokemon to the character's team
-  - update_pokemon_health(pokemonId, currentHealth): Update Pokemon health and status
+  - get_trainer_summary(): Get a quick overview of the trainer's current status
+  - update_trainer_experience(experienceGain): Add experience and handle level ups
+  - update_trainer_stat(statName, statLevel): Update trainer stats (Strength, Agility, Social, Intelligence)
+  - add_trainer_condition(conditionType, duration, severity): Add conditions like Tired, Inspired, etc.
+  - add_pokemon_to_team(pokemonJson): Add new Pokemon to the trainer's team
+  - update_pokemon_vigor(pokemonName, currentVigor): Update Pokemon health/vigor
   - change_location(newLocation, region): Move to new locations and track visited places
-  - update_npc_relationship(npcId, npcName, relationshipChange, relationshipType): Manage relationships with NPCs
-  - add_to_inventory(itemName, quantity, itemType): Add items to inventory
-  - add_game_event(eventType, description, location): Record important events in game history
+  - update_npc_relationship(npcId, relationshipChange): Manage relationships with NPCs
+  - update_faction_reputation(factionName, reputationChange): Manage faction standings
+  - add_to_inventory(itemName, quantity): Add items to inventory
+  - update_money(amount): Add or subtract money
+  - earn_gym_badge(gymName, leaderName, location, badgeType): Award gym badges
+  - discover_lore(loreEntry): Add discovered lore to the world
+  - set_time_and_weather(timeOfDay, weather): Update time and weather conditions
 
 ADVENTURE DATA MANAGEMENT:
 - You also have access to vector store functions for world-building and reference:
@@ -146,10 +143,17 @@ GAMEPLAY GUIDELINES:
 - Always check for existing game state before starting new interactions
 - Use the game state functions to track changes and maintain consistency
 - Record significant events, level ups, new Pokemon captures, and story developments
-- Manage character progression realistically based on actions and challenges
+- Manage trainer progression realistically based on actions and challenges
 - Keep track of relationships with NPCs based on player interactions
 - Use the vector store to maintain consistency in locations, NPCs, and story elements
 - Focus on creating an engaging narrative while maintaining mechanical accuracy
+
+TRAINER PROGRESSION:
+- Trainers have stats: Strength, Agility, Social, Intelligence (ranging from Hopeless to Legendary)
+- Trainers can have conditions that affect their abilities (Tired, Inspired, Focused, etc.)
+- Trainers have archetypes (BugCatcher, Hiker, Psychic, Researcher, etc.) that influence their story
+- Pokemon have Vigor instead of HP, and friendship levels that matter
+- Track money, inventory, global renown/notoriety for reputation systems
 
 NARRATIVE REQUIREMENTS:
 - Create immersive Pokemon world experiences with canonical creatures and locations
