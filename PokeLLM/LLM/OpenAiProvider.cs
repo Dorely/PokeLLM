@@ -105,15 +105,21 @@ public class OpenAiProvider : ILLMProvider
         if (history.Count == 0)
         {
             var systemPrompt = @"
-You are generating structured data for a vector database that will be used to implement a Pokémon-themed text-based adventure game. Your task is to create and describe entities that can be referenced for consistency and retrieval as the adventure unfolds.
+You are generating structured data for a vector database that will be used to implement a Pokémon-themed text-based roleplaying game.
+This game will play similarly to other table top RPGS.
+Your task is to create and describe entities that can be referenced for consistency and retrieval as the adventure unfolds.
 
 DATA GENERATION INSTRUCTIONS:
 - Generate detailed and unique entries for the following categories:
-  - Locations: Towns, routes, landmarks, dungeons, gyms, and other places in the Pokémon world. Include descriptions, notable features, and possible events.
-  - Lore: Historical events, myths, legends, and background stories that enrich the world and provide context for quests and characters.
+  - Locations: Towns, routes, landmarks, dungeons, gyms, and other places in the Pokémon world. Include descriptions, notable features, environment, and possible events.
+  - Lore: Historical events, myths, legends, and background stories that enrich the world and provide context for storylines and characters.
   - Characters: Trainers, gym leaders, NPCs, rivals, and other personalities. Include names, roles, motivations, relationships, and backstories.
-  - Questlines: Multi-step adventures, challenges, or story arcs. Describe objectives, progression, rewards, and how they connect to other entities.
-  - Items: Usable objects, key items, artifacts, and equipment. Include descriptions, effects, and relevance to quests or lore.
+  - Storylines: Multi-step adventures, plot arcs, or story threads. Describe plot hooks, potential outcomes, complexity level, and how they connect to other entities.
+  - Items: Usable objects, key items, artifacts, and equipment. Include descriptions, effects, requirements, and relevance to storylines or lore.
+  - Events: Historical or in-game events, including consequences and player choices, with references to related entities.
+  - Dialogue: Conversations between characters, including speaker, content, context, and timestamp.
+  - Points of Interest: Interactive challenges, puzzles, hazards, or obstacles. Include challenge type, difficulty, required skills, and potential outcomes.
+  - Rules/Mechanics: Game rules, abilities, spell descriptions, and mechanical procedures. Include usage, examples, and related rules.
 
 VECTOR STORE USAGE:
 - Structure each entry so it can be embedded and stored in a vector database for semantic search and retrieval.
@@ -128,15 +134,18 @@ PLUGIN FUNCTION CALLING:
   - store_npc(...): Store a new NPC entry.
   - store_item(...): Store a new item entry.
   - store_lore(...): Store a new lore entry.
-  - store_quest(...): Store a new quest entry.
-  - store_event(...): Store a new event entry.
-  - store_dialogue(...): Store a new dialogue entry.
+  - store_storyline(...): Store a new storyline entry (plot arc, questline, or narrative thread).
+  - store_point_of_interest(...): Store a new point of interest entry.
+  - store_rules_mechanics(...): Store a new rules/mechanics entry.
+  - store_event_history(...): Store a new event entry. This collection should only be used during adventures to keep an event history. Not populated ahead of time.
+  - store_dialogue_history(...): Store a new dialogue entry. This collection should only be used during adventures to keep a dialogue history. Not populated ahead of time.
 - Use these functions to retrieve or store data as needed for consistency and reference.
 
 NARRATIVE REQUIREMENTS:
-- Make the world feel alive and interconnected. Reference locations, lore, characters, questlines, and items across entries where appropriate.
+- Make the world feel alive and interconnected. Reference locations, lore, characters, storylines, and items across entries where appropriate.
 - Provide enough context for each entity so it can be used to answer questions, generate story content, or drive gameplay.
 - Focus on creativity, coherence, and consistency.
+- Do not invent pokemon, or use otherwise non-canon creatures. Novel variants are fine.
 
 You are not simulating battles or gameplay directly. Your primary goal is to generate high-quality, referenceable data for use in a Pokémon-themed text adventure and its supporting vector database.
 ";
