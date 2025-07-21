@@ -21,7 +21,7 @@ public class VectorStoreService : IVectorStoreService
         );
     }
 
-    public async Task<Guid> StoreLocationAsync(string name, string description, string type, string environment = "", string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedPointsOfInterest = null)
+    public async Task<Guid> UpsertLocationAsync(string name, string description, string type, string environment = "", string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedPointsOfInterest = null)
     {
         var collection = _vectorStore.GetCollection<Guid, LocationVectorModel>(VectorCollections.LOCATIONS);
         await collection.EnsureCollectionExistsAsync();
@@ -44,7 +44,7 @@ public class VectorStoreService : IVectorStoreService
         return model.Id;
     }
 
-    public async Task<Guid> StoreNPCAsync(string name, string description, string role, string location, string faction = "", string motivations = "", string abilities = "", string challengeLevel = "", string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedStorylines = null)
+    public async Task<Guid> UpsertNPCAsync(string name, string description, string role, string location, string faction = "", string motivations = "", string abilities = "", string challengeLevel = "", string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedStorylines = null)
     {
         var collection = _vectorStore.GetCollection<Guid, NPCVectorModel>(VectorCollections.NPCS);
         await collection.EnsureCollectionExistsAsync();
@@ -69,7 +69,7 @@ public class VectorStoreService : IVectorStoreService
         return model.Id;
     }
 
-    public async Task<Guid> StoreItemAsync(string name, string description, string category, string rarity, string mechanicalEffects = "", string requirements = "", int value = 0, string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null)
+    public async Task<Guid> UpsertItemAsync(string name, string description, string category, string rarity, string mechanicalEffects = "", string requirements = "", int value = 0, string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null)
     {
         var collection = _vectorStore.GetCollection<Guid, ItemVectorModel>(VectorCollections.ITEMS);
         await collection.EnsureCollectionExistsAsync();
@@ -92,7 +92,7 @@ public class VectorStoreService : IVectorStoreService
         return model.Id;
     }
 
-    public async Task<Guid> StoreLoreAsync(string name, string description, string category, string timePeriod, string importance, string region, string[] relatedEvents = null, string[] relatedNpcs = null, string[] relatedLocations = null)
+    public async Task<Guid> UpsertLoreAsync(string name, string description, string category, string timePeriod, string importance, string region, string[] relatedEvents = null, string[] relatedNpcs = null, string[] relatedLocations = null)
     {
         var collection = _vectorStore.GetCollection<Guid, LoreVectorModel>(VectorCollections.LORE);
         await collection.EnsureCollectionExistsAsync();
@@ -114,7 +114,7 @@ public class VectorStoreService : IVectorStoreService
         return model.Id;
     }
 
-    public async Task<Guid> StoreStorylinesAsync(string name, string description, string plothooks = "", string potentialOutcomes = "", int complexityLevel = 3, string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedStorylines = null)
+    public async Task<Guid> UpsertStorylinesAsync(string name, string description, string plothooks = "", string potentialOutcomes = "", int complexityLevel = 3, string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedStorylines = null)
     {
         var collection = _vectorStore.GetCollection<Guid, StorylineVectorModel>(VectorCollections.STORYLINES);
         await collection.EnsureCollectionExistsAsync();
@@ -136,7 +136,7 @@ public class VectorStoreService : IVectorStoreService
         return model.Id;
     }
 
-    public async Task<Guid> StoreEventHistoryAsync(string name, string description, string type, string consequences = "", string playerChoices = "", string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedStoryLines = null)
+    public async Task<Guid> UpsertEventHistoryAsync(string name, string description, string type, string consequences = "", string playerChoices = "", string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedStoryLines = null)
     {
         var collection = _vectorStore.GetCollection<Guid, EventHistoryVectorModel>(VectorCollections.EVENTS);
         await collection.EnsureCollectionExistsAsync();
@@ -158,7 +158,7 @@ public class VectorStoreService : IVectorStoreService
         return model.Id;
     }
 
-    public async Task<Guid> StoreDialogueHistoryAsync(string speaker, string content, string topic, string context = "", string[] relatedNpcs = null, string[] relatedLocations = null, string[] relatedStoryLines = null)
+    public async Task<Guid> UpsertDialogueHistoryAsync(string speaker, string content, string topic, string context = "", string[] relatedNpcs = null, string[] relatedLocations = null, string[] relatedStoryLines = null)
     {
         var collection = _vectorStore.GetCollection<Guid, DialogueHistoryVectorModel>(VectorCollections.DIALOGUE);
         await collection.EnsureCollectionExistsAsync();
@@ -178,7 +178,7 @@ public class VectorStoreService : IVectorStoreService
         return model.Id;
     }
 
-    public async Task<Guid> StorePointOfInterestAsync(string name, string description, string challengeType, int difficultyClass, string requiredSkills, string potentialOutcomes, string environmentalFactors, string rewards, string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedStoryLines = null)
+    public async Task<Guid> UpsertPointOfInterestAsync(string name, string description, string challengeType, int difficultyClass, string requiredSkills, string potentialOutcomes, string environmentalFactors, string rewards, string[] relatedLocations = null, string[] relatedNpcs = null, string[] relatedItems = null, string[] relatedStoryLines = null)
     {
         var collection = _vectorStore.GetCollection<Guid, PointOfInterestVectorModel>(VectorCollections.POINTS_OF_INTEREST);
         await collection.EnsureCollectionExistsAsync();
@@ -203,7 +203,7 @@ public class VectorStoreService : IVectorStoreService
         return model.Id;
     }
 
-    public async Task<Guid> StoreRulesMechanicsAsync(string name, string description, string category, string ruleSet, string usage, string examples, string[] relatedRules = null)
+    public async Task<Guid> UpsertRulesMechanicsAsync(string name, string description, string category, string ruleSet, string usage, string examples, string[] relatedRules = null)
     {
         var collection = _vectorStore.GetCollection<Guid, RulesMechanicsVectorModel>(VectorCollections.RULES_MECHANICS);
         await collection.EnsureCollectionExistsAsync();

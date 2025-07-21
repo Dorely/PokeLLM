@@ -123,7 +123,7 @@ public class OpenAiProvider : ILLMProvider
         catch (Exception ex)
         {
             // Fallback to a basic prompt if file reading fails
-            _systemPrompt = "You are a helpful AI assistant for a Pokemon-themed text-based RPG game.";
+            _systemPrompt = "There has been an error loading the game prompt. Do not continue";
             Console.WriteLine($"Warning: Could not load system prompt from file. Using fallback prompt. Error: {ex.Message}");
         }
     }

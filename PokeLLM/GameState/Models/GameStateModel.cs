@@ -31,9 +31,6 @@ public class TrainerState
     [JsonPropertyName("stats")]
     public Stats Stats { get; set; } = new();
 
-    [JsonPropertyName("archetype")]
-    public TrainerArchetype Archetype { get; set; } = TrainerArchetype.None;
-
     [JsonPropertyName("conditions")]
     public List<ActiveCondition> Conditions { get; set; } = new();
 
@@ -48,6 +45,12 @@ public class TrainerState
 
     [JsonPropertyName("globalNotoriety")]
     public int GlobalNotoriety { get; set; } = 0; // negative reputation
+
+    [JsonPropertyName("availableStatPoints")]
+    public int AvailableStatPoints { get; set; } = 0; // For character creation and future point allocation
+
+    [JsonPropertyName("characterCreationComplete")]
+    public bool CharacterCreationComplete { get; set; } = false; // Track if initial character creation is done
 }
 
 public class Stats
@@ -546,19 +549,6 @@ public enum TrainerCondition
     Exhausted,
     Confident,
     Intimidated
-}
-
-public enum TrainerArchetype
-{
-    None,
-    BugCatcher,
-    Hiker,
-    Psychic,
-    Medium,
-    AceTrainer,
-    Researcher,
-    Coordinator,
-    Ranger
 }
 
 public enum TimeOfDay

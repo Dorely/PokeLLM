@@ -22,11 +22,6 @@ services.AddSingleton<IGameStateRepository, GameStateRepository>();
 
 var provider = services.BuildServiceProvider();
 
-//var store = provider.GetRequiredService<IVectorStoreService>();
-
-//var collection = await store.GetGameHistory();
-//await store.Upsert(collection, "test", "This is a test to see if upsert works");
-
 var llm = provider.GetRequiredService<ILLMProvider>();
 llm.RegisterPlugins(provider.GetRequiredService<IVectorStoreService>(), provider.GetRequiredService<IGameStateRepository>());
 
@@ -54,8 +49,6 @@ while (true)
         break;
 
     //// Get LLM response
-    //var response = await llm.GetCompletionAsync(input, history);
-    //Console.WriteLine($"LLM: {response}\n");
     var response = llm.GetCompletionStreamingAsync(input, history);
 
     Console.WriteLine($"LLM: ");

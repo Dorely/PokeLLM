@@ -42,13 +42,19 @@ public class GameStateRepository : IGameStateRepository
                 Name = trainerName,
                 Level = 1,
                 Experience = 0,
-                Money = 3000,
-                Stats = new Stats(),
-                Archetype = TrainerArchetype.None,
+                Money = 1000, // Fixed starting money instead of archetype-based
+                Stats = new Stats(), // All start at Novice (0)
                 Conditions = new List<ActiveCondition>(),
-                Inventory = new Dictionary<string, int>(),
+                Inventory = new Dictionary<string, int>
+                {
+                    // Basic starting inventory
+                    ["Pokeball"] = 5,
+                    ["Potion"] = 2
+                },
                 GlobalRenown = 0,
-                GlobalNotoriety = 0
+                GlobalNotoriety = 0,
+                AvailableStatPoints = 1, // Start with 1 free point to allocate
+                CharacterCreationComplete = false // Character creation not yet complete
             },
             PokemonTeam = new PokemonTeam
             {

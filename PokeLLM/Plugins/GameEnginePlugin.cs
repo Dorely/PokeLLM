@@ -181,6 +181,277 @@ public class GameEnginePlugin
 
     #endregion
 
+    #region Character Creation
+
+    [KernelFunction("get_character_creation_status")]
+    [Description("Check if character creation is complete and get current stat allocation status")]
+    public async Task<string> GetCharacterCreationStatus()
+    {
+        Debug.WriteLine($"[GameEnginePlugin] GetCharacterCreationStatus called");
+        
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState == null)
+            return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+        var trainer = gameState.Trainer;
+        var result = new
+        {
+            characterCreationComplete = trainer.CharacterCreationComplete,
+            availableStatPoints = trainer.AvailableStatPoints,
+            currentStats = new
+            {
+                strength = trainer.Stats.Strength.ToString(),
+                agility = trainer.Stats.Agility.ToString(),
+                social = trainer.Stats.Social.ToString(),
+                intelligence = trainer.Stats.Intelligence.ToString()
+            },
+            statModifiers = new
+            {
+                strengthModifier = GetStatModifier(trainer.Stats.Strength),
+                agilityModifier = GetStatModifier(trainer.Stats.Agility),
+                socialModifier = GetStatModifier(trainer.Stats.Social),
+                intelligenceModifier = GetStatModifier(trainer.Stats.Intelligence)
+            },
+            canAllocatePoints = trainer.AvailableStatPoints > 0,
+            needsCompletion = !trainer.CharacterCreationComplete
+        };
+        
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("allocate_stat_point")]
+    [Description("Allocate an available stat point to increase a stat during character creation or when points are available")]
+    public async Task<string> AllocateStatPoint(
+        [Description("The stat to increase (Strength, Agility, Social, Intelligence)")] string statName)
+    {
+        Debug.WriteLine($"[GameEnginePlugin] AllocateStatPoint called with stat: {statName}");
+        
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState == null)
+            return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+        var trainer = gameState.Trainer;
+        
+        // Check if we have available points
+        if (trainer.AvailableStatPoints <= 0)
+            return JsonSerializer.Serialize(new { error = "No available stat points to allocate" }, _jsonOptions);
+
+        // Validate stat name
+        if (!IsValidStatName(statName))
+            return JsonSerializer.Serialize(new { error = "Invalid stat name. Use: Strength, Agility, Social, or Intelligence" }, _jsonOptions);
+
+        // Get current stat level
+        var currentStatLevel = GetStatLevel(trainer.Stats, statName);
+        
+        // Check if stat can be increased (max is Legendary = 7)
+        if (currentStatLevel >= StatLevel.Legendary)
+            return JsonSerializer.Serialize(new { error = $"{statName} is already at maximum level (Legendary)" }, _jsonOptions);
+
+        // Increase the stat and decrease available points
+        var newStatLevel = (StatLevel)((int)currentStatLevel + 1);
+        await _repository.UpdateTrainerAsync(t =>
+        {
+            switch (statName.ToLower())
+            {
+                case "strength":
+                    t.Stats.Strength = newStatLevel;
+                    break;
+                case "agility":
+                    t.Stats.Agility = newStatLevel;
+                    break;
+                case "social":
+                    t.Stats.Social = newStatLevel;
+                    break;
+                case "intelligence":
+                    t.Stats.Intelligence = newStatLevel;
+                    break;
+            }
+            
+            t.AvailableStatPoints--;
+        });
+
+        var result = new
+        {
+            success = true,
+            statIncreased = statName,
+            previousStatLevel = currentStatLevel.ToString(),
+            newStatLevel = newStatLevel.ToString(),
+            previousModifier = GetStatModifier(currentStatLevel),
+            newModifier = GetStatModifier(newStatLevel),
+            remainingPoints = trainer.AvailableStatPoints - 1,
+            message = $"{statName} increased from {currentStatLevel} to {newStatLevel}"
+        };
+        
+        Debug.WriteLine($"[GameEnginePlugin] Stat point allocated: {statName} {currentStatLevel} -> {newStatLevel}");
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("reduce_stat_point")]
+    [Description("Reduce a stat by one level to get a stat point back during character creation (minimum Hopeless)")]
+    public async Task<string> ReduceStatPoint(
+        [Description("The stat to reduce (Strength, Agility, Social, Intelligence)")] string statName)
+    {
+        Debug.WriteLine($"[GameEnginePlugin] ReduceStatPoint called with stat: {statName}");
+        
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState == null)
+            return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+        var trainer = gameState.Trainer;
+        
+        // Only allow during character creation or when explicitly allowed
+        if (trainer.CharacterCreationComplete)
+            return JsonSerializer.Serialize(new { error = "Cannot reduce stats after character creation is complete" }, _jsonOptions);
+
+        // Validate stat name
+        if (!IsValidStatName(statName))
+            return JsonSerializer.Serialize(new { error = "Invalid stat name. Use: Strength, Agility, Social, or Intelligence" }, _jsonOptions);
+
+        // Get current stat level
+        var currentStatLevel = GetStatLevel(trainer.Stats, statName);
+        
+        // Check if stat can be reduced (minimum is Hopeless = -2)
+        if (currentStatLevel <= StatLevel.Hopeless)
+            return JsonSerializer.Serialize(new { error = $"{statName} is already at minimum level (Hopeless)" }, _jsonOptions);
+
+        // Reduce the stat and increase available points
+        var newStatLevel = (StatLevel)((int)currentStatLevel - 1);
+        await _repository.UpdateTrainerAsync(t =>
+        {
+            switch (statName.ToLower())
+            {
+                case "strength":
+                    t.Stats.Strength = newStatLevel;
+                    break;
+                case "agility":
+                    t.Stats.Agility = newStatLevel;
+                    break;
+                case "social":
+                    t.Stats.Social = newStatLevel;
+                    break;
+                case "intelligence":
+                    t.Stats.Intelligence = newStatLevel;
+                    break;
+            }
+            
+            t.AvailableStatPoints++;
+        });
+
+        var result = new
+        {
+            success = true,
+            statReduced = statName,
+            previousStatLevel = currentStatLevel.ToString(),
+            newStatLevel = newStatLevel.ToString(),
+            previousModifier = GetStatModifier(currentStatLevel),
+            newModifier = GetStatModifier(newStatLevel),
+            newAvailablePoints = trainer.AvailableStatPoints + 1,
+            message = $"{statName} reduced from {currentStatLevel} to {newStatLevel}"
+        };
+        
+        Debug.WriteLine($"[GameEnginePlugin] Stat point reduced: {statName} {currentStatLevel} -> {newStatLevel}");
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("complete_character_creation")]
+    [Description("Finalize character creation and mark it as complete")]
+    public async Task<string> CompleteCharacterCreation()
+    {
+        Debug.WriteLine($"[GameEnginePlugin] CompleteCharacterCreation called");
+        
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState == null)
+            return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+        var trainer = gameState.Trainer;
+        
+        if (trainer.CharacterCreationComplete)
+            return JsonSerializer.Serialize(new { error = "Character creation is already complete" }, _jsonOptions);
+
+        await _repository.UpdateTrainerAsync(t =>
+        {
+            t.CharacterCreationComplete = true;
+            // Any remaining stat points are lost when completing creation
+            t.AvailableStatPoints = 0;
+        });
+
+        var result = new
+        {
+            success = true,
+            characterCreationComplete = true,
+            finalStats = new
+            {
+                strength = trainer.Stats.Strength.ToString(),
+                agility = trainer.Stats.Agility.ToString(),
+                social = trainer.Stats.Social.ToString(),
+                intelligence = trainer.Stats.Intelligence.ToString()
+            },
+            finalModifiers = new
+            {
+                strengthModifier = GetStatModifier(trainer.Stats.Strength),
+                agilityModifier = GetStatModifier(trainer.Stats.Agility),
+                socialModifier = GetStatModifier(trainer.Stats.Social),
+                intelligenceModifier = GetStatModifier(trainer.Stats.Intelligence)
+            },
+            message = "Character creation completed! Your trainer is ready to begin their Pokemon journey."
+        };
+        
+        Debug.WriteLine($"[GameEnginePlugin] Character creation completed for {trainer.Name}");
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("get_stat_allocation_options")]
+    [Description("Get detailed information about available stat allocation choices")]
+    public async Task<string> GetStatAllocationOptions()
+    {
+        Debug.WriteLine($"[GameEnginePlugin] GetStatAllocationOptions called");
+        
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState == null)
+            return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+        var stats = gameState.Trainer.Stats;
+        var options = new List<object>();
+
+        // Check each stat
+        foreach (var statName in new[] { "Strength", "Agility", "Social", "Intelligence" })
+        {
+            var currentLevel = GetStatLevel(stats, statName);
+            var canIncrease = currentLevel < StatLevel.Legendary;
+            var canDecrease = currentLevel > StatLevel.Hopeless && !gameState.Trainer.CharacterCreationComplete;
+            var nextLevel = canIncrease ? (StatLevel)((int)currentLevel + 1) : currentLevel;
+            var prevLevel = canDecrease ? (StatLevel)((int)currentLevel - 1) : currentLevel;
+            
+            options.Add(new
+            {
+                statName = statName,
+                currentLevel = currentLevel.ToString(),
+                currentModifier = GetStatModifier(currentLevel),
+                nextLevel = nextLevel.ToString(),
+                nextModifier = GetStatModifier(nextLevel),
+                prevLevel = prevLevel.ToString(),
+                prevModifier = GetStatModifier(prevLevel),
+                canIncrease = canIncrease,
+                canDecrease = canDecrease,
+                description = GetStatDescription(statName)
+            });
+        }
+
+        var result = new
+        {
+            availablePoints = gameState.Trainer.AvailableStatPoints,
+            characterCreationComplete = gameState.Trainer.CharacterCreationComplete,
+            options = options,
+            instructions = gameState.Trainer.CharacterCreationComplete ? 
+                "Character creation is complete. Use level-ups to gain more stat points." :
+                "During character creation, you can allocate available points or reduce stats to reallocate them."
+        };
+        
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    #endregion
+
     #region Experience and Level Management
 
     [KernelFunction("calculate_experience_needed")]
@@ -253,104 +524,37 @@ public class GameEnginePlugin
         return JsonSerializer.Serialize(result, _jsonOptions);
     }
 
-    #endregion
-
-    #region Character Creation
-
-    [KernelFunction("generate_starting_stats")]
-    [Description("Generate deterministic starting stats for a new trainer based on archetype.")]
-    public async Task<string> GenerateStartingStats(
-        [Description("Trainer archetype to determine stats")] string archetype = "None")
+    [KernelFunction("award_stat_points")]
+    [Description("Award additional stat points for special achievements or milestones")]
+    public async Task<string> AwardStatPoints(
+        [Description("Number of stat points to award")] int points,
+        [Description("Reason for awarding stat points")] string reason = "")
     {
-        await Task.Yield();
+        Debug.WriteLine($"[GameEnginePlugin] AwardStatPoints called: points={points}, reason={reason}");
         
-        // Base stats (all start at Novice = 0)
-        var stats = new Dictionary<string, int>
-        {
-            ["Strength"] = 0,
-            ["Agility"] = 0,
-            ["Social"] = 0,
-            ["Intelligence"] = 0
-        };
+        if (points <= 0)
+            return JsonSerializer.Serialize(new { error = "Must award at least 1 stat point" }, _jsonOptions);
 
-        // Apply archetype bonuses (deterministic, no randomness)
-        if (Enum.TryParse<TrainerArchetype>(archetype, true, out var archetypeEnum))
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState == null)
+            return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+        await _repository.UpdateTrainerAsync(trainer =>
         {
-            ApplyArchetypeStatBonuses(stats, archetypeEnum);
-        }
+            trainer.AvailableStatPoints += points;
+        });
 
         var result = new
         {
-            strength = (StatLevel)stats["Strength"],
-            agility = (StatLevel)stats["Agility"],
-            social = (StatLevel)stats["Social"],
-            intelligence = (StatLevel)stats["Intelligence"],
-            archetype = archetype,
-            note = "Starting stats are deterministic based on archetype. Additional points awarded at level up."
+            success = true,
+            pointsAwarded = points,
+            reason = reason,
+            newTotalPoints = gameState.Trainer.AvailableStatPoints + points,
+            message = $"Awarded {points} stat point(s)! Reason: {reason}"
         };
         
-        Debug.WriteLine($"[GameEnginePlugin] Generated starting stats for {archetype}: {JsonSerializer.Serialize(result, _jsonOptions)}");
+        Debug.WriteLine($"[GameEnginePlugin] Awarded {points} stat points for: {reason}");
         return JsonSerializer.Serialize(result, _jsonOptions);
-    }
-
-    [KernelFunction("create_custom_trainer")]
-    [Description("Create a new trainer with custom stats and archetype.")]
-    public async Task<string> CreateCustomTrainer(
-        [Description("Trainer name")] string name,
-        [Description("Strength stat level (0-2 for starting)")] int strength = 0,
-        [Description("Agility stat level (0-2 for starting)")] int agility = 0,
-        [Description("Social stat level (0-2 for starting)")] int social = 0,
-        [Description("Intelligence stat level (0-2 for starting)")] int intelligence = 0,
-        [Description("Trainer archetype")] string archetype = "None")
-    {
-        Debug.WriteLine($"[GameEnginePlugin] CreateCustomTrainer called for {name}");
-        
-        // Validate stat levels
-        if (strength < 0 || strength > 2 || agility < 0 || agility > 2 || 
-            social < 0 || social > 2 || intelligence < 0 || intelligence > 2)
-        {
-            return JsonSerializer.Serialize(new { error = "Starting stats must be between 0-2" }, _jsonOptions);
-        }
-
-        // Validate total stat points (max based on archetype bonuses)
-        var archetypeBonus = 0;
-        if (Enum.TryParse<TrainerArchetype>(archetype, true, out var archetypeEnum))
-        {
-            archetypeBonus = GetArchetypeTotalBonus(archetypeEnum);
-        }
-        
-        var totalStats = strength + agility + social + intelligence;
-        var maxAllowed = archetypeBonus + 2; // Base archetype bonus + 2 additional points
-        
-        if (totalStats > maxAllowed)
-        {
-            return JsonSerializer.Serialize(new { error = $"Total stat points cannot exceed {maxAllowed} for {archetype} archetype" }, _jsonOptions);
-        }
-
-        if (!Enum.TryParse<TrainerArchetype>(archetype, true, out archetypeEnum))
-        {
-            return JsonSerializer.Serialize(new { error = "Invalid trainer archetype" }, _jsonOptions);
-        }
-
-        // Create trainer data
-        var trainerData = new
-        {
-            name = name,
-            stats = new
-            {
-                strength = (StatLevel)strength,
-                agility = (StatLevel)agility,
-                social = (StatLevel)social,
-                intelligence = (StatLevel)intelligence
-            },
-            archetype = archetypeEnum,
-            level = 1,
-            experience = 0,
-            money = GetStartingMoney(archetypeEnum),
-            startingItems = GetStartingItems(archetypeEnum)
-        };
-
-        return JsonSerializer.Serialize(trainerData, _jsonOptions);
     }
 
     #endregion
@@ -509,6 +713,519 @@ public class GameEnginePlugin
 
     #endregion
 
+    #region Trainer Management
+
+    [KernelFunction("add_trainer_condition")]
+    [Description("Add a condition to the trainer (Tired, Inspired, Focused, etc.)")]
+    public async Task<string> AddTrainerCondition(
+        [Description("The condition type (Tired, Inspired, Focused, Confident, Exhausted, Injured, Intimidated, Poisoned)")] string conditionType,
+        [Description("Duration in turns (-1 for permanent)")] int duration = -1,
+        [Description("Severity level (1-10)")] int severity = 1)
+    {
+        Debug.WriteLine($"[GameEnginePlugin] AddTrainerCondition called with conditionType: '{conditionType}', duration: {duration}, severity: {severity}");
+        
+        if (!Enum.TryParse<TrainerCondition>(conditionType, true, out var condition))
+            return JsonSerializer.Serialize(new { error = "Invalid condition type" }, _jsonOptions);
+
+        await _repository.UpdateTrainerAsync(trainer =>
+        {
+            // Remove existing condition of same type
+            trainer.Conditions.RemoveAll(c => c.Type == condition);
+            
+            // Add new condition
+            trainer.Conditions.Add(new ActiveCondition
+            {
+                Type = condition,
+                Duration = duration,
+                Severity = severity
+            });
+        });
+
+        var result = new
+        {
+            success = true,
+            condition = condition.ToString(),
+            duration = duration,
+            severity = severity,
+            message = $"Added condition {condition} with duration {duration} and severity {severity}"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("remove_trainer_condition")]
+    [Description("Remove a specific condition from the trainer")]
+    public async Task<string> RemoveTrainerCondition(
+        [Description("The condition type to remove")] string conditionType)
+    {
+        Debug.WriteLine($"[GameEnginePlugin] RemoveTrainerCondition called with conditionType: '{conditionType}'");
+        
+        if (!Enum.TryParse<TrainerCondition>(conditionType, true, out var condition))
+            return JsonSerializer.Serialize(new { error = "Invalid condition type" }, _jsonOptions);
+
+        var removed = false;
+        await _repository.UpdateTrainerAsync(trainer =>
+        {
+            var initialCount = trainer.Conditions.Count;
+            trainer.Conditions.RemoveAll(c => c.Type == condition);
+            removed = trainer.Conditions.Count < initialCount;
+        });
+
+        var result = new
+        {
+            success = removed,
+            condition = condition.ToString(),
+            message = removed ? $"Removed condition {condition}" : $"Condition {condition} was not active"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("update_money")]
+    [Description("Add or subtract money from the trainer")]
+    public async Task<string> UpdateMoney(
+        [Description("Amount to add (positive) or subtract (negative)")] int amount,
+        [Description("Reason for the money change")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] UpdateMoney called with amount: {amount}");
+        var newAmount = 0;
+        
+        await _repository.UpdateTrainerAsync(trainer =>
+        {
+            trainer.Money = Math.Max(0, trainer.Money + amount);
+            newAmount = trainer.Money;
+        });
+
+        var result = new
+        {
+            success = true,
+            change = amount,
+            newTotal = newAmount,
+            reason = reason,
+            message = $"Money updated by {amount:+#;-#;0}. Current money: {newAmount}"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("add_to_inventory")]
+    [Description("Add items to the trainer's inventory")]
+    public async Task<string> AddToInventory(
+        [Description("Name of the item")] string itemName,
+        [Description("Quantity to add")] int quantity = 1,
+        [Description("Reason for adding item")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] AddToInventory called with itemName: '{itemName}', quantity: {quantity}");
+        
+        var newQuantity = 0;
+        await _repository.UpdateTrainerAsync(trainer =>
+        {
+            trainer.Inventory[itemName] = trainer.Inventory.GetValueOrDefault(itemName, 0) + quantity;
+            newQuantity = trainer.Inventory[itemName];
+        });
+
+        var result = new
+        {
+            success = true,
+            itemName = itemName,
+            quantityAdded = quantity,
+            newTotal = newQuantity,
+            reason = reason,
+            message = $"Added {quantity} {itemName}(s) to inventory. Total: {newQuantity}"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("remove_from_inventory")]
+    [Description("Remove items from the trainer's inventory")]
+    public async Task<string> RemoveFromInventory(
+        [Description("Name of the item")] string itemName,
+        [Description("Quantity to remove")] int quantity = 1,
+        [Description("Reason for removing item")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] RemoveFromInventory called with itemName: '{itemName}', quantity: {quantity}");
+        
+        var success = false;
+        var newQuantity = 0;
+        await _repository.UpdateTrainerAsync(trainer =>
+        {
+            var currentQuantity = trainer.Inventory.GetValueOrDefault(itemName, 0);
+            if (currentQuantity >= quantity)
+            {
+                trainer.Inventory[itemName] = currentQuantity - quantity;
+                if (trainer.Inventory[itemName] == 0)
+                    trainer.Inventory.Remove(itemName);
+                newQuantity = trainer.Inventory.GetValueOrDefault(itemName, 0);
+                success = true;
+            }
+        });
+
+        var result = new
+        {
+            success = success,
+            itemName = itemName,
+            quantityRemoved = success ? quantity : 0,
+            newTotal = newQuantity,
+            reason = reason,
+            message = success ? 
+                $"Removed {quantity} {itemName}(s) from inventory. Total: {newQuantity}" :
+                $"Insufficient {itemName} in inventory"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    #endregion
+
+    #region Pokemon Management
+
+    [KernelFunction("add_pokemon_to_team")]
+    [Description("Add a new Pokemon to the trainer's team")]
+    public async Task<string> AddPokemonToTeam(
+        [Description("Pokemon's nickname")] string name,
+        [Description("Pokemon species (e.g., 'Pikachu', 'Charizard')")] string species,
+        [Description("Pokemon level")] int level = 1,
+        [Description("Primary type")] string type1 = "Normal",
+        [Description("Secondary type (optional)")] string type2 = "",
+        [Description("Current vigor/health")] int currentVigor = 20,
+        [Description("Maximum vigor/health")] int maxVigor = 20,
+        [Description("Location where caught")] string caughtLocation = "Unknown",
+        [Description("Friendship level")] int friendship = 50,
+        [Description("Pokemon ability")] string ability = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] AddPokemonToTeam called with name: '{name}', species: '{species}'");
+        
+        var pokemon = new Pokemon
+        {
+            Name = name,
+            Species = species,
+            Level = level,
+            Experience = 0,
+            KnownMoves = new HashSet<string>(),
+            CurrentVigor = currentVigor,
+            MaxVigor = maxVigor,
+            Stats = new Stats(), // Default stats for now
+            Type1 = type1,
+            Type2 = string.IsNullOrEmpty(type2) ? null : type2,
+            Ability = ability,
+            CaughtLocation = caughtLocation,
+            Friendship = friendship
+        };
+
+        await _repository.AddPokemonToTeamAsync(pokemon);
+        
+        var result = new
+        {
+            success = true,
+            pokemon = new
+            {
+                name = pokemon.Name,
+                species = pokemon.Species,
+                level = pokemon.Level,
+                type1 = pokemon.Type1,
+                type2 = pokemon.Type2,
+                vigor = $"{pokemon.CurrentVigor}/{pokemon.MaxVigor}",
+                caughtLocation = pokemon.CaughtLocation
+            },
+            message = $"Added {pokemon.Name} ({pokemon.Species}) to the team!"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("update_pokemon_vigor")]
+    [Description("Update a Pokemon's vigor (health/energy) by name")]
+    public async Task<string> UpdatePokemonVigor(
+        [Description("Name of the Pokemon to update")] string pokemonName,
+        [Description("New current vigor value")] int currentVigor,
+        [Description("Reason for vigor change")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] UpdatePokemonVigor called with pokemonName: '{pokemonName}', currentVigor: {currentVigor}");
+        var found = false;
+        var actualNewVigor = 0;
+
+        var state = await _repository.LoadLatestStateAsync();
+        if (state != null)
+        {
+            var pokemon = state.PokemonTeam.ActivePokemon.FirstOrDefault(p => p.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase)) ??
+                         state.PokemonTeam.BoxedPokemon.FirstOrDefault(p => p.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase));
+            
+            if (pokemon != null)
+            {
+                pokemon.CurrentVigor = Math.Max(0, Math.Min(currentVigor, pokemon.MaxVigor));
+                actualNewVigor = pokemon.CurrentVigor;
+                found = true;
+                await _repository.SaveStateAsync(state);
+            }
+        }
+
+        var result = new
+        {
+            success = found,
+            pokemonName = pokemonName,
+            newVigor = actualNewVigor,
+            reason = reason,
+            message = found ? 
+                $"Updated {pokemonName}'s vigor to {actualNewVigor}" : 
+                "Pokemon not found"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("heal_pokemon")]
+    [Description("Fully heal a Pokemon's vigor")]
+    public async Task<string> HealPokemon(
+        [Description("Name of the Pokemon to heal")] string pokemonName,
+        [Description("Reason for healing")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] HealPokemon called with pokemonName: '{pokemonName}'");
+        var found = false;
+        var maxVigor = 0;
+
+        var state = await _repository.LoadLatestStateAsync();
+        if (state != null)
+        {
+            var pokemon = state.PokemonTeam.ActivePokemon.FirstOrDefault(p => p.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase)) ??
+                         state.PokemonTeam.BoxedPokemon.FirstOrDefault(p => p.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase));
+            
+            if (pokemon != null)
+            {
+                pokemon.CurrentVigor = pokemon.MaxVigor;
+                maxVigor = pokemon.MaxVigor;
+                found = true;
+                await _repository.SaveStateAsync(state);
+            }
+        }
+
+        var result = new
+        {
+            success = found,
+            pokemonName = pokemonName,
+            newVigor = maxVigor,
+            reason = reason,
+            message = found ? 
+                $"{pokemonName} fully healed to {maxVigor} vigor" : 
+                "Pokemon not found"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    #endregion
+
+    #region World and Location Management
+
+    [KernelFunction("change_location")]
+    [Description("Move the trainer to a new location")]
+    public async Task<string> ChangeLocation(
+        [Description("Name of the new location")] string newLocation,
+        [Description("Region where the location is (optional)")] string region = "",
+        [Description("Reason for travel")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] ChangeLocation called with newLocation: '{newLocation}', region: '{region}'");
+        
+        var previousLocation = "";
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            previousLocation = worldState.CurrentLocation;
+            worldState.CurrentLocation = newLocation;
+            if (!string.IsNullOrEmpty(region))
+                worldState.CurrentRegion = region;
+            
+            worldState.VisitedLocations.Add(newLocation);
+        });
+
+        var result = new
+        {
+            success = true,
+            previousLocation = previousLocation,
+            newLocation = newLocation,
+            region = region,
+            reason = reason,
+            message = $"Moved to {newLocation}" + (string.IsNullOrEmpty(region) ? "" : $" in {region}")
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("set_time_and_weather")]
+    [Description("Update the time of day and weather")]
+    public async Task<string> SetTimeAndWeather(
+        [Description("Time of day (Morning, Afternoon, Evening, Night)")] string timeOfDay,
+        [Description("Weather condition")] string weather = "Clear",
+        [Description("Reason for change")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] SetTimeAndWeather called with timeOfDay: '{timeOfDay}', weather: '{weather}'");
+        
+        if (!Enum.TryParse<TimeOfDay>(timeOfDay, true, out var time))
+            return JsonSerializer.Serialize(new { error = "Invalid time of day" }, _jsonOptions);
+
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            worldState.TimeOfDay = time;
+            worldState.WeatherCondition = weather;
+        });
+
+        var result = new
+        {
+            success = true,
+            timeOfDay = time.ToString(),
+            weather = weather,
+            reason = reason,
+            message = $"Time set to {time}, weather set to {weather}"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("update_npc_relationship")]
+    [Description("Update relationship with an NPC")]
+    public async Task<string> UpdateNPCRelationship(
+        [Description("Name or ID of the NPC")] string npcId,
+        [Description("Change in relationship level (-100 to 100)")] int relationshipChange,
+        [Description("Reason for relationship change")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] UpdateNPCRelationship called with npcId: '{npcId}', relationshipChange: {relationshipChange}");
+        
+        var newLevel = 0;
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            var currentLevel = worldState.NPCRelationships.GetValueOrDefault(npcId, 0);
+            worldState.NPCRelationships[npcId] = Math.Max(-100, Math.Min(100, currentLevel + relationshipChange));
+            newLevel = worldState.NPCRelationships[npcId];
+        });
+
+        var result = new
+        {
+            success = true,
+            npcId = npcId,
+            change = relationshipChange,
+            newLevel = newLevel,
+            reason = reason,
+            message = $"Relationship with {npcId} updated by {relationshipChange:+#;-#;0}. Current level: {newLevel}"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("update_faction_reputation")]
+    [Description("Update reputation with a faction")]
+    public async Task<string> UpdateFactionReputation(
+        [Description("Name of the faction")] string factionName,
+        [Description("Change in reputation (-100 to 100)")] int reputationChange,
+        [Description("Reason for reputation change")] string reason = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] UpdateFactionReputation called with factionName: '{factionName}', reputationChange: {reputationChange}");
+        
+        var newRep = 0;
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            var currentRep = worldState.FactionReputations.GetValueOrDefault(factionName, 0);
+            worldState.FactionReputations[factionName] = Math.Max(-100, Math.Min(100, currentRep + reputationChange));
+            newRep = worldState.FactionReputations[factionName];
+        });
+
+        var result = new
+        {
+            success = true,
+            factionName = factionName,
+            change = reputationChange,
+            newReputation = newRep,
+            reason = reason,
+            message = $"Reputation with {factionName} updated by {reputationChange:+#;-#;0}. Current reputation: {newRep}"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("earn_gym_badge")]
+    [Description("Award a gym badge to the trainer")]
+    public async Task<string> EarnGymBadge(
+        [Description("Name of the gym")] string gymName,
+        [Description("Name of the gym leader")] string leaderName,
+        [Description("Location of the gym")] string location,
+        [Description("Badge type (Fire, Water, etc.)")] string badgeType,
+        [Description("How the badge was earned")] string achievement = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] EarnGymBadge called with gymName: '{gymName}', leaderName: '{leaderName}'");
+        
+        var alreadyHad = false;
+        var totalBadges = 0;
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            // Check if badge already exists
+            if (!worldState.GymBadges.Any(b => b.GymName.Equals(gymName, StringComparison.OrdinalIgnoreCase)))
+            {
+                worldState.GymBadges.Add(new GymBadge
+                {
+                    GymName = gymName,
+                    LeaderName = leaderName,
+                    Location = location,
+                    BadgeType = badgeType
+                });
+            }
+            else
+            {
+                alreadyHad = true;
+            }
+            totalBadges = worldState.GymBadges.Count;
+        });
+
+        var result = new
+        {
+            success = !alreadyHad,
+            gymName = gymName,
+            leaderName = leaderName,
+            location = location,
+            badgeType = badgeType,
+            achievement = achievement,
+            totalBadges = totalBadges,
+            message = alreadyHad ? 
+                $"Already have the {badgeType} Badge from {gymName}" :
+                $"Earned the {badgeType} Badge from {gymName} in {location}! Total badges: {totalBadges}"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("discover_lore")]
+    [Description("Add discovered lore to the game world")]
+    public async Task<string> DiscoverLore(
+        [Description("The lore entry to add")] string loreEntry,
+        [Description("How the lore was discovered")] string discoveryMethod = "")
+    {
+        Debug.WriteLine($"[GameEnginePlugin] DiscoverLore called with loreEntry: '{loreEntry}'");
+        
+        var alreadyKnown = false;
+        await _repository.UpdateWorldStateAsync(worldState =>
+        {
+            if (worldState.DiscoveredLore.Contains(loreEntry))
+            {
+                alreadyKnown = true;
+            }
+            else
+            {
+                worldState.DiscoveredLore.Add(loreEntry);
+            }
+        });
+
+        var result = new
+        {
+            success = !alreadyKnown,
+            loreEntry = loreEntry,
+            discoveryMethod = discoveryMethod,
+            message = alreadyKnown ? 
+                "This lore was already known" :
+                $"Discovered new lore: {loreEntry}"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    #endregion
+
     #region Pokemon Battle Mechanics
 
     [KernelFunction("calculate_type_effectiveness")]
@@ -578,22 +1295,6 @@ public class GameEnginePlugin
         };
     }
 
-    private int GetArchetypeTotalBonus(TrainerArchetype archetype)
-    {
-        return archetype switch
-        {
-            TrainerArchetype.BugCatcher => 2, // +1 Agility, +1 Intelligence
-            TrainerArchetype.Hiker => 2, // +2 Strength
-            TrainerArchetype.Psychic => 2, // +2 Intelligence
-            TrainerArchetype.Medium => 2, // +1 Intelligence, +1 Social
-            TrainerArchetype.AceTrainer => 2, // +1 Strength, +1 Agility
-            TrainerArchetype.Researcher => 2, // +2 Intelligence
-            TrainerArchetype.Coordinator => 2, // +1 Social, +1 Agility
-            TrainerArchetype.Ranger => 2, // +1 Strength, +1 Intelligence
-            _ => 0
-        };
-    }
-
     private int GetConditionModifier(List<ActiveCondition> conditions, string statName)
     {
         var modifier = 0;
@@ -633,119 +1334,48 @@ public class GameEnginePlugin
         return level;
     }
 
-    private void ApplyArchetypeStatBonuses(Dictionary<string, int> stats, TrainerArchetype archetype)
-    {
-        switch (archetype)
-        {
-            case TrainerArchetype.BugCatcher:
-                stats["Agility"] += 1;
-                stats["Intelligence"] += 1;
-                break;
-            case TrainerArchetype.Hiker:
-                stats["Strength"] += 2;
-                break;
-            case TrainerArchetype.Psychic:
-                stats["Intelligence"] += 2;
-                break;
-            case TrainerArchetype.Medium:
-                stats["Intelligence"] += 1;
-                stats["Social"] += 1;
-                break;
-            case TrainerArchetype.AceTrainer:
-                stats["Strength"] += 1;
-                stats["Agility"] += 1;
-                break;
-            case TrainerArchetype.Researcher:
-                stats["Intelligence"] += 2;
-                break;
-            case TrainerArchetype.Coordinator:
-                stats["Social"] += 1;
-                stats["Agility"] += 1;
-                break;
-            case TrainerArchetype.Ranger:
-                stats["Strength"] += 1;
-                stats["Intelligence"] += 1;
-                break;
-        }
-    }
-
-    private int GetStartingMoney(TrainerArchetype archetype)
-    {
-        return archetype switch
-        {
-            TrainerArchetype.Researcher => 5000,
-            TrainerArchetype.AceTrainer => 3000,
-            TrainerArchetype.Coordinator => 2500,
-            TrainerArchetype.Psychic => 2000,
-            TrainerArchetype.Medium => 2000,
-            TrainerArchetype.Ranger => 1500,
-            TrainerArchetype.Hiker => 1000,
-            TrainerArchetype.BugCatcher => 500,
-            _ => 1000
-        };
-    }
-
-    private List<string> GetStartingItems(TrainerArchetype archetype)
-    {
-        var items = new List<string> { "Pokeball", "Pokeball", "Pokeball", "Pokeball", "Pokeball", "Potion", "Potion" };
-        
-        return archetype switch
-        {
-            TrainerArchetype.Researcher => items.Concat(new[] { "Pokedex", "Notebook", "Research Kit" }).ToList(),
-            TrainerArchetype.AceTrainer => items.Concat(new[] { "Super Potion", "Great Ball" }).ToList(),
-            TrainerArchetype.Coordinator => items.Concat(new[] { "Poffin Case", "Contest Ribbon" }).ToList(),
-            TrainerArchetype.Psychic => items.Concat(new[] { "Psychic Gem", "Mental Herb" }).ToList(),
-            TrainerArchetype.Medium => items.Concat(new[] { "Cleanse Tag", "Spell Tag" }).ToList(),
-            TrainerArchetype.Ranger => items.Concat(new[] { "Ranger Sign", "Survival Kit" }).ToList(),
-            TrainerArchetype.Hiker => items.Concat(new[] { "Hiking Boots", "Rock Incense" }).ToList(),
-            TrainerArchetype.BugCatcher => items.Concat(new[] { "Bug Net", "Silver Powder" }).ToList(),
-            _ => items
-        };
-    }
-
     private double GetTypeEffectiveness(string attackType, string defenseType)
     {
         // Simplified type effectiveness chart - in a real implementation, this would be a comprehensive lookup table
-        var effectiveness = new Dictionary<string, double>
-        {
-            // Fire
-            ["Fire_Grass"] = 2.0,
-            ["Fire_Ice"] = 2.0,
-            ["Fire_Bug"] = 2.0,
-            ["Fire_Steel"] = 2.0,
-            ["Fire_Water"] = 0.5,
-            ["Fire_Fire"] = 0.5,
-            ["Fire_Rock"] = 0.5,
-            ["Fire_Dragon"] = 0.5,
-            
-            // Water
-            ["Water_Fire"] = 2.0,
-            ["Water_Ground"] = 2.0,
-            ["Water_Rock"] = 2.0,
-            ["Water_Water"] = 0.5,
-            ["Water_Grass"] = 0.5,
-            ["Water_Dragon"] = 0.5,
-            
-            // Grass
-            ["Grass_Water"] = 2.0,
-            ["Grass_Ground"] = 2.0,
-            ["Grass_Rock"] = 2.0,
-            ["Grass_Fire"] = 0.5,
-            ["Grass_Grass"] = 0.5,
-            ["Grass_Poison"] = 0.5,
-            ["Grass_Flying"] = 0.5,
-            ["Grass_Bug"] = 0.5,
-            ["Grass_Dragon"] = 0.5,
-            ["Grass_Steel"] = 0.5,
-            
-            // Electric
-            ["Electric_Water"] = 2.0,
-            ["Electric_Flying"] = 2.0,
-            ["Electric_Electric"] = 0.5,
-            ["Electric_Grass"] = 0.5,
-            ["Electric_Dragon"] = 0.5,
-            ["Electric_Ground"] = 0.0
-        };
+        var effectiveness = new Dictionary<string, double>();
+        
+        // Fire type effectiveness
+        effectiveness["Fire_Grass"] = 2.0;
+        effectiveness["Fire_Ice"] = 2.0;
+        effectiveness["Fire_Bug"] = 2.0;
+        effectiveness["Fire_Steel"] = 2.0;
+        effectiveness["Fire_Water"] = 0.5;
+        effectiveness["Fire_Fire"] = 0.5;
+        effectiveness["Fire_Rock"] = 0.5;
+        effectiveness["Fire_Dragon"] = 0.5;
+        
+        // Water type effectiveness
+        effectiveness["Water_Fire"] = 2.0;
+        effectiveness["Water_Ground"] = 2.0;
+        effectiveness["Water_Rock"] = 2.0;
+        effectiveness["Water_Water"] = 0.5;
+        effectiveness["Water_Grass"] = 0.5;
+        effectiveness["Water_Dragon"] = 0.5;
+        
+        // Grass type effectiveness
+        effectiveness["Grass_Water"] = 2.0;
+        effectiveness["Grass_Ground"] = 2.0;
+        effectiveness["Grass_Rock"] = 2.0;
+        effectiveness["Grass_Fire"] = 0.5;
+        effectiveness["Grass_Grass"] = 0.5;
+        effectiveness["Grass_Poison"] = 0.5;
+        effectiveness["Grass_Flying"] = 0.5;
+        effectiveness["Grass_Bug"] = 0.5;
+        effectiveness["Grass_Dragon"] = 0.5;
+        effectiveness["Grass_Steel"] = 0.5;
+        
+        // Electric type effectiveness
+        effectiveness["Electric_Water"] = 2.0;
+        effectiveness["Electric_Flying"] = 2.0;
+        effectiveness["Electric_Electric"] = 0.5;
+        effectiveness["Electric_Grass"] = 0.5;
+        effectiveness["Electric_Dragon"] = 0.5;
+        effectiveness["Electric_Ground"] = 0.0;
         
         var key = $"{attackType}_{defenseType}";
         return effectiveness.GetValueOrDefault(key, 1.0);
