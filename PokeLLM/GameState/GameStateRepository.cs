@@ -305,4 +305,47 @@ public class GameStateRepository : IGameStateRepository
     {
         return File.Exists(_currentStateFile);
     }
+
+    #region Battle State Management
+
+    public async Task UpdateBattleStateAsync(Action<BattleState> updateAction)
+    {
+        var gameState = await LoadLatestStateAsync();
+        if (gameState?.BattleState != null)
+        {
+            updateAction(gameState.BattleState);
+            await SaveStateAsync(gameState);
+        }
+    }
+
+    public async Task<bool> HasActiveBattleAsync()
+    {
+        var gameState = await LoadLatestStateAsync();
+        return gameState?.BattleState?.IsActive == true;
+    }
+
+    public async Task StartBattleAsync(BattleState battleState)
+    {
+        var gameState = await LoadLatestStateAsync();
+        if (gameState != null)
+        {
+            battleState.IsActive = true;
+            gameState.BattleState = battleState;
+            await SaveStateAsync(gameState);
+        }
+    }
+
+    public async Task EndBattleAsync()
+    {
+        var gameState = await LoadLatestStateAsync();
+        if (gameState?.BattleState != null)
+        {
+            gameState.BattleState.IsActive = false;
+            // Optionally clear the battle state or keep it for reference
+            // gameState.BattleState = null;
+            await SaveStateAsync(gameState);
+        }
+    }
+
+    #endregion
 }

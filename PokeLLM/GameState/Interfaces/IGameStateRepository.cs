@@ -14,4 +14,10 @@ public interface IGameStateRepository
     Task UpdateWorldStateAsync(Action<GameWorldState> updateAction);
     Task AddPokemonToTeamAsync(Pokemon pokemon);
     Task<bool> HasGameStateAsync();
+    
+    // Battle State Management
+    Task UpdateBattleStateAsync(Action<BattleState> updateAction);
+    Task<bool> HasActiveBattleAsync();
+    Task StartBattleAsync(BattleState battleState);
+    Task EndBattleAsync();
 }

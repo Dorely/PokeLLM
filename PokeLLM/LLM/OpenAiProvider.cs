@@ -4,6 +4,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Embeddings;
+using PokeLLM.Game.Plugins;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -43,9 +44,10 @@ public class OpenAiProvider : ILLMProvider
 
     public void RegisterPlugins(IVectorStoreService vectorStoreService, IGameStateRepository gameStateRepository)
     {
-        _kernel.Plugins.AddFromType<PokemonBattlePlugin>();
         _kernel.Plugins.AddFromObject(new VectorStorePlugin(vectorStoreService));
         _kernel.Plugins.AddFromObject(new GameStatePlugin(gameStateRepository));
+        _kernel.Plugins.AddFromObject(new GameEnginePlugin(gameStateRepository));
+        _kernel.Plugins.AddFromObject(new BattleStatePlugin(gameStateRepository));
     }
 
     public IEmbeddingGenerator GetEmbeddingGenerator()
