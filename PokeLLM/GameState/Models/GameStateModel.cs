@@ -77,16 +77,16 @@ public class ActiveCondition
 public class PokemonTeam
 {
     [JsonPropertyName("activePokemon")]
-    public List<TeamPokemon> ActivePokemon { get; set; } = new();
+    public List<Pokemon> ActivePokemon { get; set; } = new();
 
     [JsonPropertyName("boxedPokemon")]
-    public List<TeamPokemon> BoxedPokemon { get; set; } = new();
+    public List<Pokemon> BoxedPokemon { get; set; } = new();
 
     [JsonPropertyName("maxPartySize")]
     public int MaxPartySize { get; set; } = 6;
 }
 
-public class TeamPokemon
+public class Pokemon
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
@@ -117,6 +117,9 @@ public class TeamPokemon
 
     [JsonPropertyName("type2")]
     public string Type2 { get; set; }
+
+    [JsonPropertyName("ability")]
+    public string Ability { get; set; }
 
     [JsonPropertyName("caughtLocation")]
     public string CaughtLocation { get; set; } = string.Empty;

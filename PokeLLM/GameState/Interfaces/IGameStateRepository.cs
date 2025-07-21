@@ -12,6 +12,6 @@ public interface IGameStateRepository
     Task DeleteStateAsync(string stateId);
     Task UpdateTrainerAsync(Action<TrainerState> updateAction);
     Task UpdateWorldStateAsync(Action<GameWorldState> updateAction);
-    Task AddPokemonToTeamAsync(TeamPokemon pokemon);
+    Task AddPokemonToTeamAsync(Pokemon pokemon);
     Task<bool> HasGameStateAsync();
 }

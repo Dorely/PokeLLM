@@ -52,8 +52,8 @@ public class GameStateRepository : IGameStateRepository
             },
             PokemonTeam = new PokemonTeam
             {
-                ActivePokemon = new List<TeamPokemon>(),
-                BoxedPokemon = new List<TeamPokemon>(),
+                ActivePokemon = new List<Pokemon>(),
+                BoxedPokemon = new List<Pokemon>(),
                 MaxPartySize = 6
             },
             WorldState = new GameWorldState
@@ -284,7 +284,7 @@ public class GameStateRepository : IGameStateRepository
         }
     }
 
-    public async Task AddPokemonToTeamAsync(TeamPokemon pokemon)
+    public async Task AddPokemonToTeamAsync(Pokemon pokemon)
     {
         var state = await LoadLatestStateAsync();
         if (state != null)

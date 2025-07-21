@@ -172,7 +172,7 @@ public class GameStatePlugin
         Debug.WriteLine($"[GameStatePlugin] AddPokemonToTeam called with pokemonJson: '{pokemonJson}'");
         try
         {
-            var pokemon = JsonSerializer.Deserialize<TeamPokemon>(pokemonJson, _jsonOptions);
+            var pokemon = JsonSerializer.Deserialize<Pokemon>(pokemonJson, _jsonOptions);
             if (pokemon == null)
                 return "Invalid Pokemon data provided.";
 
