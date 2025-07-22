@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Azure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
@@ -30,6 +31,16 @@ var history = llm.CreateHistory();
 
 Console.WriteLine("Welcome to PokeLLM! Type 'exit' to quit.");
 Console.WriteLine("Enter your message. Finish with a blank line to send.\n");
+
+//start the prompt and get the game flowing before initiating player input
+var firstResponse = llm.GetCompletionStreamingAsync("Session Start", history);
+Console.WriteLine($"LLM: ");
+string fullFirstResponse = "";
+await foreach (var chunk in firstResponse)
+{
+    Console.Write(chunk);
+    fullFirstResponse += chunk;
+}
 
 while (true)
 {

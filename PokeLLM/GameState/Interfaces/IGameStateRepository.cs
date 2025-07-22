@@ -10,9 +10,9 @@ public interface IGameStateRepository
     Task<GameStateModel?> LoadStateByIdAsync(string stateId);
     Task<List<GameStateModel>> GetAllStatesAsync(int limit = 50);
     Task DeleteStateAsync(string stateId);
-    Task UpdateTrainerAsync(Action<TrainerState> updateAction);
+    Task UpdatePlayerAsync(Action<PlayerState> updateAction);
     Task UpdateWorldStateAsync(Action<GameWorldState> updateAction);
-    Task AddPokemonToTeamAsync(Pokemon pokemon);
+    Task AddPokemonToTeamAsync(OwnedPokemon pokemon);
     Task<bool> HasGameStateAsync();
     
     // Battle State Management

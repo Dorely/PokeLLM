@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using PokeLLM.GameState.Interfaces;
 using PokeLLM.GameState.Models;
+using PokeLLM.Game.Helpers;
 
 namespace PokeLLM.Game.Plugins;
 
@@ -27,15 +28,46 @@ public class BattleStatePlugin
         };
     }
 
+    #region Helper Methods
+
+    private string GetParticipantId(BattleParticipant participant)
+    {
+        if (participant.Pokemon != null)
+            return participant.Pokemon.Id;
+        if (participant.Character != null)
+            return participant.Character.Id;
+        return Guid.NewGuid().ToString(); // Fallback
+    }
+
+    private string GetParticipantName(BattleParticipant participant)
+    {
+        if (participant.Pokemon != null)
+            return participant.Pokemon.Name;
+        if (participant.Character != null)
+            return participant.Character.Name;
+        return "Unknown";
+    }
+
+    private string GetParticipantFaction(BattleParticipant participant)
+    {
+        if (participant.Pokemon != null)
+            return participant.Pokemon.Faction;
+        if (participant.Character != null)
+            return participant.Character.Faction;
+        return "Unknown";
+    }
+
+    #endregion
+
     #region Battle Initialization
 
     [KernelFunction("start_battle")]
-    [Description("Initialize a new battle with specified participants and conditions")]
+    [Description("Initialize a new battle with specified participants and conditions. Creates a tactical D&D-style Pokemon battle with turn order, positioning, and victory conditions. Example: start_battle('Wild', '[{\"pokemon\":{\"id\":\"pikachu1\",\"name\":\"Pikachu\"}}]', 'Forest Clearing', 'Clear')")]
     public async Task<string> StartBattle(
-        [Description("Type of battle (Wild, Trainer, Gym, etc.)")] string battleType,
-        [Description("JSON array of battle participants")] string participantsJson,
-        [Description("Battlefield name/description")] string battlefieldName = "Standard Field",
-        [Description("Weather conditions")] string weather = "Clear")
+        [Description("Type of battle: Wild, Trainer, Gym, Elite, Champion, Team, Raid, Tournament")] string battleType,
+        [Description("JSON array of battle participants with their data")] string participantsJson,
+        [Description("Battlefield name/description for narrative context")] string battlefieldName = "Standard Field",
+        [Description("Weather conditions affecting the battle: Clear, Rain, Sun, Sandstorm, Hail, etc.")] string weather = "Clear")
     {
         Debug.WriteLine($"[BattleStatePlugin] StartBattle called with type: {battleType}");
 
@@ -66,7 +98,7 @@ public class BattleStatePlugin
                 BattleParticipants = participants,
                 Battlefield = new Battlefield { Name = battlefieldName },
                 Weather = new BattleWeather { Name = weather },
-                VictoryConditions = GenerateDefaultVictoryConditions(battleTypeEnum),
+                VictoryCondition = GenerateDefaultVictoryCondition(battleTypeEnum),
                 BattleLog = new List<BattleLogEntry>()
             };
 
@@ -100,9 +132,9 @@ public class BattleStatePlugin
     }
 
     [KernelFunction("end_battle")]
-    [Description("End the current battle and clean up battle state")]
+    [Description("End the current battle and clean up battle state. Marks battle as inactive and logs the conclusion. Example: end_battle('Victory - All enemies defeated')")]
     public async Task<string> EndBattle(
-        [Description("Reason for ending battle")] string reason = "Battle concluded")
+        [Description("Reason for ending battle for logging purposes")] string reason = "Battle concluded")
     {
         Debug.WriteLine($"[BattleStatePlugin] EndBattle called");
 
@@ -127,7 +159,7 @@ public class BattleStatePlugin
     #region Battle State Queries
 
     [KernelFunction("get_battle_state")]
-    [Description("Get the current battle state and all participant information")]
+    [Description("Get the current battle state and all participant information including positions, health, status effects, and turn order. Essential for understanding battle context.")]
     public async Task<string> GetBattleState()
     {
         Debug.WriteLine($"[BattleStatePlugin] GetBattleState called");
@@ -142,15 +174,15 @@ public class BattleStatePlugin
     }
 
     [KernelFunction("get_participant_status")]
-    [Description("Get detailed status of a specific battle participant")]
+    [Description("Get detailed status of a specific battle participant including health, position, status effects, and relationships. Example: get_participant_status('pikachu1')")]
     public async Task<string> GetParticipantStatus(
-        [Description("ID of the participant to check")] string participantId)
+        [Description("Unique ID of the participant to check")] string participantId)
     {
         Debug.WriteLine($"[BattleStatePlugin] GetParticipantStatus called for: {participantId}");
 
         var gameState = await _repository.LoadLatestStateAsync();
         var participant = gameState?.BattleState?.BattleParticipants
-            .FirstOrDefault(p => p.Id.Equals(participantId, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(p => GetParticipantId(p).Equals(participantId, StringComparison.OrdinalIgnoreCase));
 
         if (participant == null)
         {
@@ -159,30 +191,26 @@ public class BattleStatePlugin
 
         var status = new
         {
-            participant.Id,
-            participant.Name,
-            participant.Type,
-            participant.Faction,
-            participant.Position,
-            participant.Initiative,
-            participant.HasActed,
-            participant.IsDefeated,
+            id = GetParticipantId(participant),
+            name = GetParticipantName(participant),
+            type = participant.Type,
+            position = participant.Position,
+            initiative = participant.Initiative,
+            hasActed = participant.HasActed,
+            isDefeated = participant.IsDefeated,
             pokemon = participant.Pokemon != null ? new
             {
                 participant.Pokemon.CurrentVigor,
                 participant.Pokemon.MaxVigor,
                 vigorPercentage = (participant.Pokemon.CurrentVigor * 100) / Math.Max(1, participant.Pokemon.MaxVigor),
                 statusEffects = participant.Pokemon.StatusEffects.Count,
-                participant.Pokemon.UsedMoves,
-                participant.Pokemon.LastAction
+                knownMoves = participant.Pokemon.KnownMoves.Count
             } : null,
-            trainer = participant.Trainer != null ? new
+            character = participant.Character != null ? new
             {
-                participant.Trainer.Name,
-                participant.Trainer.CanEscape,
-                participant.Trainer.HasActed,
-                remainingPokemon = participant.Trainer.RemainingPokemon.Count,
-                conditions = participant.Trainer.Conditions.Count
+                participant.Character.Name,
+                hasActed = participant.HasActed,
+                conditions = participant.Character.Conditions.Count
             } : null,
             relationships = participant.Relationships
         };
@@ -191,7 +219,7 @@ public class BattleStatePlugin
     }
 
     [KernelFunction("get_turn_order")]
-    [Description("Get the current turn order and whose turn it is")]
+    [Description("Get the current turn order and whose turn it is based on initiative rolls. Shows the sequence of actions for the current battle turn.")]
     public async Task<string> GetTurnOrder()
     {
         Debug.WriteLine($"[BattleStatePlugin] GetTurnOrder called");
@@ -211,12 +239,12 @@ public class BattleStatePlugin
             turnOrder = battleState.TurnOrder,
             participants = battleState.BattleParticipants.Select(p => new
             {
-                p.Id,
-                p.Name,
-                p.Initiative,
-                p.HasActed,
-                p.IsDefeated
-            }).OrderByDescending(p => p.Initiative)
+                id = GetParticipantId(p),
+                name = GetParticipantName(p),
+                initiative = p.Initiative,
+                hasActed = p.HasActed,
+                isDefeated = p.IsDefeated
+            }).OrderByDescending(p => p.initiative)
         };
 
         return JsonSerializer.Serialize(result, _jsonOptions);
@@ -227,11 +255,17 @@ public class BattleStatePlugin
     #region Battle Actions
 
     [KernelFunction("execute_battle_action")]
-    [Description("Execute a battle action for a participant")]
+    [Description("Execute a battle action for a participant. For attack actions: rolls to hit against target defense, then calculates damage on successful hits. Example: execute_battle_action('pikachu1', 'Attack', '[\"rattata1\"]', 'Thunderbolt', 'Electric', 3, true)")]
     public async Task<string> ExecuteBattleAction(
-        [Description("JSON string with battle action data")] string actionJson)
+        [Description("Unique ID of the acting participant")] string actorId,
+        [Description("Type of action: Attack, Switch, Item, Escape")] string actionType,
+        [Description("JSON array of target participant IDs")] string targetIdsJson,
+        [Description("Name of move/action being performed")] string actionName = "",
+        [Description("For attacks: type of the move (Fire, Water, Electric, etc.)")] string moveType = "Normal",
+        [Description("For attacks: number of damage dice to roll")] int numDice = 2,
+        [Description("For attacks: whether this uses special attack/defense stats")] bool isSpecialMove = false)
     {
-        Debug.WriteLine($"[BattleStatePlugin] ExecuteBattleAction called");
+        Debug.WriteLine($"[BattleStatePlugin] ExecuteBattleAction called: {actorId} using {actionName}");
 
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState?.BattleState == null || !gameState.BattleState.IsActive)
@@ -241,10 +275,27 @@ public class BattleStatePlugin
 
         try
         {
-            var action = JsonSerializer.Deserialize<BattleAction>(actionJson, _jsonOptions);
-            if (action == null)
+            var targetIds = JsonSerializer.Deserialize<List<string>>(targetIdsJson, _jsonOptions);
+            if (targetIds == null)
             {
-                return JsonSerializer.Serialize(new { error = "Invalid action data" }, _jsonOptions);
+                return JsonSerializer.Serialize(new { error = "Invalid target IDs format" }, _jsonOptions);
+            }
+
+            // Create strongly typed battle action
+            var action = new BattleAction
+            {
+                ActorId = actorId,
+                ActionType = Enum.Parse<BattleActionType>(actionType, true),
+                TargetIds = targetIds,
+                MoveName = actionName
+            };
+
+            // For attack actions, populate move details
+            if (action.ActionType == BattleActionType.Move)
+            {
+                action.Parameters["moveType"] = moveType;
+                action.Parameters["numDice"] = numDice;
+                action.Parameters["isSpecial"] = isSpecialMove;
             }
 
             var results = await ProcessBattleAction(gameState.BattleState, action);
@@ -252,14 +303,14 @@ public class BattleStatePlugin
 
             return JsonSerializer.Serialize(new { success = true, results = results }, _jsonOptions);
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = $"Error parsing action: {ex.Message}" }, _jsonOptions);
+            return JsonSerializer.Serialize(new { error = $"Error processing action: {ex.Message}" }, _jsonOptions);
         }
     }
 
     [KernelFunction("advance_battle_phase")]
-    [Description("Advance the battle to the next phase")]
+    [Description("Advance the battle to the next phase in the turn sequence: Initialize -> SelectAction -> ResolveActions -> ApplyEffects -> CheckVictory -> EndTurn. Manages turn progression.")]
     public async Task<string> AdvanceBattlePhase()
     {
         Debug.WriteLine($"[BattleStatePlugin] AdvanceBattlePhase called");
@@ -285,10 +336,6 @@ public class BattleStatePlugin
                 foreach (var participant in battleState.BattleParticipants)
                 {
                     participant.HasActed = false;
-                    if (participant.Trainer != null)
-                    {
-                        participant.Trainer.HasActed = false;
-                    }
                 }
             }
 
@@ -312,9 +359,9 @@ public class BattleStatePlugin
     #region Participant Management
 
     [KernelFunction("add_battle_participant")]
-    [Description("Add a new participant to the current battle")]
+    [Description("Add a new participant to the current battle and recalculate turn order. Used for reinforcements, summoned Pokemon, or late joiners. Example: add_battle_participant('{\"pokemon\":{\"id\":\"charizard1\",\"name\":\"Charizard\"}}')")]
     public async Task<string> AddBattleParticipant(
-        [Description("JSON string with participant data")] string participantJson)
+        [Description("JSON string with participant data including pokemon or character data")] string participantJson)
     {
         Debug.WriteLine($"[BattleStatePlugin] AddBattleParticipant called");
 
@@ -339,10 +386,10 @@ public class BattleStatePlugin
                 CalculateInitiativeOrder(battleState);
                 
                 LogBattleEvent(battleState, "System", "Participant Added", new List<string>(), 
-                    $"{participant.Name} joined the battle");
+                    $"{GetParticipantName(participant)} joined the battle");
             });
 
-            return JsonSerializer.Serialize(new { success = true, participantId = participant.Id }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = true, participantId = GetParticipantId(participant) }, _jsonOptions);
         }
         catch (JsonException ex)
         {
@@ -351,16 +398,16 @@ public class BattleStatePlugin
     }
 
     [KernelFunction("remove_battle_participant")]
-    [Description("Remove a participant from the current battle")]
+    [Description("Remove a participant from the current battle due to defeat, escape, or withdrawal. Updates turn order accordingly. Example: remove_battle_participant('rattata1')")]
     public async Task<string> RemoveBattleParticipant(
-        [Description("ID of the participant to remove")] string participantId)
+        [Description("Unique ID of the participant to remove")] string participantId)
     {
         Debug.WriteLine($"[BattleStatePlugin] RemoveBattleParticipant called for: {participantId}");
 
         await _repository.UpdateBattleStateAsync(battleState =>
         {
             var participant = battleState.BattleParticipants
-                .FirstOrDefault(p => p.Id.Equals(participantId, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(p => GetParticipantId(p).Equals(participantId, StringComparison.OrdinalIgnoreCase));
             
             if (participant != null)
             {
@@ -368,7 +415,7 @@ public class BattleStatePlugin
                 battleState.TurnOrder.Remove(participantId);
                 
                 LogBattleEvent(battleState, "System", "Participant Removed", new List<string>(), 
-                    $"{participant.Name} left the battle");
+                    $"{GetParticipantName(participant)} left the battle");
             }
         });
 
@@ -376,11 +423,11 @@ public class BattleStatePlugin
     }
 
     [KernelFunction("update_participant_vigor")]
-    [Description("Update a Pokemon participant's vigor (health)")]
+    [Description("Update a Pokemon participant's vigor (health) due to damage, healing, or other effects. Automatically checks for defeat at 0 vigor. Example: update_participant_vigor('pikachu1', 45, 'Took damage from Tackle')")]
     public async Task<string> UpdateParticipantVigor(
-        [Description("ID of the participant")] string participantId,
-        [Description("New current vigor value")] int newVigor,
-        [Description("Reason for change (optional)")] string reason = "")
+        [Description("Unique ID of the participant")] string participantId,
+        [Description("New current vigor value (0 = fainted)")] int newVigor,
+        [Description("Reason for change for battle log")] string reason = "")
     {
         Debug.WriteLine($"[BattleStatePlugin] UpdateParticipantVigor called for: {participantId}");
 
@@ -391,7 +438,7 @@ public class BattleStatePlugin
         }
 
         var participant = gameState.BattleState.BattleParticipants
-            .FirstOrDefault(p => p.Id.Equals(participantId, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(p => GetParticipantId(p).Equals(participantId, StringComparison.OrdinalIgnoreCase));
 
         if (participant?.Pokemon == null)
         {
@@ -406,7 +453,7 @@ public class BattleStatePlugin
         {
             participant.IsDefeated = true;
             LogBattleEvent(gameState.BattleState, "System", "Pokemon Defeated", new List<string> { participantId }, 
-                $"{participant.Name} was defeated");
+                $"{GetParticipantName(participant)} was defeated");
         }
 
         await _repository.SaveStateAsync(gameState);
@@ -431,10 +478,10 @@ public class BattleStatePlugin
     #region Status Effects and Conditions
 
     [KernelFunction("apply_status_effect")]
-    [Description("Apply a status effect to a battle participant")]
+    [Description("Apply a status effect to a battle participant such as poison, paralysis, or stat changes. Effects can be temporary or permanent. Example: apply_status_effect('rattata1', '{\"name\":\"Poison\",\"type\":\"Debuff\",\"duration\":5,\"severity\":1}')")]
     public async Task<string> ApplyStatusEffect(
-        [Description("ID of the target participant")] string targetId,
-        [Description("JSON string with status effect data")] string statusEffectJson)
+        [Description("Unique ID of the target participant")] string targetId,
+        [Description("JSON string with status effect data including name, type, duration, and effects")] string statusEffectJson)
     {
         Debug.WriteLine($"[BattleStatePlugin] ApplyStatusEffect called for: {targetId}");
 
@@ -453,7 +500,7 @@ public class BattleStatePlugin
             }
 
             var participant = gameState.BattleState.BattleParticipants
-                .FirstOrDefault(p => p.Id.Equals(targetId, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(p => GetParticipantId(p).Equals(targetId, StringComparison.OrdinalIgnoreCase));
 
             if (participant?.Pokemon == null)
             {
@@ -467,7 +514,7 @@ public class BattleStatePlugin
             participant.Pokemon.StatusEffects.Add(statusEffect);
 
             LogBattleEvent(gameState.BattleState, "System", "Status Effect Applied", new List<string> { targetId }, 
-                $"{participant.Name} is now {statusEffect.Name}");
+                $"{GetParticipantName(participant)} is now {statusEffect.Name}");
 
             await _repository.SaveStateAsync(gameState);
 
@@ -480,10 +527,10 @@ public class BattleStatePlugin
     }
 
     [KernelFunction("remove_status_effect")]
-    [Description("Remove a status effect from a battle participant")]
+    [Description("Remove a status effect from a battle participant, typically due to natural expiration, healing, or other cure effects. Example: remove_status_effect('pikachu1', 'Poison')")]
     public async Task<string> RemoveStatusEffect(
-        [Description("ID of the target participant")] string targetId,
-        [Description("Name of the status effect to remove")] string effectName)
+        [Description("Unique ID of the target participant")] string targetId,
+        [Description("Name of the status effect to remove (case-insensitive)")] string effectName)
     {
         Debug.WriteLine($"[BattleStatePlugin] RemoveStatusEffect called for: {targetId}, effect: {effectName}");
 
@@ -494,7 +541,7 @@ public class BattleStatePlugin
         }
 
         var participant = gameState.BattleState.BattleParticipants
-            .FirstOrDefault(p => p.Id.Equals(targetId, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(p => GetParticipantId(p).Equals(targetId, StringComparison.OrdinalIgnoreCase));
 
         if (participant?.Pokemon == null)
         {
@@ -507,7 +554,7 @@ public class BattleStatePlugin
         if (removed)
         {
             LogBattleEvent(gameState.BattleState, "System", "Status Effect Removed", new List<string> { targetId }, 
-                $"{participant.Name} is no longer {effectName}");
+                $"{GetParticipantName(participant)} is no longer {effectName}");
         }
 
         await _repository.SaveStateAsync(gameState);
@@ -520,10 +567,10 @@ public class BattleStatePlugin
     #region Battle Log and History
 
     [KernelFunction("get_battle_log")]
-    [Description("Get the battle log with optional filtering")]
+    [Description("Get the battle log with optional filtering to review recent actions and their results. Useful for narrative descriptions and understanding battle flow. Example: get_battle_log(5, 'pikachu1')")]
     public async Task<string> GetBattleLog(
-        [Description("Number of recent entries to return (0 = all)")] int count = 10,
-        [Description("Filter by actor ID (optional)")] string actorFilter = "")
+        [Description("Number of recent entries to return (0 = all entries)")] int count = 10,
+        [Description("Filter by actor ID to see only specific participant's actions")] string actorFilter = "")
     {
         Debug.WriteLine($"[BattleStatePlugin] GetBattleLog called");
 
@@ -553,12 +600,12 @@ public class BattleStatePlugin
     #region Utility Functions
 
     [KernelFunction("create_pokemon_participant")]
-    [Description("Create a Pokemon battle participant from a Pokemon in the trainer's team")]
+    [Description("Create a Pokemon battle participant from a Pokemon in the trainer's team with specified position and faction. Example: create_pokemon_participant('Pikachu', 'Player', 2, 3)")]
     public async Task<string> CreatePokemonParticipant(
         [Description("Name of the Pokemon from trainer's team")] string pokemonName,
-        [Description("Faction (Player, Enemy, Neutral)")] string faction = "Player",
-        [Description("X position on battlefield")] int x = 0,
-        [Description("Y position on battlefield")] int y = 0)
+        [Description("Faction: Player, Enemy, Neutral, Allied")] string faction = "Player",
+        [Description("X position on battlefield (0-9)")] int x = 0,
+        [Description("Y position on battlefield (0-9)")] int y = 0)
     {
         Debug.WriteLine($"[BattleStatePlugin] CreatePokemonParticipant called for: {pokemonName}");
 
@@ -569,81 +616,77 @@ public class BattleStatePlugin
         }
 
         // Find the Pokemon in the trainer's team
-        var pokemon = gameState.PokemonTeam.ActivePokemon
-            .FirstOrDefault(p => p.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase)) ??
-            gameState.PokemonTeam.BoxedPokemon
-            .FirstOrDefault(p => p.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase));
+        var ownedPokemon = gameState.Player.Character.PokemonTeam.ActivePokemon
+            .FirstOrDefault(p => p.Pokemon.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase)) ??
+            gameState.Player.Character.PokemonTeam.BoxedPokemon
+            .FirstOrDefault(p => p.Pokemon.Name.Equals(pokemonName, StringComparison.OrdinalIgnoreCase));
 
-        if (pokemon == null)
+        if (ownedPokemon == null)
         {
             return JsonSerializer.Serialize(new { error = "Pokemon not found in trainer's team" }, _jsonOptions);
         }
 
         var participant = new BattleParticipant
         {
-            Id = Guid.NewGuid().ToString(),
-            Name = pokemon.Name,
             Type = faction.ToLower() == "player" ? ParticipantType.PlayerPokemon : ParticipantType.EnemyPokemon,
-            Faction = faction,
-            Pokemon = new BattlePokemon
-            {
-                PokemonData = pokemon,
-                CurrentVigor = pokemon.CurrentVigor,
-                MaxVigor = pokemon.MaxVigor,
-                StatusEffects = new List<StatusEffect>(),
-                TemporaryStats = new Dictionary<string, int>(),
-                UsedMoves = new List<string>()
-            },
+            Pokemon = ownedPokemon.Pokemon,
             Position = new BattlePosition { X = x, Y = y },
-            Relationships = new Dictionary<string, RelationshipType>()
+            Relationships = new Dictionary<string, RelationshipType>(),
+            TemporaryStats = new Dictionary<string, int>()
         };
 
         return JsonSerializer.Serialize(participant, _jsonOptions);
     }
 
     [KernelFunction("create_trainer_participant")]
-    [Description("Create a trainer battle participant")]
+    [Description("Create a trainer battle participant with their Pokemon team and battle capabilities. Example: create_trainer_participant('Gary', 'Enemy', '[]', true)")]
     public async Task<string> CreateTrainerParticipant(
         [Description("Name of the trainer")] string trainerName,
-        [Description("Faction (Player, Enemy, Neutral)")] string faction = "Enemy",
-        [Description("JSON array of Pokemon for this trainer")] string pokemonListJson = "[]",
-        [Description("Can this trainer escape?")] bool canEscape = true)
+        [Description("Faction: Player, Enemy, Neutral, Allied")] string faction = "Enemy",
+        [Description("JSON array of Pokemon for this trainer (simplified format)")] string pokemonListJson = "[]",
+        [Description("Can this trainer escape from battle?")] bool canEscape = true)
     {
         Debug.WriteLine($"[BattleStatePlugin] CreateTrainerParticipant called for: {trainerName}");
 
         try
         {
-            var pokemonList = JsonSerializer.Deserialize<List<Pokemon>>(pokemonListJson, _jsonOptions) ?? new List<Pokemon>();
-
             var participant = new BattleParticipant
             {
-                Id = Guid.NewGuid().ToString(),
-                Name = trainerName,
                 Type = faction.ToLower() == "player" ? ParticipantType.PlayerTrainer : ParticipantType.EnemyTrainer,
-                Faction = faction,
-                Trainer = new BattleTrainer
+                Character = new Character
                 {
+                    Id = Guid.NewGuid().ToString(),
                     Name = trainerName,
-                    Stats = new Stats(), // Default stats
+                    Stats = new Stats
+                    {
+                        Power = new Stat { Type = StatType.Power, Level = StatLevel.Trained },
+                        Speed = new Stat { Type = StatType.Speed, Level = StatLevel.Trained },
+                        Mind = new Stat { Type = StatType.Mind, Level = StatLevel.Trained },
+                        Charm = new Stat { Type = StatType.Charm, Level = StatLevel.Trained },
+                        Defense = new Stat { Type = StatType.Defense, Level = StatLevel.Trained },
+                        Spirit = new Stat { Type = StatType.Spirit, Level = StatLevel.Trained }
+                    },
                     Conditions = new List<ActiveCondition>(),
-                    RemainingPokemon = pokemonList,
-                    CanEscape = canEscape,
-                    HasActed = false
+                    Faction = faction,
+                    IsTrainer = true,
+                    Inventory = new Dictionary<string, int>(),
+                    PokemonTeam = new PokemonTeam { ActivePokemon = new List<OwnedPokemon>(), BoxedPokemon = new List<OwnedPokemon>() }
                 },
                 Position = new BattlePosition(),
-                Relationships = new Dictionary<string, RelationshipType>()
+                Relationships = new Dictionary<string, RelationshipType>(),
+                TemporaryStats = new Dictionary<string, int>()
             };
 
             return JsonSerializer.Serialize(participant, _jsonOptions);
         }
         catch (JsonException ex)
         {
-            return JsonSerializer.Serialize(new { error = $"Error parsing Pokemon list: {ex.Message}" }, _jsonOptions);
+            return JsonSerializer.Serialize(new { error = $"Error creating trainer participant: {ex.Message}" }, _jsonOptions);
         }
     }
 
     [KernelFunction("check_victory_conditions")]
-    [Description("Check if any victory conditions have been met")]
+    [Description("Check if any victory conditions have been met to determine if the battle should end. Returns status of victory condition and whether battle is concluded.")]
     public async Task<string> CheckVictoryConditions()
     {
         Debug.WriteLine($"[BattleStatePlugin] CheckVictoryConditions called");
@@ -655,32 +698,26 @@ public class BattleStatePlugin
         }
 
         var battleState = gameState.BattleState;
-        var victoryResults = new List<object>();
-
-        foreach (var condition in battleState.VictoryConditions)
+        var condition = battleState.VictoryCondition;
+        
+        var met = CheckSingleVictoryCondition(battleState, condition);
+        var victoryResult = new
         {
-            var met = CheckSingleVictoryCondition(battleState, condition);
-            victoryResults.Add(new
-            {
-                condition.Type,
-                condition.Faction,
-                condition.Description,
-                met = met,
-                reason = met ? $"{condition.Faction} has achieved {condition.Type}" : "Condition not met"
-            });
-        }
-
-        var anyVictory = victoryResults.Any(r => (bool)r.GetType().GetProperty("met")!.GetValue(r)!);
+            condition.Type,
+            condition.Description,
+            met = met,
+            reason = met ? $"Victory condition achieved: {condition.Type}" : "Condition not met"
+        };
 
         return JsonSerializer.Serialize(new
         {
-            battleEnded = anyVictory,
-            victoryConditions = victoryResults
+            battleEnded = met,
+            victoryCondition = victoryResult
         }, _jsonOptions);
     }
 
     [KernelFunction("get_battlefield_summary")]
-    [Description("Get a summary of the current battlefield state")]
+    [Description("Get a summary of the current battlefield state including participants, turn info, weather, and recent events. Useful for narrative descriptions and tactical overview.")]
     public async Task<string> GetBattlefieldSummary()
     {
         Debug.WriteLine($"[BattleStatePlugin] GetBattlefieldSummary called");
@@ -701,7 +738,7 @@ public class BattleStatePlugin
             totalParticipants = battleState.BattleParticipants.Count,
             activeParticipants = battleState.BattleParticipants.Count(p => !p.IsDefeated),
             defeatedParticipants = battleState.BattleParticipants.Count(p => p.IsDefeated),
-            factions = battleState.BattleParticipants.Select(p => p.Faction).Distinct().ToList(),
+            factions = battleState.BattleParticipants.Select(p => GetParticipantFaction(p)).Distinct().ToList(),
             weather = battleState.Weather.Name,
             battlefield = battleState.Battlefield.Name,
             hazards = battleState.Battlefield.Hazards.Count,
@@ -726,7 +763,7 @@ public class BattleStatePlugin
     {
         return condition.Type switch
         {
-            VictoryType.DefeatAllEnemies => CheckDefeatAllEnemies(battleState, condition.Faction),
+            VictoryType.DefeatAllEnemies => CheckDefeatAllEnemies(battleState),
             VictoryType.DefeatSpecificTarget => CheckDefeatSpecificTarget(battleState, condition),
             VictoryType.Survival => CheckSurvival(battleState, condition),
             VictoryType.Escape => CheckEscape(battleState, condition),
@@ -736,10 +773,10 @@ public class BattleStatePlugin
         };
     }
 
-    private bool CheckDefeatAllEnemies(BattleState battleState, string faction)
+    private bool CheckDefeatAllEnemies(BattleState battleState)
     {
         var enemies = battleState.BattleParticipants
-            .Where(p => p.Faction != faction && (p.Type == ParticipantType.EnemyPokemon || p.Type == ParticipantType.EnemyTrainer))
+            .Where(p => GetParticipantFaction(p) != "Player" && (p.Type == ParticipantType.EnemyPokemon || p.Type == ParticipantType.EnemyTrainer))
             .ToList();
 
         return enemies.All(e => e.IsDefeated);
@@ -751,7 +788,7 @@ public class BattleStatePlugin
             return false;
 
         var target = battleState.BattleParticipants
-            .FirstOrDefault(p => p.Id.Equals(targetId, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(p => GetParticipantId(p).Equals(targetId, StringComparison.OrdinalIgnoreCase));
 
         return target?.IsDefeated == true;
     }
@@ -766,15 +803,13 @@ public class BattleStatePlugin
 
     private bool CheckEscape(BattleState battleState, VictoryCondition condition)
     {
-        // Check if any participant from the faction has successfully escaped
-        // This would need to be tracked in the battle state when escape actions are processed
-        return false; // Placeholder
+        // Check if any participant has successfully escaped
+        return false; // Placeholder - would need to track escapes
     }
 
     private bool CheckObjective(BattleState battleState, VictoryCondition condition)
     {
         // Custom objective checking based on parameters
-        // Implementation depends on specific objectives
         return false; // Placeholder
     }
 
@@ -786,24 +821,18 @@ public class BattleStatePlugin
         return DateTime.UtcNow >= timeLimit;
     }
 
-    #endregion
-
     private void CalculateInitiativeOrder(BattleState battleState)
     {
-        // Calculate initiative for each participant
+        // Calculate initiative for each participant using BattleCalcHelper
         foreach (var participant in battleState.BattleParticipants)
         {
             if (participant.Pokemon != null)
             {
-                // Base initiative on Pokemon's Agility stat + random factor
-                var agilityModifier = (int)participant.Pokemon.PokemonData.Stats.Agility;
-                participant.Initiative = agilityModifier * 10 + _random.Next(1, 21);
+                participant.Initiative = BattleCalcHelper.CalculateInitiative(participant.Pokemon, _random);
             }
-            else if (participant.Trainer != null)
+            else if (participant.Character != null)
             {
-                // Trainer initiative based on their Agility stat
-                var agilityModifier = (int)participant.Trainer.Stats.Agility;
-                participant.Initiative = agilityModifier * 10 + _random.Next(1, 21);
+                participant.Initiative = BattleCalcHelper.CalculateTrainerInitiative(participant.Character, _random);
             }
             else
             {
@@ -814,7 +843,7 @@ public class BattleStatePlugin
         // Sort by initiative (highest first) and create turn order
         battleState.TurnOrder = battleState.BattleParticipants
             .OrderByDescending(p => p.Initiative)
-            .Select(p => p.Id)
+            .Select(p => GetParticipantId(p))
             .ToList();
 
         // Set the first actor
@@ -829,37 +858,41 @@ public class BattleStatePlugin
         // Set up default hostile relationships between different factions
         foreach (var participant in battleState.BattleParticipants)
         {
-            foreach (var other in battleState.BattleParticipants.Where(p => p.Id != participant.Id))
+            foreach (var other in battleState.BattleParticipants.Where(p => GetParticipantId(p) != GetParticipantId(participant)))
             {
-                if (participant.Faction != other.Faction)
+                if (GetParticipantFaction(participant) != GetParticipantFaction(other))
                 {
-                    participant.Relationships[other.Id] = RelationshipType.Hostile;
+                    participant.Relationships[GetParticipantId(other)] = RelationshipType.Hostile;
                 }
                 else
                 {
-                    participant.Relationships[other.Id] = RelationshipType.Allied;
+                    participant.Relationships[GetParticipantId(other)] = RelationshipType.Allied;
                 }
             }
         }
     }
 
-    private List<VictoryCondition> GenerateDefaultVictoryConditions(BattleType battleType)
+    private VictoryCondition GenerateDefaultVictoryCondition(BattleType battleType)
     {
         return battleType switch
         {
-            BattleType.Wild => new List<VictoryCondition>
-            {
-                new() { Type = VictoryType.DefeatAllEnemies, Faction = "Player", Description = "Defeat or capture all wild Pokemon" },
-                new() { Type = VictoryType.Escape, Faction = "Player", Description = "Successfully escape from battle" }
+            BattleType.Wild => new VictoryCondition 
+            { 
+                Type = VictoryType.DefeatAllEnemies, 
+                Description = "Defeat or capture all wild Pokemon",
+                Parameters = new Dictionary<string, object>()
             },
-            BattleType.Trainer => new List<VictoryCondition>
-            {
-                new() { Type = VictoryType.DefeatAllEnemies, Faction = "Player", Description = "Defeat all opponent Pokemon" },
-                new() { Type = VictoryType.DefeatAllEnemies, Faction = "Enemy", Description = "Defeat all player Pokemon" }
+            BattleType.Trainer => new VictoryCondition 
+            { 
+                Type = VictoryType.DefeatAllEnemies, 
+                Description = "Defeat all opponent Pokemon",
+                Parameters = new Dictionary<string, object>()
             },
-            _ => new List<VictoryCondition>
-            {
-                new() { Type = VictoryType.DefeatAllEnemies, Faction = "Player", Description = "Defeat all enemies" }
+            _ => new VictoryCondition 
+            { 
+                Type = VictoryType.DefeatAllEnemies, 
+                Description = "Defeat all enemies",
+                Parameters = new Dictionary<string, object>()
             }
         };
     }
@@ -870,7 +903,7 @@ public class BattleStatePlugin
 
         // Find the acting participant
         var actor = battleState.BattleParticipants
-            .FirstOrDefault(p => p.Id.Equals(action.ActorId, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(p => GetParticipantId(p).Equals(action.ActorId, StringComparison.OrdinalIgnoreCase));
 
         if (actor == null)
         {
@@ -889,16 +922,16 @@ public class BattleStatePlugin
         switch (action.ActionType)
         {
             case BattleActionType.Move:
-                results.AddRange(await ProcessMoveAction(battleState, action, actor));
+                results.AddRange(ProcessAttackAction(battleState, action, actor));
                 break;
             case BattleActionType.Switch:
-                results.AddRange(await ProcessSwitchAction(battleState, action, actor));
+                results.Add(new ActionResult { Success = false, Message = "Switch action logged - functionality not implemented. Handle Elsewhere" });
                 break;
             case BattleActionType.Item:
-                results.AddRange(await ProcessItemAction(battleState, action, actor));
+                results.Add(new ActionResult { Success = false, Message = "Item action logged - functionality not implemented. Handle Elsewhere" });
                 break;
             case BattleActionType.Escape:
-                results.AddRange(await ProcessEscapeAction(battleState, action, actor));
+                results.Add(new ActionResult { Success = false, Message = "Escape action logged - functionality not implemented. Handle Elsewhere" });
                 break;
             default:
                 results.Add(new ActionResult
@@ -911,12 +944,12 @@ public class BattleStatePlugin
 
         // Log the action
         LogBattleEvent(battleState, action.ActorId, action.ActionType.ToString(), 
-            action.TargetIds, $"{actor.Name} used {action.MoveName}");
+            action.TargetIds, $"{GetParticipantName(actor)} used {action.MoveName}");
 
         return results;
     }
 
-    private async Task<List<ActionResult>> ProcessMoveAction(BattleState battleState, BattleAction action, BattleParticipant actor)
+    private List<ActionResult> ProcessAttackAction(BattleState battleState, BattleAction action, BattleParticipant actor)
     {
         var results = new List<ActionResult>();
 
@@ -930,42 +963,98 @@ public class BattleStatePlugin
             return results;
         }
 
-        // Record the move as used
-        if (!actor.Pokemon.UsedMoves.Contains(action.MoveName))
-        {
-            actor.Pokemon.UsedMoves.Add(action.MoveName);
-        }
+        // Get move details from action parameters
+        var moveType = action.Parameters.GetValueOrDefault("moveType", "Normal")?.ToString() ?? "Normal";
+        var numDice = int.TryParse(action.Parameters.GetValueOrDefault("numDice", 2)?.ToString(), out var dice) ? dice : 2;
+        var isSpecialMove = bool.TryParse(action.Parameters.GetValueOrDefault("isSpecial", false)?.ToString(), out var special) && special;
 
         // Process each target
         foreach (var targetId in action.TargetIds)
         {
             var target = battleState.BattleParticipants
-                .FirstOrDefault(p => p.Id.Equals(targetId, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(p => GetParticipantId(p).Equals(targetId, StringComparison.OrdinalIgnoreCase));
 
-            if (target == null)
+            if (target?.Pokemon == null)
             {
                 results.Add(new ActionResult
                 {
                     TargetId = targetId,
                     Success = false,
-                    Message = "Target not found"
+                    Message = "Target not found or not a Pokemon"
                 });
                 continue;
             }
 
-            // Calculate damage (simplified)
-            var damage = CalculateMoveDamage(actor.Pokemon, target.Pokemon, action.MoveName);
+            // Step 1: Roll to hit against target's defense
+            var hitResult = RollToHit(actor.Pokemon, target.Pokemon, isSpecialMove);
             
             var result = new ActionResult
             {
                 TargetId = targetId,
-                Success = true,
-                Damage = damage,
-                Message = $"{actor.Name} used {action.MoveName} on {target.Name} for {damage} damage"
+                Success = hitResult.Hit,
+                Message = $"{GetParticipantName(actor)} used {action.MoveName} on {GetParticipantName(target)}"
             };
 
-            // Apply damage
-            if (target.Pokemon != null && damage > 0)
+            // Add hit roll information to effects
+            result.Effects["hitRoll"] = hitResult.HitRoll;
+            result.Effects["targetDefense"] = hitResult.TargetDefense;
+            result.Effects["hitMargin"] = hitResult.Margin;
+
+            if (!hitResult.Hit)
+            {
+                result.Message += " - MISS!";
+                result.Effects["missed"] = true;
+                results.Add(result);
+                continue;
+            }
+
+            result.Message += " - HIT!";
+
+            // Step 2: Calculate damage if hit was successful
+            var damage = BattleCalcHelper.CalculateMoveDamage(
+                actor.Pokemon, 
+                target.Pokemon, 
+                action.MoveName, 
+                moveType, 
+                numDice, 
+                hitResult.HitRoll, 
+                isSpecialMove, 
+                _random);
+
+            result.Damage = damage;
+            result.Message += $" Deals {damage} damage";
+
+            // Add critical hit message
+            if (hitResult.HitRoll == 20)
+            {
+                result.Message += " - Critical hit!";
+                result.Effects["critical"] = true;
+            }
+
+            // Add type effectiveness information
+            var typeEffectiveness = BattleCalcHelper.CalculateDualTypeEffectiveness(
+                moveType, 
+                target.Pokemon.Type1, 
+                target.Pokemon.Type2);
+
+            result.Effects["typeEffectiveness"] = typeEffectiveness;
+            result.Effects["effectivenessDescription"] = BattleCalcHelper.GetEffectivenessDescription(typeEffectiveness);
+
+            if (typeEffectiveness > 1.0)
+            {
+                result.Message += " - It's super effective!";
+            }
+            else if (typeEffectiveness < 1.0 && typeEffectiveness > 0.0)
+            {
+                result.Message += " - It's not very effective...";
+            }
+            else if (typeEffectiveness == 0.0)
+            {
+                result.Message += " - It had no effect!";
+            }
+
+            // Step 3: Apply damage to target
+            if (damage > 0)
             {
                 target.Pokemon.CurrentVigor = Math.Max(0, target.Pokemon.CurrentVigor - damage);
                 
@@ -982,45 +1071,48 @@ public class BattleStatePlugin
         return results;
     }
 
-    private async Task<List<ActionResult>> ProcessSwitchAction(BattleState battleState, BattleAction action, BattleParticipant actor)
+    /// <summary>
+    /// Roll to hit against target's defense, following D&D-style attack mechanics
+    /// </summary>
+    private HitResult RollToHit(Pokemon attacker, Pokemon target, bool isSpecialMove)
     {
-        // Implementation for switching Pokemon
-        return new List<ActionResult>
-        {
-            new() { Success = true, Message = $"{actor.Name} is switching Pokemon" }
-        };
-    }
-
-    private async Task<List<ActionResult>> ProcessItemAction(BattleState battleState, BattleAction action, BattleParticipant actor)
-    {
-        // Implementation for using items
-        return new List<ActionResult>
-        {
-            new() { Success = true, Message = $"{actor.Name} used an item" }
-        };
-    }
-
-    private async Task<List<ActionResult>> ProcessEscapeAction(BattleState battleState, BattleAction action, BattleParticipant actor)
-    {
-        // Implementation for escaping
-        return new List<ActionResult>
-        {
-            new() { Success = true, Message = $"{actor.Name} is trying to escape" }
-        };
-    }
-
-    private int CalculateMoveDamage(BattlePokemon? attacker, BattlePokemon? defender, string moveName)
-    {
-        if (attacker == null || defender == null)
-            return 0;
-
-        // Simplified damage calculation
-        var baseDamage = 50; // Default move power
-        var attackStat = (int)attacker.PokemonData.Stats.Strength;
-        var defenseStat = (int)defender.PokemonData.Stats.Strength;
+        // Roll d20 for hit
+        var hitRoll = _random.Next(1, 21);
         
-        var damage = (baseDamage + attackStat - defenseStat) + _random.Next(-10, 11);
-        return Math.Max(1, damage);
+        // Get attacker's relevant attack stat
+        var attackStat = isSpecialMove ? attacker.Stats.Mind.Level : attacker.Stats.Power.Level;
+        var attackModifier = (int)attackStat;
+        
+        // Get target's relevant defense stat (Defense for physical, Spirit for special)
+        var defenseStat = isSpecialMove ? target.Stats.Spirit.Level : target.Stats.Defense.Level;
+        var defenseValue = 10 + (int)defenseStat; // Base defense of 10 + stat modifier
+        
+        var totalAttackRoll = hitRoll + attackModifier;
+        var hit = totalAttackRoll >= defenseValue;
+        var margin = totalAttackRoll - defenseValue;
+        
+        return new HitResult
+        {
+            Hit = hit,
+            HitRoll = hitRoll,
+            AttackModifier = attackModifier,
+            TotalAttackRoll = totalAttackRoll,
+            TargetDefense = defenseValue,
+            Margin = margin
+        };
+    }
+
+    /// <summary>
+    /// Result of a hit roll attempt
+    /// </summary>
+    private class HitResult
+    {
+        public bool Hit { get; set; }
+        public int HitRoll { get; set; }
+        public int AttackModifier { get; set; }
+        public int TotalAttackRoll { get; set; }
+        public int TargetDefense { get; set; }
+        public int Margin { get; set; }
     }
 
     private void LogBattleEvent(BattleState battleState, string actorId, string action, List<string> targets, string result)
@@ -1032,8 +1124,172 @@ public class BattleStatePlugin
             ActorId = actorId,
             Action = action,
             Targets = targets,
-            Result = result,
-            Timestamp = DateTime.UtcNow
+            Result = result
         });
     }
+
+    #endregion
+
+    #region Battle Calculation Functions
+
+    // TODO: Add battle calculation functions like damage preview, effectiveness analysis, escape chance, etc.
+    // These would use the BattleCalcHelper methods to provide tactical information
+
+    #endregion
+
+    #region Additional Battle Actions
+
+    [KernelFunction("attack_target")]
+    [Description("Simplified attack action - roll to hit and calculate damage against a single target. Example: attack_target('pikachu1', 'rattata1', 'Thunderbolt', 'Electric', 3, true)")]
+    public async Task<string> AttackTarget(
+        [Description("ID of the attacking Pokemon")] string attackerId,
+        [Description("ID of the target Pokemon")] string targetId,
+        [Description("Name of the move being used")] string moveName,
+        [Description("Type of the move (Fire, Water, Electric, etc.)")] string moveType = "Normal",
+        [Description("Number of damage dice to roll (typically 1-4)")] int numDice = 2,
+        [Description("Whether this is a special attack (uses Mind/Spirit) vs physical (Power/Defense)")] bool isSpecialMove = false)
+    {
+        Debug.WriteLine($"[BattleStatePlugin] AttackTarget called: {attackerId} attacks {targetId} with {moveName}");
+
+        return await ExecuteBattleAction(attackerId, "Attack", $"[\"{targetId}\"]", moveName, moveType, numDice, isSpecialMove);
+    }
+
+    [KernelFunction("get_pokemon_moves")]
+    [Description("Get available moves for a Pokemon participant in battle, including move types and power levels. Example: get_pokemon_moves('pikachu1')")]
+    public async Task<string> GetPokemonMoves(
+        [Description("ID of the Pokemon participant")] string pokemonId)
+    {
+        Debug.WriteLine($"[BattleStatePlugin] GetPokemonMoves called for: {pokemonId}");
+
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState?.BattleState == null)
+        {
+            return JsonSerializer.Serialize(new { error = "No active battle" }, _jsonOptions);
+        }
+
+        var participant = gameState.BattleState.BattleParticipants
+            .FirstOrDefault(p => GetParticipantId(p).Equals(pokemonId, StringComparison.OrdinalIgnoreCase));
+
+        if (participant?.Pokemon == null)
+        {
+            return JsonSerializer.Serialize(new { error = "Pokemon not found" }, _jsonOptions);
+        }
+
+        // Note: KnownMoves appears to be a List<string> based on the context, so we'll simplify this
+        var moves = participant.Pokemon.KnownMoves.Select((moveName, index) => new
+        {
+            name = moveName,
+            type = "Normal", // Default - would need actual move data
+            category = "Physical", // Default - would need actual move data  
+            power = 50, // Default - would need actual move data
+            accuracy = 100, // Default - would need actual move data
+            description = $"A {moveName} attack",
+            isSpecial = false, // Default - would need actual move data
+            suggestedDice = 2 // Default dice count
+        }).ToList();
+
+        var result = new
+        {
+            pokemonId = pokemonId,
+            pokemonName = participant.Pokemon.Name,
+            availableMoves = moves,
+            moveCount = moves.Count,
+            message = $"{participant.Pokemon.Name} has {moves.Count} available moves"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    [KernelFunction("preview_attack")]
+    [Description("Preview an attack without executing it - shows hit chances and potential damage ranges. Example: preview_attack('pikachu1', 'rattata1', 'Thunderbolt', 'Electric', 3, true)")]
+    public async Task<string> PreviewAttack(
+        [Description("ID of the attacking Pokemon")] string attackerId,
+        [Description("ID of the target Pokemon")] string targetId,
+        [Description("Name of the move being used")] string moveName,
+        [Description("Type of the move")] string moveType = "Normal",
+        [Description("Number of damage dice")] int numDice = 2,
+        [Description("Whether this is a special attack")] bool isSpecialMove = false)
+    {
+        Debug.WriteLine($"[BattleStatePlugin] PreviewAttack called: {attackerId} vs {targetId}");
+
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState?.BattleState == null)
+        {
+            return JsonSerializer.Serialize(new { error = "No active battle" }, _jsonOptions);
+        }
+
+        var attacker = gameState.BattleState.BattleParticipants
+            .FirstOrDefault(p => GetParticipantId(p).Equals(attackerId, StringComparison.OrdinalIgnoreCase));
+
+        var target = gameState.BattleState.BattleParticipants
+            .FirstOrDefault(p => GetParticipantId(p).Equals(targetId, StringComparison.OrdinalIgnoreCase));
+
+        if (attacker?.Pokemon == null || target?.Pokemon == null)
+        {
+            return JsonSerializer.Serialize(new { error = "Attacker or target not found" }, _jsonOptions);
+        }
+
+        // Calculate hit chance
+        var attackStat = isSpecialMove ? attacker.Pokemon.Stats.Mind.Level : attacker.Pokemon.Stats.Power.Level;
+        var defenseStat = isSpecialMove ? target.Pokemon.Stats.Spirit.Level : target.Pokemon.Stats.Defense.Level;
+        var attackModifier = (int)attackStat;
+        var defenseValue = 10 + (int)defenseStat;
+
+        // Hit chance calculation (need to roll attackModifier + d20 >= defenseValue)
+        // So need to roll (defenseValue - attackModifier) or higher on d20
+        var neededRoll = Math.Max(1, defenseValue - attackModifier);
+        var hitChance = Math.Max(5, Math.Min(95, (21 - neededRoll) * 5)); // 5% min, 95% max
+
+        // Type effectiveness
+        var typeEffectiveness = BattleCalcHelper.CalculateDualTypeEffectiveness(moveType, target.Pokemon.Type1, target.Pokemon.Type2);
+
+        // Calculate bonus dice: +1 die for every 2 skill levels above Novice
+        var attackStatValue = (int)attackStat;
+        var bonusDice = attackStatValue / 2;
+        var totalDice = numDice + bonusDice;
+
+        // Damage ranges (updated calculation without stat modifiers)
+        var minDamage = totalDice; // minimum roll is 1 per die
+        var maxDamage = totalDice * 6; // maximum roll is 6 per die
+        var avgDamage = totalDice * 3.5; // average roll is 3.5 per die
+
+        // No type effectiveness multiplier or defense reduction in new system
+        minDamage = Math.Max(1, minDamage);
+        maxDamage = Math.Max(1, maxDamage);
+        avgDamage = Math.Max(1, avgDamage);
+
+        var result = new
+        {
+            attackerName = GetParticipantName(attacker),
+            targetName = GetParticipantName(target),
+            moveName = moveName,
+            moveType = moveType,
+            hitChance = $"{hitChance}%",
+            hitCalculation = $"Need {neededRoll}+ on d20 (attack +{attackModifier} vs defense {defenseValue})",
+            typeEffectiveness = typeEffectiveness,
+            effectivenessDescription = BattleCalcHelper.GetEffectivenessDescription(typeEffectiveness),
+            damageRange = new
+            {
+                minimum = minDamage,
+                maximum = maxDamage,
+                average = (int)avgDamage,
+                diceExpression = $"{totalDice}d6 (base {numDice} + {bonusDice} bonus dice from {attackStat} skill)",
+                advantageDisadvantage = typeEffectiveness > 1.0 ? "Advantage (roll twice, take higher)" :
+                                      typeEffectiveness < 1.0 && typeEffectiveness > 0.0 ? "Disadvantage (roll twice, take lower)" :
+                                      "Normal rolls"
+            },
+            criticalHitDamage = new
+            {
+                minimum = (int)(minDamage * 1.5),
+                maximum = (int)(maxDamage * 1.5),
+                average = (int)(avgDamage * 1.5)
+            },
+            recommendation = hitChance >= 60 ? "Good chance to hit" : 
+                           hitChance >= 40 ? "Moderate chance to hit" : "Low chance to hit"
+        };
+
+        return JsonSerializer.Serialize(result, _jsonOptions);
+    }
+
+    #endregion
 }

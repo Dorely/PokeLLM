@@ -4,29 +4,83 @@ namespace PokeLLM.GameState.Models;
 
 public class GameStateModel
 {
-    [JsonPropertyName("trainer")]
-    public TrainerState Trainer { get; set; } = new();
+    [JsonPropertyName("sessionId")]
+    public string SessionId { get; set; } = Guid.NewGuid().ToString();
 
-    [JsonPropertyName("pokemonTeam")]
-    public PokemonTeam PokemonTeam { get; set; } = new();
+    [JsonPropertyName("sessionStartTime")]
+    public DateTime SessionStartTime { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("lastSaveTime")]
+    public DateTime LastSaveTime { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("player")]
+    public PlayerState Player { get; set; } = new();
+
+    [JsonPropertyName("environment")]
+    public EnvironmentState Environment { get; set; } = new();
 
     [JsonPropertyName("worldState")]
     public GameWorldState WorldState { get; set; } = new();
 
     [JsonPropertyName("battleState")]
-    public BattleState? BattleState { get; set; } = null;
+    public BattleState BattleState { get; set; } = null;
 }
 
-public class TrainerState
+public class PlayerState
 {
+    [JsonPropertyName("character")]
+    public Character Character { get; set; } = new();
+
+    [JsonPropertyName("experience")]
+    public int Experience { get; set; } = 0;
+
+    [JsonPropertyName("availableStatPoints")]
+    public int AvailableStatPoints { get; set; } = 0; // For character creation and future point allocation
+
+    [JsonPropertyName("characterCreationComplete")]
+    public bool CharacterCreationComplete { get; set; } = false; // Track if initial character creation is done
+
+    [JsonPropertyName("npcRelationships")]
+    public Dictionary<string, int> NpcRelationships { get; set; } = new();
+
+    [JsonPropertyName("factionRelationships")]
+    public Dictionary<string, int> FactionRelationships { get; set; } = new();
+
+    [JsonPropertyName("gymBadges")]
+    public List<string> GymBadges { get; set; } = new();
+
+    [JsonPropertyName("discoveredLore")]
+    public List<string> DiscoveredLore { get; set; } = new();
+
+    [JsonPropertyName("pokemonTeam")]
+    public PokemonTeam PokemonTeam { get; set; } = new();
+}
+
+public class EnvironmentState
+{
+    [JsonPropertyName("currentLocation")]
+    public string CurrentLocation { get; set; } = string.Empty;
+
+    [JsonPropertyName("region")]
+    public string Region { get; set; } = string.Empty;
+
+    [JsonPropertyName("timeOfDay")]
+    public TimeOfDay TimeOfDay { get; set; } = TimeOfDay.Morning;
+
+    [JsonPropertyName("weather")]
+    public Weather Weather { get; set; } = Weather.Clear;
+}
+
+public class Character
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
     [JsonPropertyName("level")]
     public int Level { get; set; } = 1;
-
-    [JsonPropertyName("experience")]
-    public int Experience { get; set; } = 0;
 
     [JsonPropertyName("stats")]
     public Stats Stats { get; set; } = new();
@@ -46,26 +100,44 @@ public class TrainerState
     [JsonPropertyName("globalNotoriety")]
     public int GlobalNotoriety { get; set; } = 0; // negative reputation
 
-    [JsonPropertyName("availableStatPoints")]
-    public int AvailableStatPoints { get; set; } = 0; // For character creation and future point allocation
+    [JsonPropertyName("faction")]
+    public string Faction { get; set; } = string.Empty;
 
-    [JsonPropertyName("characterCreationComplete")]
-    public bool CharacterCreationComplete { get; set; } = false; // Track if initial character creation is done
+    [JsonPropertyName("isTrainer")]
+    public bool IsTrainer { get; set; }
+
+    [JsonPropertyName("pokemonTeam")]
+    public PokemonTeam PokemonTeam { get; set; } = new();
 }
 
 public class Stats
 {
-    [JsonPropertyName("strength")]
-    public StatLevel Strength { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("power")]
+    public Stat Power { get; set; } = new();
 
-    [JsonPropertyName("agility")]
-    public StatLevel Agility { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("speed")]
+    public Stat Speed { get; set; } = new();
 
-    [JsonPropertyName("social")]
-    public StatLevel Social { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("mind")]
+    public Stat Mind { get; set; } = new();
 
-    [JsonPropertyName("intelligence")]
-    public StatLevel Intelligence { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("charm")]
+    public Stat Charm { get; set; } = new();
+
+    [JsonPropertyName("defense")]
+    public Stat Defense { get; set; } = new();
+
+    [JsonPropertyName("spirit")]
+    public Stat Spirit { get; set; } = new();
+}
+
+public class Stat
+{
+    [JsonPropertyName("type")]
+    public StatType Type { get; set; }
+
+    [JsonPropertyName("level")]
+    public StatLevel Level { get; set; } = StatLevel.Novice;
 }
 
 public class ActiveCondition
@@ -83,17 +155,38 @@ public class ActiveCondition
 public class PokemonTeam
 {
     [JsonPropertyName("activePokemon")]
-    public List<Pokemon> ActivePokemon { get; set; } = new();
+    public List<OwnedPokemon> ActivePokemon { get; set; } = new();
+
+    [JsonPropertyName("activeTeam")]
+    public List<OwnedPokemon> ActiveTeam => ActivePokemon; // Alias for compatibility
 
     [JsonPropertyName("boxedPokemon")]
-    public List<Pokemon> BoxedPokemon { get; set; } = new();
+    public List<OwnedPokemon> BoxedPokemon { get; set; } = new();
 
     [JsonPropertyName("maxPartySize")]
     public int MaxPartySize { get; set; } = 6;
 }
 
+public class OwnedPokemon
+{
+    [JsonPropertyName("pokemon")]
+    public Pokemon Pokemon { get; set; } = new();
+
+    [JsonPropertyName("experience")]
+    public int Experience { get; set; } = 0;
+
+    [JsonPropertyName("caughtLocation")]
+    public string CaughtLocation { get; set; } = string.Empty;
+
+    [JsonPropertyName("friendship")]
+    public int Friendship { get; set; } = 50; // 0-100 scale
+}
+
 public class Pokemon
 {
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
@@ -102,9 +195,6 @@ public class Pokemon
 
     [JsonPropertyName("level")]
     public int Level { get; set; } = 1;
-
-    [JsonPropertyName("experience")]
-    public int Experience { get; set; } = 0;
 
     [JsonPropertyName("knownMoves")]
     public HashSet<string> KnownMoves { get; set; } = new();
@@ -127,11 +217,11 @@ public class Pokemon
     [JsonPropertyName("ability")]
     public string Ability { get; set; }
 
-    [JsonPropertyName("caughtLocation")]
-    public string CaughtLocation { get; set; } = string.Empty;
+    [JsonPropertyName("statusEffects")]
+    public List<StatusEffect> StatusEffects { get; set; } = new();
 
-    [JsonPropertyName("friendship")]
-    public int Friendship { get; set; } = 50; // 0-100 scale
+    [JsonPropertyName("faction")]
+    public string Faction { get; set; } = string.Empty;
 }
 
 public class GameWorldState
@@ -141,6 +231,12 @@ public class GameWorldState
 
     [JsonPropertyName("currentRegion")]
     public string CurrentRegion { get; set; }
+
+    [JsonPropertyName("activeNpcPokemon")]
+    public List<Pokemon> ActiveNpcPokemon { get; set; } = new();
+
+    [JsonPropertyName("activeNpcs")]
+    public List<Character> ActiveNpcs { get; set; } = new();
 
     [JsonPropertyName("visitedLocations")]
     public HashSet<string> VisitedLocations { get; set; } = new();
@@ -185,7 +281,10 @@ public class GymBadge
 public class BattleState
 {
     [JsonPropertyName("isActive")]
-    public bool IsActive { get; set; } = false;
+    public bool IsActive { get; set; } = false; 
+
+    [JsonPropertyName("victoryCondition")]
+    public VictoryCondition VictoryCondition { get; set; }
 
     [JsonPropertyName("battleType")]
     public BattleType BattleType { get; set; } = BattleType.Wild;
@@ -214,32 +313,23 @@ public class BattleState
     [JsonPropertyName("weather")]
     public BattleWeather Weather { get; set; } = new();
 
-    [JsonPropertyName("victoryConditions")]
-    public List<VictoryCondition> VictoryConditions { get; set; } = new();
-
     [JsonPropertyName("battleLog")]
     public List<BattleLogEntry> BattleLog { get; set; } = new();
 }
 
 public class BattleParticipant
 {
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
     [JsonPropertyName("type")]
     public ParticipantType Type { get; set; } = ParticipantType.PlayerPokemon;
 
-    [JsonPropertyName("faction")]
-    public string Faction { get; set; } = string.Empty;
+    [JsonPropertyName("temporaryStats")]
+    public Dictionary<string, int> TemporaryStats { get; set; } = new();
 
     [JsonPropertyName("pokemon")]
-    public BattlePokemon? Pokemon { get; set; }
+    public Pokemon Pokemon { get; set; }
 
-    [JsonPropertyName("trainer")]
-    public BattleTrainer? Trainer { get; set; }
+    [JsonPropertyName("character")]
+    public Character Character { get; set; }
 
     [JsonPropertyName("position")]
     public BattlePosition Position { get; set; } = new();
@@ -255,51 +345,9 @@ public class BattleParticipant
 
     [JsonPropertyName("relationships")]
     public Dictionary<string, RelationshipType> Relationships { get; set; } = new();
-}
-
-public class BattlePokemon
-{
-    [JsonPropertyName("pokemonData")]
-    public Pokemon PokemonData { get; set; } = new();
-
-    [JsonPropertyName("currentVigor")]
-    public int CurrentVigor { get; set; }
-
-    [JsonPropertyName("maxVigor")]
-    public int MaxVigor { get; set; }
-
-    [JsonPropertyName("statusEffects")]
-    public List<StatusEffect> StatusEffects { get; set; } = new();
-
-    [JsonPropertyName("temporaryStats")]
-    public Dictionary<string, int> TemporaryStats { get; set; } = new();
-
-    [JsonPropertyName("usedMoves")]
-    public List<string> UsedMoves { get; set; } = new();
 
     [JsonPropertyName("lastAction")]
-    public BattleAction? LastAction { get; set; }
-}
-
-public class BattleTrainer
-{
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
-    [JsonPropertyName("stats")]
-    public Stats Stats { get; set; } = new();
-
-    [JsonPropertyName("conditions")]
-    public List<ActiveCondition> Conditions { get; set; } = new();
-
-    [JsonPropertyName("remainingPokemon")]
-    public List<Pokemon> RemainingPokemon { get; set; } = new();
-
-    [JsonPropertyName("canEscape")]
-    public bool CanEscape { get; set; } = true;
-
-    [JsonPropertyName("hasActed")]
-    public bool HasActed { get; set; } = false;
+    public BattleAction LastAction { get; set; }
 }
 
 public class BattlePosition
@@ -415,8 +463,8 @@ public class Battlefield
     [JsonPropertyName("height")]
     public int Height { get; set; } = 10;
 
-    [JsonPropertyName("terrainTypes")]
-    public Dictionary<string, TerrainTile> TerrainTypes { get; set; } = new();
+    [JsonPropertyName("terrainTiles")]
+    public Dictionary<string, TerrainTile> TerrainTiles { get; set; } = new();
 
     [JsonPropertyName("hazards")]
     public List<BattleHazard> Hazards { get; set; } = new();
@@ -484,9 +532,6 @@ public class VictoryCondition
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 
-    [JsonPropertyName("faction")]
-    public string Faction { get; set; } = string.Empty;
-
     [JsonPropertyName("parameters")]
     public Dictionary<string, object> Parameters { get; set; } = new();
 }
@@ -510,18 +555,17 @@ public class BattleLogEntry
 
     [JsonPropertyName("result")]
     public string Result { get; set; } = string.Empty;
-
-    [JsonPropertyName("timestamp")]
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
 
 // Enums
 public enum StatType
 {
-    Strength,
-    Agility,
-    Social,
-    Intelligence
+    Power,
+    Speed,
+    Mind,
+    Charm,
+    Defense,
+    Spirit
 }
 
 public enum StatLevel
@@ -553,10 +597,26 @@ public enum TrainerCondition
 
 public enum TimeOfDay
 {
+    Dawn,
     Morning,
+    Day,
     Afternoon,
-    Evening,
+    Dusk,
     Night
+}
+
+public enum Weather
+{
+    Clear,
+    Cloudy,
+    Rain,
+    Storm,
+    Thunderstorm,
+    Snow,
+    Fog,
+    Sandstorm,
+    Sunny,
+    Overcast
 }
 
 public enum BattleType
@@ -588,6 +648,8 @@ public enum ParticipantType
     PlayerTrainer,
     EnemyPokemon,
     EnemyTrainer,
+    AlliedPokemon,
+    AlliedTrainer,
     NeutralPokemon,
     Environment
 }

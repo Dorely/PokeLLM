@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PokeLLM.GameState.Interfaces;
+using PokeLLM.GameState.Models;
 
 namespace PokeLLM.GameState;
 
@@ -37,35 +39,50 @@ public class GameStateRepository : IGameStateRepository
     {
         var gameState = new GameStateModel
         {
-            Trainer = new TrainerState
+            Player = new PlayerState
             {
-                Name = trainerName,
-                Level = 1,
-                Experience = 0,
-                Money = 1000, // Fixed starting money instead of archetype-based
-                Stats = new Stats(), // All start at Novice (0)
-                Conditions = new List<ActiveCondition>(),
-                Inventory = new Dictionary<string, int>
+                Character = new Character
                 {
-                    // Basic starting inventory
-                    ["Pokeball"] = 5,
-                    ["Potion"] = 2
+                    Id = Guid.NewGuid().ToString(),
+                    Name = trainerName,
+                    Level = 1,
+                    Money = 1000, // Starting money
+                    Stats = new Stats
+                    {
+                        Power = new Stat { Type = StatType.Power, Level = StatLevel.Novice },
+                        Speed = new Stat { Type = StatType.Speed, Level = StatLevel.Novice },
+                        Mind = new Stat { Type = StatType.Mind, Level = StatLevel.Novice },
+                        Charm = new Stat { Type = StatType.Charm, Level = StatLevel.Novice },
+                        Defense = new Stat { Type = StatType.Defense, Level = StatLevel.Novice },
+                        Spirit = new Stat { Type = StatType.Spirit, Level = StatLevel.Novice }
+                    },
+                    Conditions = new List<ActiveCondition>(),
+                    Inventory = new Dictionary<string, int>
+                    {
+                        ["Pokeball"] = 5,
+                        ["Potion"] = 2
+                    },
+                    GlobalRenown = 0,
+                    GlobalNotoriety = 0,
+                    Faction = "Player",
+                    IsTrainer = true,
+                    PokemonTeam = new PokemonTeam
+                    {
+                        ActivePokemon = new List<OwnedPokemon>(),
+                        BoxedPokemon = new List<OwnedPokemon>(),
+                        MaxPartySize = 6
+                    }
                 },
-                GlobalRenown = 0,
-                GlobalNotoriety = 0,
+                Experience = 0,
                 AvailableStatPoints = 1, // Start with 1 free point to allocate
                 CharacterCreationComplete = false // Character creation not yet complete
-            },
-            PokemonTeam = new PokemonTeam
-            {
-                ActivePokemon = new List<Pokemon>(),
-                BoxedPokemon = new List<Pokemon>(),
-                MaxPartySize = 6
             },
             WorldState = new GameWorldState
             {
                 CurrentLocation = "unknown",
                 CurrentRegion = "unknown",
+                ActiveNpcPokemon = new List<Pokemon>(),
+                ActiveNpcs = new List<Character>(),
                 VisitedLocations = new HashSet<string>(),
                 GymBadges = new List<GymBadge>(),
                 WorldFlags = new Dictionary<string, object>(),
@@ -74,7 +91,8 @@ public class GameStateRepository : IGameStateRepository
                 DiscoveredLore = new HashSet<string>(),
                 TimeOfDay = TimeOfDay.Morning,
                 WeatherCondition = "Clear"
-            }
+            },
+            BattleState = null // No active battle initially
         };
 
         await SaveStateAsync(gameState);
@@ -96,7 +114,7 @@ public class GameStateRepository : IGameStateRepository
         await File.WriteAllTextAsync(_currentStateFile, json);
     }
 
-    public async Task<GameStateModel> LoadLatestStateAsync()
+    public async Task<GameStateModel?> LoadLatestStateAsync()
     {
         if (!File.Exists(_currentStateFile))
             return null;
@@ -115,7 +133,7 @@ public class GameStateRepository : IGameStateRepository
         }
     }
 
-    public async Task<GameStateModel> LoadStateByIdAsync(string stateId)
+    public async Task<GameStateModel?> LoadStateByIdAsync(string stateId)
     {
         var backupFiles = Directory.GetFiles(_backupDirectory, "*.json")
             .OrderByDescending(f => File.GetCreationTime(f));
@@ -270,12 +288,12 @@ public class GameStateRepository : IGameStateRepository
     }
 
     // Helper methods for common operations
-    public async Task UpdateTrainerAsync(Action<TrainerState> updateAction)
+    public async Task UpdatePlayerAsync(Action<PlayerState> updateAction)
     {
         var state = await LoadLatestStateAsync();
         if (state != null)
         {
-            updateAction(state.Trainer);
+            updateAction(state.Player);
             await SaveStateAsync(state);
         }
     }
@@ -290,18 +308,18 @@ public class GameStateRepository : IGameStateRepository
         }
     }
 
-    public async Task AddPokemonToTeamAsync(Pokemon pokemon)
+    public async Task AddPokemonToTeamAsync(OwnedPokemon pokemon)
     {
         var state = await LoadLatestStateAsync();
         if (state != null)
         {
-            if (state.PokemonTeam.ActivePokemon.Count < state.PokemonTeam.MaxPartySize)
+            if (state.Player.Character.PokemonTeam.ActivePokemon.Count < state.Player.Character.PokemonTeam.MaxPartySize)
             {
-                state.PokemonTeam.ActivePokemon.Add(pokemon);
+                state.Player.Character.PokemonTeam.ActivePokemon.Add(pokemon);
             }
             else
             {
-                state.PokemonTeam.BoxedPokemon.Add(pokemon);
+                state.Player.Character.PokemonTeam.BoxedPokemon.Add(pokemon);
             }
             await SaveStateAsync(state);
         }
