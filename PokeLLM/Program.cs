@@ -33,7 +33,7 @@ Console.WriteLine("Welcome to PokeLLM! Type 'exit' to quit.");
 Console.WriteLine("Enter your message. Finish with a blank line to send.\n");
 
 //start the prompt and get the game flowing before initiating player input
-var firstResponse = llm.GetCompletionStreamingAsync("Session Start", history);
+var firstResponse = llm.GetCompletionStreamingAsync("Session Start - Begin character creation", history);
 Console.WriteLine($"LLM: ");
 string fullFirstResponse = "";
 await foreach (var chunk in firstResponse)
