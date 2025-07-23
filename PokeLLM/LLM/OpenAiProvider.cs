@@ -46,20 +46,8 @@ public class OpenAiProvider : ILLMProvider
     {
         // Core plugins
         _kernel.Plugins.AddFromObject(new VectorStorePlugin(vectorStoreService));
-        _kernel.Plugins.AddFromObject(new GameStatePlugin(gameStateRepository));
-        
-        // Specialized plugins for different game areas
-        _kernel.Plugins.AddFromObject(new CharacterManagementPlugin(gameStateRepository));
-        _kernel.Plugins.AddFromObject(new PokemonManagementPlugin(gameStateRepository));
-        _kernel.Plugins.AddFromObject(new WorldManagementPlugin(gameStateRepository));
-        _kernel.Plugins.AddFromObject(new DiceAndSkillPlugin(gameStateRepository));
-        _kernel.Plugins.AddFromObject(new BattleCalculationPlugin());
-        
-        // Legacy/remaining utility plugin
         _kernel.Plugins.AddFromObject(new GameEnginePlugin(gameStateRepository));
-        
-        // Battle system plugin
-        _kernel.Plugins.AddFromObject(new BattleStatePlugin(gameStateRepository));
+        _kernel.Plugins.AddFromObject(new DicePlugin(gameStateRepository));
     }
 
     public IEmbeddingGenerator GetEmbeddingGenerator()

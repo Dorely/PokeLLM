@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using PokeLLM.GameState.Models;
+﻿namespace PokeLLM.Game.Helpers;
 
-namespace PokeLLM.Game.Helpers;
-
-public static class BattleCalcHelper
+public static class PokemonKnowledgeHelper
 {
     public static double EffectivenessChart(string attackType, string defenseType)
     {
@@ -190,12 +183,9 @@ public static class BattleCalcHelper
     /// </summary>
     public static List<string> GetAllTypes()
     {
-        return new List<string>
-        {
-            "Normal", "Fire", "Water", "Electric", "Grass", "Ice",
-            "Fighting", "Poison", "Ground", "Flying", "Psychic", "Bug",
-            "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy"
-        };
+        var list = new List<string>(Enum.GetNames(typeof(PokemonType)));
+
+        return list;
     }
 
     /// <summary>
@@ -273,7 +263,7 @@ public static class BattleCalcHelper
         string moveType, int numDice, int hitDiceRoll, bool isSpecialMove, Random random)
     {
         // Get attacker's relevant stat for calculating bonus dice
-        var attackStat = isSpecialMove ? attacker.Stats.Mind.Level : attacker.Stats.Power.Level;
+        var attackStat = isSpecialMove ? attacker.Stats.Mind : attacker.Stats.Power;
         var attackStatValue = (int)attackStat;
         
         // Calculate bonus dice: +1 die for every 2 skill levels above Novice (0)
@@ -284,7 +274,7 @@ public static class BattleCalcHelper
         int baseDamage = 0;
         
         // Apply type effectiveness for advantage/disadvantage on dice rolls only
-        var typeEffectiveness = CalculateDualTypeEffectiveness(moveType, defender.Type1, defender.Type2);
+        var typeEffectiveness = CalculateDualTypeEffectiveness(moveType, defender.Type1.ToString(), defender.Type2.ToString());
         
         // Roll damage dice with advantage/disadvantage based on type effectiveness
         if (typeEffectiveness > 1.0)
@@ -351,22 +341,9 @@ public static class BattleCalcHelper
     /// <param name="pokemon">Pokemon to calculate initiative for</param>
     /// <param name="random">Random number generator</param>
     /// <returns>Initiative value for turn order</returns>
-    public static int CalculateInitiative(Pokemon pokemon, Random random)
+    public static int CalculateInitiative(StatLevel speedLevel, Random random)
     {
-        int speedModifier = (int)pokemon.Stats.Speed.Level;
-        int roll = random.Next(1, 21); // 1d20
-        return roll + speedModifier;
-    }
-
-    /// <summary>
-    /// Calculate initiative for a trainer character using Speed stat + d20 roll
-    /// </summary>
-    /// <param name="character">Character to calculate initiative for</param>
-    /// <param name="random">Random number generator</param>
-    /// <returns>Initiative value for turn order</returns>
-    public static int CalculateTrainerInitiative(Character character, Random random)
-    {
-        int speedModifier = (int)character.Stats.Speed.Level;
+        int speedModifier = (int)speedLevel;
         int roll = random.Next(1, 21); // 1d20
         return roll + speedModifier;
     }

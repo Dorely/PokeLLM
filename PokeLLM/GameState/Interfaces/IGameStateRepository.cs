@@ -4,20 +4,8 @@ namespace PokeLLM.GameState.Interfaces;
 
 public interface IGameStateRepository
 {
-    Task<GameStateModel> CreateNewGameStateAsync(string trainerName = "Trainer");
+    Task<GameStateModel> CreateNewGameStateAsync(string playerName);
     Task SaveStateAsync(GameStateModel gameState);
-    Task<GameStateModel?> LoadLatestStateAsync();
-    Task<GameStateModel?> LoadStateByIdAsync(string stateId);
-    Task<List<GameStateModel>> GetAllStatesAsync(int limit = 50);
-    Task DeleteStateAsync(string stateId);
-    Task UpdatePlayerAsync(Action<PlayerState> updateAction);
-    Task UpdateWorldStateAsync(Action<GameWorldState> updateAction);
-    Task AddPokemonToTeamAsync(OwnedPokemon pokemon);
+    Task<GameStateModel> LoadLatestStateAsync();
     Task<bool> HasGameStateAsync();
-    
-    // Battle State Management
-    Task UpdateBattleStateAsync(Action<BattleState> updateAction);
-    Task<bool> HasActiveBattleAsync();
-    Task StartBattleAsync(BattleState battleState);
-    Task EndBattleAsync();
 }
