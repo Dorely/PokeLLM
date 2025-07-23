@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace PokeLLM.GameState.Models;
@@ -12,6 +13,9 @@ public class GameStateModel
 
     [JsonPropertyName("lastSaveTime")]
     public DateTime LastSaveTime { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("currentPhase")]
+    public GamePhase CurrentPhase { get; set; } = GamePhase.GameCreation;
 
     [JsonPropertyName("player")]
     public PlayerState Player { get; set; } = new();
@@ -29,12 +33,15 @@ public class GameStateModel
     public Weather? Weather { get; set; }
 
     [JsonPropertyName("worldNpcs")]
+    [Description("All generated NPCs")]
     public List<Character> WorldNpcs { get; set; } = new();
 
     [JsonPropertyName("worldPokemon")]
+    [Description("All generated pokemon, wild or otherwise that are not on the players team")]
     public List<Pokemon> WorldPokemon { get; set; } = new();
 
     [JsonPropertyName("adventureSummary")]
+    [Description("A continuously updated summary of the adventure so far.")]
     public string AdventureSummary { get; set; } = string.Empty;
 }
 
@@ -47,18 +54,26 @@ public class PlayerState
     public int Experience { get; set; } = 0;
 
     [JsonPropertyName("availableStatPoints")]
+    [Description("1 point awarded per level up")]
     public int AvailableStatPoints { get; set; } = 1; // For character creation and future point allocation
 
     [JsonPropertyName("characterCreationComplete")]
     public bool CharacterCreationComplete { get; set; } = false; // Track if initial character creation is done
 
+    [JsonPropertyName("teamPokemon")]
+    [Description("caught pokemon actively on the team. Limit 6")]
+    public List<OwnedPokemon> TeamPokemon { get; set; } = new();
+
     [JsonPropertyName("boxedPokemon")]
+    [Description("caught pokemon not actively on the team.")]
     public List<OwnedPokemon> BoxedPokemon { get; set; } = new();
 
     [JsonPropertyName("playerRelationships")]
+    [Description("list of player's individual relationships. scale is -100 to 100  where 0 is unknown by them, -100 is hated enemy, and 100 would be best friend")]
     public Dictionary<string, int> PlayerNpcRelationships { get; set; } = new();
 
     [JsonPropertyName("factionRelationships")]
+    [Description("list of player's factions reputations. scale is -100 to 100  where 0 is unknown by them, -100 is hated enemy, and 100 would be leader of the faction")]
     public Dictionary<string, int> PlayerFactionRelationships { get; set; } = new();
 
     [JsonPropertyName("gymBadges")]
@@ -89,19 +104,23 @@ public class Character
     public int Money { get; set; } = 0;
 
     [JsonPropertyName("globalRenown")]
+    [Description("0-100 scale of how famous this entity is in a positive way. Points awarded when good or heroic acts are witnessed.")]
     public int GlobalRenown { get; set; } = 0; // positive reputation
 
     [JsonPropertyName("globalNotoriety")]
+    [Description("0-100 scale of how famous this entity is in a negative way. Points awarded when evil or illegal acts are witnessed.")]
     public int GlobalNotoriety { get; set; } = 0; // negative reputation
 
     [JsonPropertyName("factions")]
+    [Description("List of the names of factions this entity belongs to.")]
     public List<string> Factions { get; set; } = new();
 
     [JsonPropertyName("isTrainer")]
     public bool IsTrainer { get; set; } = false;
 
     [JsonPropertyName("pokemonTeam")]
-    public List<Pokemon> PokemonTeam { get; set; } = new();
+    [Description("List of the Ids of the pokemon this character owns. Pokemon data stored in WorldPokemon collection")]
+    public List<string> PokemonOwned { get; set; } = new();
 }
 
 public class Stats
@@ -140,6 +159,7 @@ public class OwnedPokemon
     public string CaughtLocation { get; set; } = string.Empty;
 
     [JsonPropertyName("friendship")]
+    [Description("0 - 100 scale. 0 Is hated, 100 is loved.")]
     public int Friendship { get; set; } = 50; // 0-100 scale
 }
 
@@ -182,9 +202,11 @@ public class Pokemon
     public List<string> StatusEffects { get; set; } = new();
 
     [JsonPropertyName("factions")]
+    [Description("List of the names of factions this entity belongs to.")]
     public List<string> Factions { get; set; } = new();
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum StatLevel
 {
     Hopeless = -2,
@@ -199,6 +221,7 @@ public enum StatLevel
     Legendary = 7
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PokemonType
 {
     Normal,
@@ -221,6 +244,7 @@ public enum PokemonType
     Fairy
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum TimeOfDay
 {
     Dawn,
@@ -231,6 +255,7 @@ public enum TimeOfDay
     Night
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum Weather
 {
     Clear,
@@ -243,4 +268,15 @@ public enum Weather
     Sandstorm,
     Sunny,
     Overcast
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum GamePhase
+{
+    GameCreation,
+    CharacterCreation,
+    WorldGeneration,
+    Exploration,
+    Combat,
+    LevelUp
 }

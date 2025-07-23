@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Embeddings;
 using PokeLLM.Game.Plugins;
+using PokeLLM.GameState.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -15,14 +16,21 @@ namespace PokeLLM.Game.LLM;
 public class OpenAiProvider : ILLMProvider
 {
     private readonly Kernel _kernel;
-    private readonly IChatCompletionService _chatService;
-    private string? _systemPrompt;
+    private readonly IPhaseManager _phaseManager;
+    private readonly IGameStateRepository _gameStateRepository;
+    private readonly IVectorStoreService _vectorStoreService;
+    private string _systemPrompt;
+    private GamePhase? _currentPhase;
 
-    public OpenAiProvider(IOptions<ModelConfig> options)
+    public OpenAiProvider(IOptions<ModelConfig> options, IPhaseManager phaseManager, IGameStateRepository gameStateRepository, IVectorStoreService vectorStoreService)
     {
         var apiKey = options.Value.ApiKey;
         var modelId = options.Value.ModelId;
         var embeddingModelId = options.Value.EmbeddingModelId;
+
+        _phaseManager = phaseManager;
+        _gameStateRepository = gameStateRepository;
+        _vectorStoreService = vectorStoreService;
 
         IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.AddOpenAIChatCompletion(
@@ -38,16 +46,31 @@ public class OpenAiProvider : ILLMProvider
 #pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
         _kernel = kernelBuilder.Build();
-
         _chatService = _kernel.GetRequiredService<IChatCompletionService>();
     }
 
     public void RegisterPlugins(IVectorStoreService vectorStoreService, IGameStateRepository gameStateRepository)
     {
-        // Core plugins
-        _kernel.Plugins.AddFromObject(new VectorStorePlugin(vectorStoreService));
-        _kernel.Plugins.AddFromObject(new GameEnginePlugin(gameStateRepository));
-        _kernel.Plugins.AddFromObject(new DicePlugin(gameStateRepository));
+        // Phase-specific plugin registration is now handled by RefreshPhaseAsync
+        // This method is kept for compatibility but delegates to the phase manager
+    }
+
+    public async Task RefreshPhaseAsync()
+    {
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+        var newPhase = gameState?.CurrentPhase ?? GamePhase.GameCreation;
+        
+        // Only refresh if phase has changed or if this is the first time
+        if (_currentPhase != newPhase)
+        {
+            _currentPhase = newPhase;
+            _systemPrompt = null; // Force reload of system prompt
+            
+            // Register phase-specific plugins
+            _phaseManager.RegisterPluginsForPhase(_kernel, newPhase, _vectorStoreService, _gameStateRepository);
+            
+            Console.WriteLine($"Phase refreshed to: {newPhase}");
+        }
     }
 
     public IEmbeddingGenerator GetEmbeddingGenerator()
@@ -58,6 +81,7 @@ public class OpenAiProvider : ILLMProvider
 
     public async Task<string> GetCompletionAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
     {
+        await RefreshPhaseAsync(); // Check for phase changes before processing
         await AddSystemPromptIfNewConversationAsync(history);
         history.AddUserMessage(prompt);
         var executionSettings = new OpenAIPromptExecutionSettings
@@ -77,6 +101,7 @@ public class OpenAiProvider : ILLMProvider
 
     public async IAsyncEnumerable<string> GetCompletionStreamingAsync(string prompt, ChatHistory history, CancellationToken cancellationToken = default)
     {
+        await RefreshPhaseAsync(); // Check for phase changes before processing
         await AddSystemPromptIfNewConversationAsync(history);
         history.AddUserMessage(prompt);
         var executionSettings = new OpenAIPromptExecutionSettings
@@ -117,8 +142,16 @@ public class OpenAiProvider : ILLMProvider
     {
         try
         {
-            var promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "SystemPrompt.md");
-            _systemPrompt = await File.ReadAllTextAsync(promptPath);
+            if (_currentPhase.HasValue)
+            {
+                _systemPrompt = await _phaseManager.GetSystemPromptForPhaseAsync(_currentPhase.Value);
+            }
+            else
+            {
+                // Fallback to default if no phase is set yet
+                var promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "GameCreationPhase.md");
+                _systemPrompt = await File.ReadAllTextAsync(promptPath);
+            }
         }
         catch (Exception ex)
         {
