@@ -704,6 +704,20 @@ public class GameEnginePlugin
 
     // --- Readonly Functions ---
 
+    [KernelFunction("get_adventure_summary")]
+    [Description("Get the current adventure summary")]
+    public async Task<string> GetAdventureSummary()
+    {
+        var gameState = await _repository.LoadLatestStateAsync();
+        if (gameState == null)
+            return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+        return JsonSerializer.Serialize(new { 
+            adventureSummary = gameState.AdventureSummary,
+            lastUpdated = gameState.LastSaveTime 
+        }, _jsonOptions);
+    }
+
     [KernelFunction("get_player_state")]
     public async Task<string> GetPlayerState()
     {

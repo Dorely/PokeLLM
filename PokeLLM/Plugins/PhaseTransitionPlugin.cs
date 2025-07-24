@@ -2,7 +2,6 @@ using Microsoft.SemanticKernel;
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Game.Plugins;
 
@@ -28,7 +27,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_character_creation")]
     [Description("Transition from Game Creation to Character Creation phase")]
-    public async Task<string> TransitionToCharacterCreation()
+    public async Task<string> TransitionToCharacterCreation([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
         try
         {
@@ -41,6 +40,7 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.CharacterCreation;
             gameState.LastSaveTime = DateTime.UtcNow;
+            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -57,7 +57,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_world_generation")]
     [Description("Transition from Character Creation to World Generation phase")]
-    public async Task<string> TransitionToWorldGeneration()
+    public async Task<string> TransitionToWorldGeneration([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
         try
         {
@@ -73,6 +73,7 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.WorldGeneration;
             gameState.LastSaveTime = DateTime.UtcNow;
+            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -89,7 +90,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_exploration")]
     [Description("Transition to Exploration phase from World Generation or other phases")]
-    public async Task<string> TransitionToExploration()
+    public async Task<string> TransitionToExploration([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
         try
         {
@@ -104,6 +105,7 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.Exploration;
             gameState.LastSaveTime = DateTime.UtcNow;
+            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -120,7 +122,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_combat")]
     [Description("Transition to Combat phase from Exploration")]
-    public async Task<string> TransitionToCombat()
+    public async Task<string> TransitionToCombat([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
         try
         {
@@ -133,6 +135,7 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.Combat;
             gameState.LastSaveTime = DateTime.UtcNow;
+            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -149,7 +152,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_level_up")]
     [Description("Transition to Level Up phase from Combat or Exploration")]
-    public async Task<string> TransitionToLevelUp()
+    public async Task<string> TransitionToLevelUp([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
         try
         {
@@ -163,6 +166,7 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.LevelUp;
             gameState.LastSaveTime = DateTime.UtcNow;
+            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -174,28 +178,6 @@ public class PhaseTransitionPlugin
         catch (Exception ex)
         {
             return JsonSerializer.Serialize(new { error = $"Failed to transition phase: {ex.Message}" }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("get_current_phase")]
-    [Description("Get the current game phase")]
-    public async Task<string> GetCurrentPhase()
-    {
-        try
-        {
-            var gameState = await _repository.LoadLatestStateAsync();
-            if (gameState == null)
-                return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
-
-            return JsonSerializer.Serialize(new { 
-                currentPhase = gameState.CurrentPhase,
-                sessionId = gameState.SessionId,
-                lastSaveTime = gameState.LastSaveTime 
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = $"Failed to get current phase: {ex.Message}" }, _jsonOptions);
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace PokeLLM.Game.Plugins;
 
@@ -29,19 +30,18 @@ public class CharacterCreationPlugin
         };
     }
 
-    // --- Game Initialization ---
-
-    [KernelFunction("create_new_game")]
-    public async Task<string> CreateNewGame(string playerName)
+    [KernelFunction("set_player_name")]
+    public async Task<string> SetPlayerName(string playerName)
     {
         try
         {
-            var gameState = await _repository.CreateNewGameStateAsync(playerName);
-            return JsonSerializer.Serialize(new { success = true, message = $"New game created for {playerName}" }, _jsonOptions);
+            var gameState = await _repository.LoadLatestStateAsync();
+            gameState.Player.Character.Name = playerName;
+            return JsonSerializer.Serialize(new { success = true, message = $"Player name set: {playerName}" }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = $"Failed to create new game: {ex.Message}" }, _jsonOptions);
+            return JsonSerializer.Serialize(new { error = $"Failed to update player name: {ex.Message}" }, _jsonOptions);
         }
     }
 
@@ -64,6 +64,30 @@ public class CharacterCreationPlugin
         catch (Exception ex)
         {
             return JsonSerializer.Serialize(new { error = $"Failed to complete character creation: {ex.Message}" }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("get_current_stats")]
+    public async Task<string> GetCurrentStats()
+    {
+        try
+        {
+            var gameState = await _repository.LoadLatestStateAsync();
+            if (gameState == null)
+                return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+            var stats = gameState.Player.Character.Stats;
+
+            return JsonSerializer.Serialize(new
+            {
+                success = true,
+                stats,
+                remainingPoints = gameState.Player.AvailableStatPoints
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new { error = $"Failed to read stats: {ex.Message}" }, _jsonOptions);
         }
     }
 
@@ -122,6 +146,67 @@ public class CharacterCreationPlugin
         catch (Exception ex)
         {
             return JsonSerializer.Serialize(new { error = $"Failed to apply level up: {ex.Message}" }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("reduce_stat_point")]
+    [Description("Reduce a specified stat by one level to gain an additional stat point. Can only be used during character creation and cannot reduce below Hopeless (-2).")]
+    public async Task<string> ReduceStatPoint([Description("The stat to reduce: Power, Speed, Mind, Charm, Defense, or Spirit")] string statToDecrease)
+    {
+        try
+        {
+            var gameState = await _repository.LoadLatestStateAsync();
+            if (gameState == null)
+                return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
+
+            // Check if character creation is still in progress
+            if (gameState.Player.CharacterCreationComplete)
+                return JsonSerializer.Serialize(new { error = "Stat reduction can only be done during character creation" }, _jsonOptions);
+
+            var stats = gameState.Player.Character.Stats;
+            var statName = statToDecrease.ToLower();
+
+            var currentLevel = statName switch
+            {
+                "power" => stats.Power,
+                "speed" => stats.Speed,
+                "mind" => stats.Mind,
+                "charm" => stats.Charm,
+                "defense" => stats.Defense,
+                "spirit" => stats.Spirit,
+                _ => throw new ArgumentException($"Invalid stat name: {statToDecrease}")
+            };
+
+            // Check if stat is already at minimum level (Hopeless = -2)
+            if (currentLevel <= StatLevel.Hopeless)
+                return JsonSerializer.Serialize(new { error = "Stat is already at minimum level (Hopeless)" }, _jsonOptions);
+
+            var newLevel = (StatLevel)((int)currentLevel - 1);
+
+            switch (statName)
+            {
+                case "power": stats.Power = newLevel; break;
+                case "speed": stats.Speed = newLevel; break;
+                case "mind": stats.Mind = newLevel; break;
+                case "charm": stats.Charm = newLevel; break;
+                case "defense": stats.Defense = newLevel; break;
+                case "spirit": stats.Spirit = newLevel; break;
+            }
+
+            gameState.Player.AvailableStatPoints++;
+            gameState.LastSaveTime = DateTime.UtcNow;
+            await _repository.SaveStateAsync(gameState);
+
+            return JsonSerializer.Serialize(new
+            {
+                success = true,
+                message = $"{statToDecrease} reduced to {newLevel}",
+                remainingPoints = gameState.Player.AvailableStatPoints
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new { error = $"Failed to reduce stat: {ex.Message}" }, _jsonOptions);
         }
     }
 }

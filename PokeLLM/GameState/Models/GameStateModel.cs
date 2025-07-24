@@ -17,6 +17,10 @@ public class GameStateModel
     [JsonPropertyName("currentPhase")]
     public GamePhase CurrentPhase { get; set; } = GamePhase.GameCreation;
 
+    [JsonPropertyName("phaseChangeSummary")]
+    [Description("A summary what has taken place and why the phase is changing")]
+    public string PhaseChangeSummary { get; set; } = string.Empty;
+
     [JsonPropertyName("player")]
     public PlayerState Player { get; set; } = new();
 
