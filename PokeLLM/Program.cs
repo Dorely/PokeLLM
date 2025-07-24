@@ -1,21 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
-var config = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddUserSecrets<Program>()
-    .Build();
-
-// Set up DI
+// Create configuration and set up DI using ServiceConfiguration
+var config = ServiceConfiguration.CreateConfiguration();
 var services = new ServiceCollection();
-services.AddSingleton<IConfiguration>(config);
-services.Configure<ModelConfig>(config.GetSection("OpenAi"));
-services.Configure<QdrantConfig>(config.GetSection("Qdrant"));
-
-services.AddTransient<ILLMProvider, OpenAiProvider>();
-services.AddTransient<IVectorStoreService, VectorStoreService>();
-services.AddSingleton<IGameStateRepository, GameStateRepository>();
+ServiceConfiguration.ConfigureServices(services, config);
 
 var provider = services.BuildServiceProvider();
 

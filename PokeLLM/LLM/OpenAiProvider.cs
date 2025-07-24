@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.Diagnostics;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace PokeLLM.Game.LLM;
 
@@ -13,6 +14,7 @@ public class OpenAiProvider : ILLMProvider
     private readonly Kernel _kernel;
     private readonly IGameStateRepository _gameStateRepository;
     private readonly IVectorStoreService _vectorStoreService;
+    private readonly IServiceProvider _serviceProvider;
     private GamePhase _currentPhase;
     private Dictionary<GamePhase, ChatHistory> _histories = new();
     
@@ -21,7 +23,7 @@ public class OpenAiProvider : ILLMProvider
     private const int MESSAGES_TO_KEEP_RECENT = 6; // Keep most recent messages after summarization
     private const int MAX_CONTEXT_TOKENS = 8000; // Rough token limit for context
 
-    public OpenAiProvider(IOptions<ModelConfig> options, IGameStateRepository gameStateRepository, IVectorStoreService vectorStoreService)
+    public OpenAiProvider(IOptions<ModelConfig> options, IGameStateRepository gameStateRepository, IVectorStoreService vectorStoreService, IServiceProvider serviceProvider)
     {
         var apiKey = options.Value.ApiKey;
         var modelId = options.Value.ModelId;
@@ -29,6 +31,7 @@ public class OpenAiProvider : ILLMProvider
 
         _gameStateRepository = gameStateRepository;
         _vectorStoreService = vectorStoreService;
+        _serviceProvider = serviceProvider;
 
         IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.AddOpenAIChatCompletion(
@@ -43,7 +46,17 @@ public class OpenAiProvider : ILLMProvider
         );
 #pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
+        // Register plugin services in kernel DI
+        kernelBuilder.Services.AddSingleton(_gameStateRepository);
+        kernelBuilder.Services.AddSingleton(_vectorStoreService);
+
         _kernel = kernelBuilder.Build();
+    }
+
+    public IEmbeddingGenerator GetEmbeddingGenerator()
+    {
+        var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        return embeddingGenerator;
     }
 
     public async Task RefreshPhaseAsync()
@@ -54,19 +67,183 @@ public class OpenAiProvider : ILLMProvider
         // Only refresh if phase has changed or if this is the first time
         if (_currentPhase != newPhase)
         {
+            var oldPhase = _currentPhase;
             _currentPhase = newPhase;
+            
+            // Clear existing plugins and load phase-specific ones
+            await ClearAllPluginsAsync();
+            await LoadPhasePluginsAsync(newPhase);
+            
             if(!_histories.ContainsKey(newPhase))
                 _histories.Add(newPhase, CreateHistory());
             
-            Console.WriteLine($"Phase refreshed to: {newPhase}");
+            Console.WriteLine($"Phase refreshed from {oldPhase} to: {newPhase}");
+            Console.WriteLine($"Plugins loaded for {newPhase} phase");
         }
     }
 
-    public IEmbeddingGenerator GetEmbeddingGenerator()
+    private async Task ClearAllPluginsAsync()
     {
-        var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
-        return embeddingGenerator;
+        try
+        {
+            // Clear all existing plugins
+            _kernel.Plugins.Clear();
+            Console.WriteLine("All plugins cleared from kernel");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Failed to clear plugins: {ex.Message}");
+        }
     }
+
+    private async Task LoadPhasePluginsAsync(GamePhase phase)
+    {
+        try
+        {
+            switch (phase)
+            {
+                case GamePhase.GameCreation:
+                    await LoadGameCreationPluginsAsync();
+                    break;
+                    
+                case GamePhase.CharacterCreation:
+                    await LoadCharacterCreationPluginsAsync();
+                    break;
+                    
+                case GamePhase.WorldGeneration:
+                    await LoadWorldGenerationPluginsAsync();
+                    break;
+                    
+                case GamePhase.Exploration:
+                    await LoadExplorationPluginsAsync();
+                    break;
+                    
+                case GamePhase.Combat:
+                    await LoadCombatPluginsAsync();
+                    break;
+                    
+                case GamePhase.LevelUp:
+                    await LoadLevelUpPluginsAsync();
+                    break;
+                    
+                default:
+                    Console.WriteLine($"Warning: Unknown phase {phase}, loading default plugins");
+                    await LoadGameCreationPluginsAsync();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading plugins for phase {phase}: {ex.Message}");
+        }
+    }
+
+    private async Task LoadGameCreationPluginsAsync()
+    {
+        // Game Creation only needs phase transition to get started
+        var phaseTransitionPlugin = new PhaseTransitionPlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
+        
+        // Core game engine for creating new game
+        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
+        
+        Console.WriteLine("Loaded Game Creation plugins: PhaseTransition, GameEngine");
+    }
+
+    private async Task LoadCharacterCreationPluginsAsync()
+    {
+        // Character creation specific functions
+        var characterCreationPlugin = new CharacterCreationPlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(characterCreationPlugin, "CharacterCreation");
+        
+        // Phase transitions to next stage
+        var phaseTransitionPlugin = new PhaseTransitionPlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
+        
+        // Basic dice rolling for character generation
+        var dicePlugin = new DicePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(dicePlugin, "Dice");
+        
+        Console.WriteLine("Loaded Character Creation plugins: CharacterCreation, PhaseTransition, Dice");
+    }
+
+    private async Task LoadWorldGenerationPluginsAsync()
+    {
+        // World building and information storage
+        var vectorStorePlugin = new VectorStorePlugin(_vectorStoreService);
+        _kernel.ImportPluginFromObject(vectorStorePlugin, "VectorStore");
+        
+        // Phase transitions
+        var phaseTransitionPlugin = new PhaseTransitionPlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
+        
+        // Core game engine for world state management
+        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
+        
+        // Dice for random world generation
+        var dicePlugin = new DicePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(dicePlugin, "Dice");
+        
+        Console.WriteLine("Loaded World Generation plugins: VectorStore, PhaseTransition, GameEngine, Dice");
+    }
+
+    private async Task LoadExplorationPluginsAsync()
+    {
+        // Full plugin suite for exploration
+        var vectorStorePlugin = new VectorStorePlugin(_vectorStoreService);
+        _kernel.ImportPluginFromObject(vectorStorePlugin, "VectorStore");
+        
+        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
+        
+        var dicePlugin = new DicePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(dicePlugin, "Dice");
+        
+        var phaseTransitionPlugin = new PhaseTransitionPlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
+        
+        Console.WriteLine("Loaded Exploration plugins: VectorStore, GameEngine, Dice, PhaseTransition");
+    }
+
+    private async Task LoadCombatPluginsAsync()
+    {
+        // Combat-focused plugins
+        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
+        
+        var dicePlugin = new DicePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(dicePlugin, "Dice");
+        
+        var phaseTransitionPlugin = new PhaseTransitionPlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
+        
+        // Vector store for combat reference data (moves, abilities, etc.)
+        var vectorStorePlugin = new VectorStorePlugin(_vectorStoreService);
+        _kernel.ImportPluginFromObject(vectorStorePlugin, "VectorStore");
+        
+        Console.WriteLine("Loaded Combat plugins: GameEngine, Dice, PhaseTransition, VectorStore");
+    }
+
+    private async Task LoadLevelUpPluginsAsync()
+    {
+        // Level up uses character creation functions for stat increases
+        var characterCreationPlugin = new CharacterCreationPlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(characterCreationPlugin, "CharacterCreation");
+        
+        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
+        
+        var dicePlugin = new DicePlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(dicePlugin, "Dice");
+        
+        var phaseTransitionPlugin = new PhaseTransitionPlugin(_gameStateRepository);
+        _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
+        
+        Console.WriteLine("Loaded Level Up plugins: CharacterCreation, GameEngine, Dice, PhaseTransition");
+    }
+
     public async Task<string> GetCompletionAsync(string prompt, CancellationToken cancellationToken = default)
     {
         await RefreshPhaseAsync(); // Check for phase changes before processing

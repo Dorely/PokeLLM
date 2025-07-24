@@ -12,11 +12,12 @@ public class VectorStoreService : IVectorStoreService
     private readonly IEmbeddingGenerator _embeddingGenerator;
     private const string COLLECTION = "adventure";
 
-    public VectorStoreService(ILLMProvider llmProvider, IOptions<QdrantConfig> options)
+    public VectorStoreService(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, IOptions<QdrantConfig> qdrantOptions)
     {
-        _embeddingGenerator = llmProvider.GetEmbeddingGenerator();
+        _embeddingGenerator = embeddingGenerator;
+        
         _vectorStore = new QdrantVectorStore(
-            new QdrantClient(options.Value.Host, options.Value.Port),
+            new QdrantClient(qdrantOptions.Value.Host, qdrantOptions.Value.Port),
             ownsClient: true,
             new QdrantVectorStoreOptions
             {
