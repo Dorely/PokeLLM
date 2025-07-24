@@ -35,13 +35,14 @@ public class GameEnginePlugin
     // --- Pokemon Management ---
 
     [KernelFunction("create_pokemon")]
-    [Description("Create a new Pokemon and add it to the WorldPokemon Collection")]
-    public async Task<string> CreatePokemon(Pokemon pokemon)
+    [Description("Create a new Pokemon using JSON. Example: { \"nickName\": \"Sparky\", \"species\": \"Pikachu\", \"level\": 5, \"type1\": \"Electric\", \"type2\": null, \"stats\": { \"power\": \"Trained\", \"speed\": \"Experienced\", \"spirit\": \"Trained\" }, \"knownMoves\": [\"Thunder Shock\", \"Quick Attack\"], \"abilities\": [\"Static\"], \"currentVigor\": 18, \"maxVigor\": 18 }")]
+    public async Task<string> CreatePokemon(string pokemonJson)
     {
         try
         {
+            var pokemon = JsonSerializer.Deserialize<Pokemon>(pokemonJson, _jsonOptions);
             if (pokemon == null)
-                return JsonSerializer.Serialize(new { error = "Invalid Pokemon object" }, _jsonOptions);
+                return JsonSerializer.Serialize(new { error = "Invalid Pokemon JSON" }, _jsonOptions);
 
             var gameState = await _repository.LoadLatestStateAsync();
             if (gameState == null)
@@ -82,7 +83,7 @@ public class GameEnginePlugin
             if (gameState == null)
                 return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
 
-            if (gameState.Player.TeamPokemon.Count >= 6)
+            if (gameState.Player.Character.PokemonTeam.Count >= 6)
                 return JsonSerializer.Serialize(new { error = "Team is full (6 Pokemon maximum)" }, _jsonOptions);
 
             Pokemon pokemon = null;
@@ -111,14 +112,7 @@ public class GameEnginePlugin
             if (pokemon == null)
                 return JsonSerializer.Serialize(new { error = "Pokemon not found in world or collection" }, _jsonOptions);
 
-            var teamPokemon = new OwnedPokemon
-            {
-                Pokemon = pokemon,
-                CaughtLocation = sourceLocation == "world" ? gameState.CurrentLocation : 
-                    gameState.Player.BoxedPokemon.FirstOrDefault(p => p.Pokemon.Id == pokemonId)?.CaughtLocation ?? gameState.CurrentLocation
-            };
-
-            gameState.Player.TeamPokemon.Add(teamPokemon);
+            gameState.Player.Character.PokemonTeam.Add(pokemon);
             gameState.LastSaveTime = DateTime.UtcNow;
             
             await _repository.SaveStateAsync(gameState);
@@ -145,7 +139,6 @@ public class GameEnginePlugin
 
             Pokemon pokemon = null;
             string sourceLocation = "";
-            string caughtLocation = gameState.CurrentLocation;
 
             // Try to find in world Pokemon first
             var worldPokemon = gameState.WorldPokemon.FirstOrDefault(p => p.Id == pokemonId);
@@ -158,12 +151,11 @@ public class GameEnginePlugin
             else
             {
                 // Try to find in team
-                var teamPokemon = gameState.Player.TeamPokemon.FirstOrDefault(p => p.Pokemon.Id == pokemonId);
+                var teamPokemon = gameState.Player.Character.PokemonTeam.FirstOrDefault(p => p.Id == pokemonId);
                 if (teamPokemon != null)
                 {
-                    pokemon = teamPokemon.Pokemon;
-                    caughtLocation = teamPokemon.CaughtLocation;
-                    gameState.Player.TeamPokemon.Remove(teamPokemon);
+                    pokemon = teamPokemon;
+                    gameState.Player.Character.PokemonTeam.Remove(teamPokemon);
                     sourceLocation = "team";
                 }
             }
@@ -174,7 +166,7 @@ public class GameEnginePlugin
             var ownedPokemon = new OwnedPokemon
             {
                 Pokemon = pokemon,
-                CaughtLocation = caughtLocation
+                CaughtLocation = gameState.CurrentLocation
             };
 
             gameState.Player.BoxedPokemon.Add(ownedPokemon);
@@ -206,11 +198,11 @@ public class GameEnginePlugin
             string sourceLocation = "";
 
             // Try to find in team first
-            var teamPokemon = gameState.Player.TeamPokemon.FirstOrDefault(p => p.Pokemon.Id == pokemonId);
+            var teamPokemon = gameState.Player.Character.PokemonTeam.FirstOrDefault(p => p.Id == pokemonId);
             if (teamPokemon != null)
             {
-                pokemon = teamPokemon.Pokemon;
-                gameState.Player.TeamPokemon.Remove(teamPokemon);
+                pokemon = teamPokemon;
+                gameState.Player.Character.PokemonTeam.Remove(teamPokemon);
                 sourceLocation = "team";
             }
             else
@@ -257,9 +249,8 @@ public class GameEnginePlugin
                 return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
 
             var healedCount = 0;
-            foreach (var ownedPokemon in gameState.Player.TeamPokemon)
+            foreach (var pokemon in gameState.Player.Character.PokemonTeam)
             {
-                var pokemon = ownedPokemon.Pokemon;
                 if (pokemon.CurrentVigor < pokemon.MaxVigor)
                 {
                     pokemon.CurrentVigor = pokemon.MaxVigor;
@@ -281,7 +272,7 @@ public class GameEnginePlugin
 
     [KernelFunction("update_pokemon_vigor")]
     [Description("Vigor represents both health and energy. Using moves and taking damage both expend it.")]
-    public async Task<string> UpdatePokemonVigor(string pokemonId, int amount)
+    public async Task<string> UpdatePokemonVigor(string pokemonName, int amount)
     {
         try
         {
@@ -289,13 +280,13 @@ public class GameEnginePlugin
             if (gameState == null)
                 return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
 
-            var ownedPokemon = gameState.Player.TeamPokemon
-                .FirstOrDefault(p => p.Pokemon.Id.Equals(pokemonId, StringComparison.OrdinalIgnoreCase));
+            var pokemon = gameState.Player.Character.PokemonTeam
+                .FirstOrDefault(p => p.NickName.Equals(pokemonName, StringComparison.OrdinalIgnoreCase) ||
+                                   p.Species.Equals(pokemonName, StringComparison.OrdinalIgnoreCase));
 
-            if (ownedPokemon == null)
+            if (pokemon == null)
                 return JsonSerializer.Serialize(new { error = "Pokemon not found in team" }, _jsonOptions);
 
-            var pokemon = ownedPokemon.Pokemon;
             pokemon.CurrentVigor = Math.Max(0, Math.Min(pokemon.MaxVigor, pokemon.CurrentVigor + amount));
             gameState.LastSaveTime = DateTime.UtcNow;
             
@@ -311,36 +302,27 @@ public class GameEnginePlugin
         }
     }
 
-    [KernelFunction("get_player_pokemon_team")]
-    public async Task<string> GetPlayerPokemonTeam()
+    [KernelFunction("get_pokemon_team")]
+    public async Task<string> GetPokemonTeam()
     {
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
 
-        var team = gameState.Player.TeamPokemon.Select(owned => new {
-            owned.Pokemon.Id,
-            owned.Pokemon.NickName,
-            owned.Pokemon.Species,
-            owned.Pokemon.Level,
-            Vigor = $"{owned.Pokemon.CurrentVigor}/{owned.Pokemon.MaxVigor}",
-            owned.Pokemon.Stats,
-            owned.Pokemon.Type1,
-            owned.Pokemon.Type2,
-            owned.Pokemon.KnownMoves,
-            owned.Pokemon.Abilities,
-            owned.Pokemon.StatusEffects,
-            owned.CaughtLocation,
-            owned.Friendship,
-            owned.Experience,
-            owned.AvailableStatPoints
+        var team = gameState.Player.Character.PokemonTeam.Select(p => new {
+            p.Id,
+            p.NickName,
+            p.Species,
+            p.Level,
+            Vigor = $"{p.CurrentVigor}/{p.MaxVigor}",
+            p.Stats
         }).ToList();
 
         return JsonSerializer.Serialize(team, _jsonOptions);
     }
 
-    [KernelFunction("get_player_pokemon_collection")]
-    public async Task<string> GetPlayerPokemonCollection()
+    [KernelFunction("get_pokemon_collection")]
+    public async Task<string> GetPokemonCollection()
     {
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
@@ -377,47 +359,6 @@ public class GameEnginePlugin
         }).ToList();
 
         return JsonSerializer.Serialize(worldPokemon, _jsonOptions);
-    }
-
-    [KernelFunction("get_npc_pokemon_team")]
-    public async Task<string> GetNpcPokemonTeam(string npcId)
-    {
-        var gameState = await _repository.LoadLatestStateAsync();
-        if (gameState == null)
-            return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
-
-        // Find the NPC from WorldNpcs collection
-        var npc = gameState.WorldNpcs?.FirstOrDefault(n => n.Id.Equals(npcId, StringComparison.OrdinalIgnoreCase));
-        if (npc == null)
-            return JsonSerializer.Serialize(new { error = "NPC not found" }, _jsonOptions);
-
-        // Get the Pokemon that belong to this NPC
-        var npcPokemonTeam = gameState.WorldPokemon
-            .Where(p => npc.PokemonOwned.Contains(p.Id))
-            .Select(p => new {
-                p.Id,
-                p.NickName,
-                p.Species,
-                p.Level,
-                Vigor = $"{p.CurrentVigor}/{p.MaxVigor}",
-                p.Stats,
-                p.Type1,
-                p.Type2,
-                p.KnownMoves,
-                p.Abilities,
-                p.StatusEffects
-            }).ToList();
-
-        var result = new
-        {
-            npcId = npc.Id,
-            npcName = npc.Name,
-            isTrainer = npc.IsTrainer,
-            teamSize = npcPokemonTeam.Count,
-            pokemonTeam = npcPokemonTeam
-        };
-
-        return JsonSerializer.Serialize(result, _jsonOptions);
     }
 
     // --- World State Management ---
@@ -614,91 +555,6 @@ public class GameEnginePlugin
         catch (Exception ex)
         {
             return JsonSerializer.Serialize(new { error = $"Failed to create NPC: {ex.Message}" }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("assign_pokemon_to_npc")]
-    [Description("Assign a Pokemon from the WorldPokemon collection to an NPC's team")]
-    public async Task<string> AssignPokemonToNpc(string npcId, string pokemonId)
-    {
-        try
-        {
-            var gameState = await _repository.LoadLatestStateAsync();
-            if (gameState == null)
-                return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
-
-            // Find the NPC
-            var npc = gameState.WorldNpcs?.FirstOrDefault(n => n.Id.Equals(npcId, StringComparison.OrdinalIgnoreCase));
-            if (npc == null)
-                return JsonSerializer.Serialize(new { error = "NPC not found" }, _jsonOptions);
-
-            // Find the Pokemon
-            var pokemon = gameState.WorldPokemon?.FirstOrDefault(p => p.Id.Equals(pokemonId, StringComparison.OrdinalIgnoreCase));
-            if (pokemon == null)
-                return JsonSerializer.Serialize(new { error = "Pokemon not found in world collection" }, _jsonOptions);
-
-            // Check if Pokemon is already owned by this NPC
-            if (npc.PokemonOwned.Contains(pokemonId))
-                return JsonSerializer.Serialize(new { error = "Pokemon is already owned by this NPC" }, _jsonOptions);
-
-            // Check if Pokemon is already owned by another NPC
-            var existingOwner = gameState.WorldNpcs?.FirstOrDefault(n => n.PokemonOwned.Contains(pokemonId));
-            if (existingOwner != null && existingOwner.Id != npcId)
-                return JsonSerializer.Serialize(new { error = $"Pokemon is already owned by {existingOwner.Name}" }, _jsonOptions);
-
-            // Assign the Pokemon to the NPC
-            npc.PokemonOwned.Add(pokemonId);
-            gameState.LastSaveTime = DateTime.UtcNow;
-            
-            await _repository.SaveStateAsync(gameState);
-            return JsonSerializer.Serialize(new { 
-                success = true, 
-                message = $"Assigned {pokemon.NickName} ({pokemon.Species}) to {npc.Name}" 
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = $"Failed to assign Pokemon to NPC: {ex.Message}" }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("remove_pokemon_from_npc")]
-    [Description("Remove a Pokemon from an NPC's team (Pokemon remains in WorldPokemon collection)")]
-    public async Task<string> RemovePokemonFromNpc(string npcId, string pokemonId)
-    {
-        try
-        {
-            var gameState = await _repository.LoadLatestStateAsync();
-            if (gameState == null)
-                return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
-
-            // Find the NPC
-            var npc = gameState.WorldNpcs?.FirstOrDefault(n => n.Id.Equals(npcId, StringComparison.OrdinalIgnoreCase));
-            if (npc == null)
-                return JsonSerializer.Serialize(new { error = "NPC not found" }, _jsonOptions);
-
-            // Check if NPC owns this Pokemon
-            if (!npc.PokemonOwned.Contains(pokemonId))
-                return JsonSerializer.Serialize(new { error = "NPC does not own this Pokemon" }, _jsonOptions);
-
-            // Find the Pokemon for the response message
-            var pokemon = gameState.WorldPokemon?.FirstOrDefault(p => p.Id.Equals(pokemonId, StringComparison.OrdinalIgnoreCase));
-
-            // Remove the Pokemon from the NPC's ownership
-            npc.PokemonOwned.Remove(pokemonId);
-            gameState.LastSaveTime = DateTime.UtcNow;
-            
-            await _repository.SaveStateAsync(gameState);
-            
-            var pokemonName = pokemon != null ? $"{pokemon.NickName} ({pokemon.Species})" : "Pokemon";
-            return JsonSerializer.Serialize(new { 
-                success = true, 
-                message = $"Removed {pokemonName} from {npc.Name}'s team" 
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = $"Failed to remove Pokemon from NPC: {ex.Message}" }, _jsonOptions);
         }
     }
 

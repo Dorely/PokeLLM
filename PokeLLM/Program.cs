@@ -17,7 +17,6 @@ services.AddSingleton<IConfiguration>(config);
 services.Configure<ModelConfig>(config.GetSection("OpenAi"));
 services.Configure<QdrantConfig>(config.GetSection("Qdrant"));
 
-services.AddTransient<IPhaseManager, PhaseManager>();
 services.AddTransient<ILLMProvider, OpenAiProvider>();
 services.AddTransient<IVectorStoreService, VectorStoreService>();
 services.AddSingleton<IGameStateRepository, GameStateRepository>();
@@ -32,7 +31,6 @@ var history = llm.CreateHistory();
 
 Console.WriteLine("Welcome to PokeLLM! Type 'exit' to quit.");
 Console.WriteLine("Enter your message. Finish with a blank line to send.\n");
-Console.WriteLine("Bot is trained on data up to October 2023.\n");
 
 //start the prompt and get the game flowing before initiating player input
 var firstResponse = llm.GetCompletionStreamingAsync("Session Start - Begin character creation", history);
