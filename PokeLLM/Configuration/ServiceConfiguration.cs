@@ -3,6 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
+using PokeLLM.Game.ContextGathering.Interfaces;
+using PokeLLM.Game.ContextGathering;
+using PokeLLM.Game.GameLoop.Interfaces;
+using PokeLLM.Game.GameLoop;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -50,6 +54,19 @@ public static class ServiceConfiguration
             
             return new OpenAiProvider(options, gameStateRepository, vectorStoreService);
         });
+
+        // Register Context Gathering Service
+        services.AddTransient<IContextGatheringService>(serviceProvider =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<ModelConfig>>();
+            var gameStateRepository = serviceProvider.GetRequiredService<IGameStateRepository>();
+            var vectorStoreService = serviceProvider.GetRequiredService<IVectorStoreService>();
+            
+            return new ContextGatheringService(options, gameStateRepository, vectorStoreService);
+        });
+
+        // Register Game Loop Service
+        services.AddTransient<IGameLoopService, GameLoopService>();
 
         return services;
     }

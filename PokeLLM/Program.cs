@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using PokeLLM.Game.GameLoop.Interfaces;
 
 // Create configuration and set up DI using ServiceConfiguration
 var config = ServiceConfiguration.CreateConfiguration();
@@ -9,7 +10,7 @@ ServiceConfiguration.ConfigureServices(services, config);
 
 var provider = services.BuildServiceProvider();
 
-var llm = provider.GetRequiredService<ILLMProvider>();
+var gameLoop = provider.GetRequiredService<IGameLoopService>();
 var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
 
 // Ensure game state is initialized and set to GameCreation phase
@@ -25,15 +26,12 @@ else
     var gameState = await gameStateRepository.LoadLatestStateAsync();
 }
 
-//// Get LLM response
-var firstResponse = llm.GetCompletionStreamingAsync("The program has finished loading. Introduce yourself to the player.");
-
+// Get initial welcome message through the new game loop
 Console.WriteLine($"LLM: ");
-await foreach (var chunk in firstResponse)
+await foreach (var chunk in gameLoop.GetWelcomeMessageAsync())
 {
     Console.Write(chunk);
 }
-
 
 while (true)
 {
@@ -52,11 +50,9 @@ while (true)
     if (string.IsNullOrWhiteSpace(input) || input.Trim().ToLower() == "exit")
         break;
 
-    //// Get LLM response
-    var response = llm.GetCompletionStreamingAsync(input);
-
+    // Process player input through the new game loop architecture
     Console.WriteLine($"LLM: ");
-    await foreach (var chunk in response)
+    await foreach (var chunk in gameLoop.ProcessPlayerInputAsync(input))
     {
         Console.Write(chunk);
     }

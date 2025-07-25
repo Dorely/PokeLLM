@@ -66,6 +66,52 @@ public class GameStateModel
     public string PreviousPhaseConversationSummary { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Structured object containing all necessary context for the main game chat to properly orchestrate the game.
+/// This is returned by the Context Gathering Subroutine.
+/// </summary>
+public class GameContext
+{
+    [JsonPropertyName("relevantEntities")]
+    [Description("Characters, Pokémon, locations, and items that are relevant to the current player input.")]
+    public Dictionary<string, object> RelevantEntities { get; set; } = new();
+
+    [JsonPropertyName("missingEntities")]
+    [Description("List of entities that were referenced but don't exist in game state or vector store.")]
+    public List<string> MissingEntities { get; set; } = new();
+
+    [JsonPropertyName("gameStateUpdates")]
+    [Description("Any updates that were made to the game state during context gathering.")]
+    public List<string> GameStateUpdates { get; set; } = new();
+
+    [JsonPropertyName("vectorStoreData")]
+    [Description("Relevant lore, descriptions, and background information retrieved from the vector store.")]
+    public List<VectorStoreResult> VectorStoreData { get; set; } = new();
+
+    [JsonPropertyName("contextSummary")]
+    [Description("A high-level summary of the gathered context and its relevance to the player's input.")]
+    public string ContextSummary { get; set; } = string.Empty;
+
+    [JsonPropertyName("recommendedActions")]
+    [Description("Suggested actions or considerations for the main game chat based on the gathered context.")]
+    public List<string> RecommendedActions { get; set; } = new();
+}
+
+public class VectorStoreResult
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("content")]
+    public string Content { get; set; } = string.Empty;
+
+    [JsonPropertyName("relevanceScore")]
+    public float RelevanceScore { get; set; }
+
+    [JsonPropertyName("metadata")]
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
 public class PlayerState
 {
     [JsonPropertyName("character")]
@@ -286,4 +332,3 @@ public enum Weather { Clear, Cloudy, Rain, Storm, Thunderstorm, Snow, Fog, Sands
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum GamePhase { GameCreation, CharacterCreation, WorldGeneration, Exploration, Combat, LevelUp }
-}

@@ -188,14 +188,7 @@ Provide a detailed but concise summary that preserves essential context for the 
             var chunkContent = string.Join("\n", conversationMessages.Select(m => $"{m.Role}: {m.Content}"));
             var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
             
-            await _vectorStoreService.UpsertInformationAsync(
-                name: $"Phase Transition - {oldPhase} to {newPhase} - {timestamp}",
-                description: summary,
-                content: chunkContent,
-                type: "phase_transition",
-                tags: new[] { oldPhase.ToString().ToLower(), newPhase.ToString().ToLower(), "phase_transition", "conversation_summary" },
-                relatedEntries: null
-            );
+            //TODO upload to vector store
             
             Debug.WriteLine($"Stored phase transition conversation in vector store: {oldPhase} -> {newPhase}");
         }
@@ -548,15 +541,7 @@ Provide a concise but comprehensive summary:";
             var chunkContent = string.Join("\n", originalMessages.Select(m => $"{m.Role}: {m.Content}"));
             var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
             
-            await _vectorStoreService.UpsertInformationAsync(
-                name: $"Conversation Chunk - {_currentPhase} - {timestamp}",
-                description: summary,
-                content: chunkContent,
-                type: "conversation_history",
-//TODO fix embedding field
-                tags: new[] { _currentPhase.ToString().ToLower(), "chat_history", "summarized" },
-                relatedEntries: null
-            );
+            //TODO upload to vector store
         }
         catch (Exception ex)
         {
