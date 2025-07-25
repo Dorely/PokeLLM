@@ -1,12 +1,26 @@
 using Microsoft.Extensions.AI;
-using Microsoft.SemanticKernel.ChatCompletion;
 using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Game.LLM.Interfaces;
 
+
+/// <summary>
+/// Interface for low-level LLM providers that can be plugged into the orchestration service
+/// </summary>
 public interface ILLMProvider
 {
-    public Task<string> GetCompletionAsync(string prompt, CancellationToken cancellationToken = default);
-    public IAsyncEnumerable<string> GetCompletionStreamingAsync(string prompt, CancellationToken cancellationToken = default);
-    public IEmbeddingGenerator GetEmbeddingGenerator();
+    /// <summary>
+    /// Creates a kernel configured for this LLM provider
+    /// </summary>
+    Task<Microsoft.SemanticKernel.Kernel> CreateKernelAsync();
+
+    /// <summary>
+    /// Gets the embedding generator for this provider
+    /// </summary>
+    IEmbeddingGenerator GetEmbeddingGenerator();
+
+    /// <summary>
+    /// Gets provider-specific execution settings
+    /// </summary>
+    object GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = false);
 }

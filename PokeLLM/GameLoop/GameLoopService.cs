@@ -1,25 +1,25 @@
-using PokeLLM.Game.ContextGathering.Interfaces;
 using PokeLLM.Game.GameLoop.Interfaces;
 using PokeLLM.Game.LLM.Interfaces;
 using PokeLLM.GameState.Models;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Diagnostics;
+using PokeLLM.Game.Orchestration.Interfaces;
 
 namespace PokeLLM.Game.GameLoop;
 
 public class GameLoopService : IGameLoopService
 {
     private readonly ILLMProvider _llmProvider;
-    private readonly IContextGatheringService _contextGatheringService;
+    private readonly IOrchestrationService _orchestrationService;
     private readonly IGameStateRepository _gameStateRepository;
 
     public GameLoopService(
         ILLMProvider llmProvider,
-        IContextGatheringService contextGatheringService,
+        IOrchestrationService orchestrationService,
         IGameStateRepository gameStateRepository)
     {
         _llmProvider = llmProvider;
-        _contextGatheringService = contextGatheringService;
+        _orchestrationService = orchestrationService;
         _gameStateRepository = gameStateRepository;
     }
 
@@ -37,7 +37,7 @@ public class GameLoopService : IGameLoopService
         var enhancedInput = CreateEnhancedInput(playerInput, processedContext);
         
         // Stream the response from the main game chat
-        await foreach (var chunk in _llmProvider.GetCompletionStreamingAsync(enhancedInput, cancellationToken))
+        await foreach (var chunk in _orchestrationService.ExecutePromptStreamingAsync(enhancedInput, null, cancellationToken))
         {
             yield return chunk;
         }
@@ -57,14 +57,14 @@ public class GameLoopService : IGameLoopService
         var enhancedInput = CreateEnhancedInput(playerInput, processedContext);
         
         // Get complete response from the main game chat
-        return await _llmProvider.GetCompletionAsync(enhancedInput, cancellationToken);
+        return await _orchestrationService.ExecutePromptAsync(enhancedInput, null, cancellationToken);
     }
 
     public async IAsyncEnumerable<string> GetWelcomeMessageAsync(CancellationToken cancellationToken = default)
     {
         var welcomeMessage = "The program has finished loading. Introduce yourself to the player.";
         
-        await foreach (var chunk in _llmProvider.GetCompletionStreamingAsync(welcomeMessage, cancellationToken))
+        await foreach (var chunk in _orchestrationService.ExecutePromptStreamingAsync(welcomeMessage, GamePhase.GameCreation, cancellationToken))
         {
             yield return chunk;
         }
@@ -83,7 +83,7 @@ public class GameLoopService : IGameLoopService
 
             // Call the Context Gathering Subroutine
 //TODO make sure adventureSummary and recentHistory are being populated correctly
-            var gameContext = await _contextGatheringService.GatherContextAsync(
+            var gameContext = await _orchestrationService.ExecuteContextGatheringAsync(
                 playerInput, 
                 adventureSummary, 
                 recentHistory, 
