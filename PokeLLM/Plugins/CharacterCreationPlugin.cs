@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace PokeLLM.Game.Plugins;
 
@@ -33,6 +34,7 @@ public class CharacterCreationPlugin
     [KernelFunction("set_player_name")]
     public async Task<string> SetPlayerName(string playerName)
     {
+        Debug.WriteLine($"[CharacterCreationPlugin] SetPlayerName called: {playerName}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -48,6 +50,7 @@ public class CharacterCreationPlugin
     [KernelFunction("complete_character_creation")]
     public async Task<string> CompleteCharacterCreation()
     {
+        Debug.WriteLine($"[CharacterCreationPlugin] CompleteCharacterCreation called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -70,6 +73,7 @@ public class CharacterCreationPlugin
     [KernelFunction("get_current_stats")]
     public async Task<string> GetCurrentStats()
     {
+        Debug.WriteLine($"[CharacterCreationPlugin] GetCurrentStats called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -94,6 +98,7 @@ public class CharacterCreationPlugin
     [KernelFunction("apply_stat_point")]
     public async Task<string> ApplyStatPoint(string statToIncrease)
     {
+        Debug.WriteLine($"[CharacterCreationPlugin] ApplyStatPoint called: {statToIncrease}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -153,6 +158,7 @@ public class CharacterCreationPlugin
     [Description("Reduce a specified stat by one level to gain an additional stat point. Can only be used during character creation and cannot reduce below Hopeless (-2).")]
     public async Task<string> ReduceStatPoint([Description("The stat to reduce: Power, Speed, Mind, Charm, Defense, or Spirit")] string statToDecrease)
     {
+        Debug.WriteLine($"[CharacterCreationPlugin] ReduceStatPoint called: {statToDecrease}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();

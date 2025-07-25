@@ -38,6 +38,7 @@ public class GameEnginePlugin
     [Description("Create a new Pokemon and add it to the WorldPokemon Collection")]
     public async Task<string> CreatePokemon(Pokemon pokemon)
     {
+        Debug.WriteLine($"[GameEnginePlugin] CreatePokemon called: {pokemon?.Species ?? "null"}");
         try
         {
             if (pokemon == null)
@@ -76,6 +77,7 @@ public class GameEnginePlugin
     [Description("Move a Pokemon from world or collection to team using Pokemon ID")]
     public async Task<string> AddPokemonToTeam(string pokemonId)
     {
+        Debug.WriteLine($"[GameEnginePlugin] AddPokemonToTeam called: {pokemonId}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -137,6 +139,7 @@ public class GameEnginePlugin
     [Description("Move a Pokemon from world or team to collection using Pokemon ID")]
     public async Task<string> AddPokemonToCollection(string pokemonId)
     {
+        Debug.WriteLine($"[GameEnginePlugin] AddPokemonToCollection called: {pokemonId}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -196,6 +199,7 @@ public class GameEnginePlugin
     [Description("Release a Pokemon from team or collection back to the wild")]
     public async Task<string> ReleasePokemon(string pokemonId)
     {
+        Debug.WriteLine($"[GameEnginePlugin] ReleasePokemon called: {pokemonId}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -250,6 +254,7 @@ public class GameEnginePlugin
     [KernelFunction("heal_all_pokemon")]
     public async Task<string> HealAllPokemon()
     {
+        Debug.WriteLine($"[GameEnginePlugin] HealAllPokemon called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -283,6 +288,7 @@ public class GameEnginePlugin
     [Description("Vigor represents both health and energy. Using moves and taking damage both expend it.")]
     public async Task<string> UpdatePokemonVigor(string pokemonId, int amount)
     {
+        Debug.WriteLine($"[GameEnginePlugin] UpdatePokemonVigor called: {pokemonId}, amount: {amount}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -314,6 +320,7 @@ public class GameEnginePlugin
     [KernelFunction("get_player_pokemon_team")]
     public async Task<string> GetPlayerPokemonTeam()
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetPlayerPokemonTeam called");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -342,6 +349,7 @@ public class GameEnginePlugin
     [KernelFunction("get_player_pokemon_collection")]
     public async Task<string> GetPlayerPokemonCollection()
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetPlayerPokemonCollection called");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -363,6 +371,7 @@ public class GameEnginePlugin
     [KernelFunction("get_world_pokemon")]
     public async Task<string> GetWorldPokemon()
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetWorldPokemon called");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -382,6 +391,7 @@ public class GameEnginePlugin
     [KernelFunction("get_npc_pokemon_team")]
     public async Task<string> GetNpcPokemonTeam(string npcId)
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetNpcPokemonTeam called: {npcId}");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -425,6 +435,7 @@ public class GameEnginePlugin
     [KernelFunction("change_location")]
     public async Task<string> ChangeActiveLocation(string location)
     {
+        Debug.WriteLine($"[GameEnginePlugin] ChangeActiveLocation called: {location}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -446,6 +457,7 @@ public class GameEnginePlugin
     [KernelFunction("set_time_and_weather")]
     public async Task<string> SetTimeAndWeather(string timeOfDay, string weather)
     {
+        Debug.WriteLine($"[GameEnginePlugin] SetTimeAndWeather called: {timeOfDay}, {weather}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -475,6 +487,7 @@ public class GameEnginePlugin
     [KernelFunction("update_adventure_summary")]
     public async Task<string> UpdateAdventureSummary(string summary)
     {
+        Debug.WriteLine($"[GameEnginePlugin] UpdateAdventureSummary called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -497,6 +510,7 @@ public class GameEnginePlugin
     [KernelFunction("award_player_experience")]
     public async Task<string> AwardPlayerExperience(int amount, string reason = "")
     {
+        Debug.WriteLine($"[GameEnginePlugin] AwardPlayerExperience called: {amount}, reason: {reason}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -537,6 +551,7 @@ public class GameEnginePlugin
     [KernelFunction("update_money")]
     public async Task<string> UpdateMoney(int amount)
     {
+        Debug.WriteLine($"[GameEnginePlugin] UpdateMoney called: {amount}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -561,6 +576,7 @@ public class GameEnginePlugin
     [KernelFunction("add_to_inventory")]
     public async Task<string> AddToInventory(string item, int quantity = 1)
     {
+        Debug.WriteLine($"[GameEnginePlugin] AddToInventory called: {item}, quantity: {quantity}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -592,6 +608,7 @@ public class GameEnginePlugin
     [Description("Create a new NPC using JSON. Example: { \"name\": \"Professor Oak\", \"level\": 10, \"isTrainer\": true, \"stats\": { \"power\": \"Expert\", \"mind\": \"Master\", \"charm\": \"Experienced\" }, \"inventory\": { \"Pokeball\": 5, \"Potion\": 3 }, \"money\": 1000, \"factions\": [\"Pokemon League\"] }")]
     public async Task<string> CreateNpc(string npcJson)
     {
+        Debug.WriteLine($"[GameEnginePlugin] CreateNpc called");
         try
         {
             var npc = JsonSerializer.Deserialize<Character>(npcJson, _jsonOptions);
@@ -621,6 +638,7 @@ public class GameEnginePlugin
     [Description("Assign a Pokemon from the WorldPokemon collection to an NPC's team")]
     public async Task<string> AssignPokemonToNpc(string npcId, string pokemonId)
     {
+        Debug.WriteLine($"[GameEnginePlugin] AssignPokemonToNpc called: NPC {npcId}, Pokemon {pokemonId}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -666,6 +684,7 @@ public class GameEnginePlugin
     [Description("Remove a Pokemon from an NPC's team (Pokemon remains in WorldPokemon collection)")]
     public async Task<string> RemovePokemonFromNpc(string npcId, string pokemonId)
     {
+        Debug.WriteLine($"[GameEnginePlugin] RemovePokemonFromNpc called: NPC {npcId}, Pokemon {pokemonId}");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -708,6 +727,7 @@ public class GameEnginePlugin
     [Description("Get the current adventure summary")]
     public async Task<string> GetAdventureSummary()
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetAdventureSummary called");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -721,6 +741,7 @@ public class GameEnginePlugin
     [KernelFunction("get_player_state")]
     public async Task<string> GetPlayerState()
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetPlayerState called");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -731,6 +752,7 @@ public class GameEnginePlugin
     [KernelFunction("get_world_state")]
     public async Task<string> GetWorldState()
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetWorldState called");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -747,6 +769,7 @@ public class GameEnginePlugin
     [KernelFunction("get_world_npcs")]
     public async Task<string> GetWorldNpcs()
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetWorldNpcs called");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -759,6 +782,7 @@ public class GameEnginePlugin
     [KernelFunction("get_npc_details")]
     public async Task<string> GetNpcDetails(string id)
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetNpcDetails called: {id}");
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
             return JsonSerializer.Serialize(new { error = "No game state found" }, _jsonOptions);
@@ -771,6 +795,7 @@ public class GameEnginePlugin
     [KernelFunction("get_condition_effects")]
     public async Task<string> GetConditionEffects()
     {
+        Debug.WriteLine($"[GameEnginePlugin] GetConditionEffects called");
         await Task.Yield();
 
         var conditions = new Dictionary<string, string>()

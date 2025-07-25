@@ -25,8 +25,15 @@ else
     var gameState = await gameStateRepository.LoadLatestStateAsync();
 }
 
-Console.WriteLine("Welcome to PokeLLM! Type 'exit' to quit.");
-Console.WriteLine("Enter your message. Finish with a blank line to send.\n");
+//// Get LLM response
+var firstResponse = llm.GetCompletionStreamingAsync("The program has finished loading. Introduce yourself to the player.");
+
+Console.WriteLine($"LLM: ");
+await foreach (var chunk in firstResponse)
+{
+    Console.Write(chunk);
+}
+
 
 while (true)
 {
@@ -49,10 +56,8 @@ while (true)
     var response = llm.GetCompletionStreamingAsync(input);
 
     Console.WriteLine($"LLM: ");
-    string fullResponse = "";
     await foreach (var chunk in response)
     {
         Console.Write(chunk);
-        fullResponse += chunk;
     }
 }

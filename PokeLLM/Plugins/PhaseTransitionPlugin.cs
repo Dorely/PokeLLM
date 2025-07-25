@@ -1,5 +1,6 @@
 using Microsoft.SemanticKernel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -29,6 +30,7 @@ public class PhaseTransitionPlugin
     [Description("Transition from Game Creation to Character Creation phase")]
     public async Task<string> TransitionToCharacterCreation([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
+        Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToCharacterCreation called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -59,6 +61,7 @@ public class PhaseTransitionPlugin
     [Description("Transition from Character Creation to World Generation phase")]
     public async Task<string> TransitionToWorldGeneration([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
+        Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToWorldGeneration called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -92,6 +95,7 @@ public class PhaseTransitionPlugin
     [Description("Transition to Exploration phase from World Generation or other phases")]
     public async Task<string> TransitionToExploration([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
+        Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToExploration called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -124,6 +128,7 @@ public class PhaseTransitionPlugin
     [Description("Transition to Combat phase from Exploration")]
     public async Task<string> TransitionToCombat([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
+        Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToCombat called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();
@@ -154,6 +159,7 @@ public class PhaseTransitionPlugin
     [Description("Transition to Level Up phase from Combat or Exploration")]
     public async Task<string> TransitionToLevelUp([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
     {
+        Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToLevelUp called");
         try
         {
             var gameState = await _repository.LoadLatestStateAsync();

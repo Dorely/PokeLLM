@@ -36,7 +36,7 @@ public class DicePlugin
     [KernelFunction("roll_d20")]
     public async Task<string> RollD20()
     {
-        Debug.WriteLine($"[DiceAndSkillPlugin] RollD20 called");
+        Debug.WriteLine($"[DicePlugin] RollD20 called");
         
         var roll = _random.Next(1, 21);
 
@@ -47,27 +47,27 @@ public class DicePlugin
             _ => $"Rolled {roll}"
         };
 
-        Debug.WriteLine($"[DiceAndSkillPlugin] d20 roll: {roll}");
+        Debug.WriteLine($"[DicePlugin] d20 roll: {roll}");
         return result;
     }
 
     [KernelFunction("roll_specific_dice")]
     public async Task<string> RollSpecifiedDice(int sizeOfDice = 6)
     {
-        Debug.WriteLine($"[DiceAndSkillPlugin] RollD6 called");
+        Debug.WriteLine($"[DicePlugin] RollSpecifiedDice called: d{sizeOfDice}");
         
-        var roll = _random.Next(1, sizeOfDice);
+        var roll = _random.Next(1, sizeOfDice + 1);
 
         var result = $"Rolled {roll}";
 
-        Debug.WriteLine($"[DiceAndSkillPlugin] d{sizeOfDice} roll: {roll}");
+        Debug.WriteLine($"[DicePlugin] d{sizeOfDice} roll: {roll}");
         return result;
     }
 
     [KernelFunction("roll_d20_with_advantage")]
     public async Task<string> RollD20WithAdvantage()
     {
-        Debug.WriteLine($"[DiceAndSkillPlugin] RollD20WithAdvantage called");
+        Debug.WriteLine($"[DicePlugin] RollD20WithAdvantage called");
         
         var roll1 = _random.Next(1, 21);
         var roll2 = _random.Next(1, 21);
@@ -75,14 +75,14 @@ public class DicePlugin
 
         var result = $"Advantage roll: {roll1}, {roll2} -> Using {finalRoll}";
 
-        Debug.WriteLine($"[DiceAndSkillPlugin] Advantage roll: {roll1}, {roll2} -> {finalRoll}");
+        Debug.WriteLine($"[DicePlugin] Advantage roll: {roll1}, {roll2} -> {finalRoll}");
         return result;
     }
 
     [KernelFunction("roll_d20_with_disadvantage")]
     public async Task<string> RollWithDisadvantage()
     {
-        Debug.WriteLine($"[DiceAndSkillPlugin] RollWithDisadvantage called");
+        Debug.WriteLine($"[DicePlugin] RollWithDisadvantage called");
         
         var roll1 = _random.Next(1, 21);
         var roll2 = _random.Next(1, 21);
@@ -90,7 +90,7 @@ public class DicePlugin
 
         var result = $"Disadvantage roll: {roll1}, {roll2} -> Using {finalRoll}";
 
-        Debug.WriteLine($"[DiceAndSkillPlugin] Disadvantage roll: {roll1}, {roll2} -> {finalRoll}");
+        Debug.WriteLine($"[DicePlugin] Disadvantage roll: {roll1}, {roll2} -> {finalRoll}");
         return result;
     }
 
@@ -106,7 +106,7 @@ public class DicePlugin
         [Description("Whether the check has disadvantage (roll twice, take lower)")] bool disadvantage = false,
         [Description("Additional modifier to add to the roll")] int modifier = 0)
     {
-        Debug.WriteLine($"[DiceAndSkillPlugin] MakeSkillCheck called: stat={statName}, DC={difficultyClass}, adv={advantage}, dis={disadvantage}");
+        Debug.WriteLine($"[DicePlugin] MakeSkillCheck called: stat={statName}, DC={difficultyClass}, adv={advantage}, dis={disadvantage}");
         
         var gameState = await _repository.LoadLatestStateAsync();
         if (gameState == null)
@@ -175,7 +175,7 @@ public class DicePlugin
 
         var result = $"{outcome} {statName} check: {totalRoll} vs DC {difficultyClass} ({margin:+#;-#;0})";
 
-        Debug.WriteLine($"[DiceAndSkillPlugin] Skill check: {statName} {totalRoll} vs DC {difficultyClass} = {(success ? "SUCCESS" : "FAILURE")}");
+        Debug.WriteLine($"[DicePlugin] Skill check: {statName} {totalRoll} vs DC {difficultyClass} = {(success ? "SUCCESS" : "FAILURE")}");
         return result;
     }
 

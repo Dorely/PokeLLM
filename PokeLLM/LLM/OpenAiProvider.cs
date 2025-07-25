@@ -64,21 +64,35 @@ public class OpenAiProvider : ILLMProvider
         var gameState = await _gameStateRepository.LoadLatestStateAsync();
         var newPhase = gameState?.CurrentPhase ?? GamePhase.GameCreation;
         
-        // Only refresh if phase has changed or if this is the first time
-        if (_currentPhase != newPhase)
+        var oldPhase = _currentPhase;
+        var phaseChanged = _currentPhase != newPhase;
+        _currentPhase = newPhase;
+        
+        // Only clear and reload plugins if the phase has actually changed
+        if (phaseChanged)
         {
-            var oldPhase = _currentPhase;
-            _currentPhase = newPhase;
-            
-            // Clear existing plugins and load phase-specific ones
             await ClearAllPluginsAsync();
             await LoadPhasePluginsAsync(newPhase);
-            
-            if(!_histories.ContainsKey(newPhase))
-                _histories.Add(newPhase, CreateHistory());
-            
-            Console.WriteLine($"Phase refreshed from {oldPhase} to: {newPhase}");
-            Console.WriteLine($"Plugins loaded for {newPhase} phase");
+            Debug.WriteLine($"Phase changed from {oldPhase} to: {newPhase}");
+            Debug.WriteLine($"Plugins loaded for {newPhase} phase");
+        }
+        
+        // Ensure histories exist for all phases
+        await EnsureAllPhaseHistoriesExistAsync();
+    }
+
+    private async Task EnsureAllPhaseHistoriesExistAsync()
+    {
+        // Get all GamePhase enum values
+        var allPhases = Enum.GetValues<GamePhase>();
+        
+        foreach (var phase in allPhases)
+        {
+            if (!_histories.ContainsKey(phase))
+            {
+                _histories[phase] = CreateHistory();
+                Debug.WriteLine($"Created history for {phase} phase");
+            }
         }
     }
 
@@ -88,11 +102,11 @@ public class OpenAiProvider : ILLMProvider
         {
             // Clear all existing plugins
             _kernel.Plugins.Clear();
-            Console.WriteLine("All plugins cleared from kernel");
+            Debug.WriteLine("All plugins cleared from kernel");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Warning: Failed to clear plugins: {ex.Message}");
+            Debug.WriteLine($"Warning: Failed to clear plugins: {ex.Message}");
         }
     }
 
@@ -127,14 +141,14 @@ public class OpenAiProvider : ILLMProvider
                     break;
                     
                 default:
-                    Console.WriteLine($"Warning: Unknown phase {phase}, loading default plugins");
+                    Debug.WriteLine($"Warning: Unknown phase {phase}, loading default plugins");
                     await LoadGameCreationPluginsAsync();
                     break;
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading plugins for phase {phase}: {ex.Message}");
+            Debug.WriteLine($"Error loading plugins for phase {phase}: {ex.Message}");
         }
     }
 
@@ -148,7 +162,7 @@ public class OpenAiProvider : ILLMProvider
         var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
         
-        Console.WriteLine("Loaded Game Creation plugins: PhaseTransition, GameEngine");
+        Debug.WriteLine("Loaded Game Creation plugins: PhaseTransition, GameEngine");
     }
 
     private async Task LoadCharacterCreationPluginsAsync()
@@ -165,7 +179,7 @@ public class OpenAiProvider : ILLMProvider
         var dicePlugin = new DicePlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(dicePlugin, "Dice");
         
-        Console.WriteLine("Loaded Character Creation plugins: CharacterCreation, PhaseTransition, Dice");
+        Debug.WriteLine("Loaded Character Creation plugins: CharacterCreation, PhaseTransition, Dice");
     }
 
     private async Task LoadWorldGenerationPluginsAsync()
@@ -186,7 +200,7 @@ public class OpenAiProvider : ILLMProvider
         var dicePlugin = new DicePlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(dicePlugin, "Dice");
         
-        Console.WriteLine("Loaded World Generation plugins: VectorStore, PhaseTransition, GameEngine, Dice");
+        Debug.WriteLine("Loaded World Generation plugins: VectorStore, PhaseTransition, GameEngine, Dice");
     }
 
     private async Task LoadExplorationPluginsAsync()
@@ -204,7 +218,7 @@ public class OpenAiProvider : ILLMProvider
         var phaseTransitionPlugin = new PhaseTransitionPlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
         
-        Console.WriteLine("Loaded Exploration plugins: VectorStore, GameEngine, Dice, PhaseTransition");
+        Debug.WriteLine("Loaded Exploration plugins: VectorStore, GameEngine, Dice, PhaseTransition");
     }
 
     private async Task LoadCombatPluginsAsync()
@@ -223,7 +237,7 @@ public class OpenAiProvider : ILLMProvider
         var vectorStorePlugin = new VectorStorePlugin(_vectorStoreService);
         _kernel.ImportPluginFromObject(vectorStorePlugin, "VectorStore");
         
-        Console.WriteLine("Loaded Combat plugins: GameEngine, Dice, PhaseTransition, VectorStore");
+        Debug.WriteLine("Loaded Combat plugins: GameEngine, Dice, PhaseTransition, VectorStore");
     }
 
     private async Task LoadLevelUpPluginsAsync()
