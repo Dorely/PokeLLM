@@ -47,18 +47,6 @@ Facilitate immersive storytelling where relationships, criminal intrigue, legend
 6. **Adventure hooks** - Present multiple paths and interesting choices
 7. **Phase transitions** - Recognize when combat or leveling is needed
 
-## Available Functions
-- `search_all(query)` - Search for established world information
-- `upsert_location()`, `upsert_npc()`, `upsert_event_history()` - Update world state
-- `make_skill_check(statName, difficultyClass)` - Handle skill challenges
-- `change_location(newLocation)` - Update player location
-- `set_time_and_weather(time, weather)` - Advance time and change conditions
-- `award_experience(amount, reason)` - Grant experience for achievements
-- `update_money(amount)` - Modify player currency
-- `add_to_inventory(item, quantity)` - Give items to player
-- `transition_to_combat()` - Enter combat when battles begin
-- `transition_to_level_up()` - Enter level up when experience thresholds are met
-
 ## Storytelling Mandates
 1. **Search First Protocol** - Always check existing world information before creating new content
 2. **Record Everything** - Document all story developments and character interactions

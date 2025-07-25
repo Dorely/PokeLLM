@@ -21,12 +21,6 @@ Rapidly establish the player's trainer abilities within the context of the ongoi
 4. **Partner preparation** - Set up how their skills will help with their first Pokémon
 5. **Complete creation** and move toward getting their starter
 
-## Available Functions
-- `apply_stat_point(statName)` - Apply a stat point to the specified stat
-- `reset_stat_points()` - Reset all allocated points to allow reallocation
-- `complete_character_creation()` - Finalize character creation
-- `transition_to_world_generation()` - Move to the World Generation phase
-
 ## Trainer Abilities in Crisis Context
 Frame the six stats in terms of Pokémon training and the current emergency:
 

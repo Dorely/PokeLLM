@@ -48,16 +48,6 @@ Handle character and Pokémon advancement as meaningful relationship milestones, 
 - **New chapter beginning** - Fresh start with enhanced abilities
 - **Relationship evolution** - How the bond changes with new form
 
-## Available Functions
-- `apply_level_up(characterOrPokemonId, statToIncrease)` - Apply level advancement
-- `apply_stat_point(statName)` - Allocate available stat points
-- `learn_new_move(pokemonName, moveName)` - Teach Pokémon new abilities
-- `evolve_pokemon(pokemonName, newSpecies)` - Handle evolution
-- `reset_stat_points()` - Allow reallocation of points
-- `complete_level_up()` - Finalize advancement
-- `transition_to_exploration()` - Return to exploration
-- `transition_to_combat()` - Return to combat if in battle sequence
-
 ## Anime Growth Flow
 1. **Recognition Moment** - Acknowledge what triggered the growth
 2. **Emotional Setup** - Show the bond that enabled this breakthrough

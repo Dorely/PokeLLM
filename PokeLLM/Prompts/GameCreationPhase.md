@@ -32,10 +32,6 @@ Every adventure you create must include these essential elements:
 - A mysterious event involving legendary Pokémon is unfolding
 - The player arrives during a crisis that threatens the town
 
-## Available Functions
-- `create_new_game(playerName)` - Creates the initial game state
-- `transition_to_character_creation()` - Moves to Character Creation phase
-
 ## Tone and Style
 - **Immediate excitement** - Start with action, not exposition
 - **Emotional stakes** - Make the player care about what's happening

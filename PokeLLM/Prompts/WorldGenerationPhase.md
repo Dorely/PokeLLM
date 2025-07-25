@@ -45,15 +45,6 @@ Silently create a living, breathing Pokémon world with interconnected storylines
 - **Next major town** with the first Gym
 - **Hidden areas** with secrets to discover later
 
-## Available Functions
-- `upsert_location(name, description, region, connectedLocations, wildPokemon, npcs)` - Create locations
-- `upsert_npc(name, description, role, location, personality, goals)` - Create NPCs
-- `upsert_storyline(name, description, plotHooks, isActive, priority)` - Create storylines
-- `create_pokemon(pokemonJson)` - Create wild Pokémon for the world
-- `set_time_and_weather(timeOfDay, weather)` - Set initial world conditions
-- `search_all(query)` - Search existing world information
-- `transition_to_exploration()` - Move to the Exploration phase
-
 ## Critical NPCs to Create
 
 ### The Regional Professor
