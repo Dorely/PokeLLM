@@ -283,7 +283,7 @@ Provide a detailed but concise summary that preserves essential context for the 
         _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
         
         // Core game engine for creating new game
-        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        var gameEnginePlugin = new GameStatePlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
         
         Debug.WriteLine("Loaded Game Creation plugins: PhaseTransition, GameEngine");
@@ -317,7 +317,7 @@ Provide a detailed but concise summary that preserves essential context for the 
         _kernel.ImportPluginFromObject(phaseTransitionPlugin, "PhaseTransition");
         
         // Core game engine for world state management
-        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        var gameEnginePlugin = new GameStatePlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
         
         // Dice for random world generation
@@ -333,7 +333,7 @@ Provide a detailed but concise summary that preserves essential context for the 
         var vectorStorePlugin = new VectorStorePlugin(_vectorStoreService);
         _kernel.ImportPluginFromObject(vectorStorePlugin, "VectorStore");
         
-        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        var gameEnginePlugin = new GameStatePlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
         
         var dicePlugin = new DicePlugin(_gameStateRepository);
@@ -348,7 +348,7 @@ Provide a detailed but concise summary that preserves essential context for the 
     private async Task LoadCombatPluginsAsync()
     {
         // Combat-focused plugins
-        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        var gameEnginePlugin = new GameStatePlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
         
         var dicePlugin = new DicePlugin(_gameStateRepository);
@@ -370,7 +370,7 @@ Provide a detailed but concise summary that preserves essential context for the 
         var characterCreationPlugin = new CharacterCreationPlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(characterCreationPlugin, "CharacterCreation");
         
-        var gameEnginePlugin = new GameEnginePlugin(_gameStateRepository);
+        var gameEnginePlugin = new GameStatePlugin(_gameStateRepository);
         _kernel.ImportPluginFromObject(gameEnginePlugin, "GameEngine");
         
         var dicePlugin = new DicePlugin(_gameStateRepository);

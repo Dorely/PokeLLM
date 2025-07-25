@@ -194,7 +194,7 @@ public class ProgramIntegrationTests
 
         // Assert - Verify plugins can be constructed with these dependencies
         Assert.NotNull(new PhaseTransitionPlugin(gameStateRepo));
-        Assert.NotNull(new GameEnginePlugin(gameStateRepo));
+        Assert.NotNull(new GameStatePlugin(gameStateRepo));
         Assert.NotNull(new CharacterCreationPlugin(gameStateRepo));
         Assert.NotNull(new DicePlugin(gameStateRepo));
         Assert.NotNull(new VectorStorePlugin(vectorStoreService));
