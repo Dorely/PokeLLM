@@ -14,7 +14,6 @@ public class OpenAiProvider : ILLMProvider
     private readonly Kernel _kernel;
     private readonly IGameStateRepository _gameStateRepository;
     private readonly IVectorStoreService _vectorStoreService;
-    private readonly IServiceProvider _serviceProvider;
     private GamePhase _currentPhase;
     private Dictionary<GamePhase, ChatHistory> _histories = new();
     
@@ -23,7 +22,7 @@ public class OpenAiProvider : ILLMProvider
     private const int MESSAGES_TO_KEEP_RECENT = 6; // Keep most recent messages after summarization
     private const int MAX_CONTEXT_TOKENS = 8000; // Rough token limit for context
 
-    public OpenAiProvider(IOptions<ModelConfig> options, IGameStateRepository gameStateRepository, IVectorStoreService vectorStoreService, IServiceProvider serviceProvider)
+    public OpenAiProvider(IOptions<ModelConfig> options, IGameStateRepository gameStateRepository, IVectorStoreService vectorStoreService)
     {
         var apiKey = options.Value.ApiKey;
         var modelId = options.Value.ModelId;
@@ -31,7 +30,6 @@ public class OpenAiProvider : ILLMProvider
 
         _gameStateRepository = gameStateRepository;
         _vectorStoreService = vectorStoreService;
-        _serviceProvider = serviceProvider;
 
         IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.AddOpenAIChatCompletion(
@@ -66,6 +64,13 @@ public class OpenAiProvider : ILLMProvider
         
         var oldPhase = _currentPhase;
         var phaseChanged = _currentPhase != newPhase;
+        
+        // If phase has changed, generate conversation summary from the old phase before switching
+        if (phaseChanged && _currentPhase != default(GamePhase) && _histories.ContainsKey(_currentPhase))
+        {
+            await HandlePhaseTransitionAsync(oldPhase, newPhase);
+        }
+        
         _currentPhase = newPhase;
         
         // Only clear and reload plugins if the phase has actually changed
@@ -79,6 +84,125 @@ public class OpenAiProvider : ILLMProvider
         
         // Ensure histories exist for all phases
         await EnsureAllPhaseHistoriesExistAsync();
+    }
+
+    private async Task HandlePhaseTransitionAsync(GamePhase oldPhase, GamePhase newPhase)
+    {
+        try
+        {
+            var oldPhaseHistory = _histories[oldPhase];
+            if (oldPhaseHistory != null && oldPhaseHistory.Count > 1) // More than just system message
+            {
+                Debug.WriteLine($"Generating conversation summary for phase transition from {oldPhase} to {newPhase}");
+                
+                // Generate conversation summary using existing summarization logic
+                var conversationSummary = await GeneratePhaseTransitionSummaryAsync(oldPhaseHistory);
+                
+                // Update the game state with the conversation summary
+                var gameState = await _gameStateRepository.LoadLatestStateAsync();
+                if (gameState != null)
+                {
+                    gameState.PreviousPhaseConversationSummary = conversationSummary;
+                    await _gameStateRepository.SaveStateAsync(gameState);
+                    Debug.WriteLine($"Saved conversation summary for transition from {oldPhase} to {newPhase}");
+                }
+                
+                // Store the conversation chunk in vector store for future reference
+                await StorePhaseTransitionConversationAsync(conversationSummary, oldPhaseHistory, oldPhase, newPhase);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Warning: Failed to handle phase transition summary: {ex.Message}");
+        }
+    }
+
+    private async Task<string> GeneratePhaseTransitionSummaryAsync(ChatHistory history)
+    {
+        try
+        {
+            // Filter out system messages and get user/assistant conversation
+            var conversationMessages = history
+                .Where(m => m.Role == AuthorRole.User || m.Role == AuthorRole.Assistant)
+                .ToList();
+
+            if (!conversationMessages.Any())
+                return string.Empty;
+
+            // Reuse the existing summarization logic but with phase transition context
+            var summary = await SummarizeMessagesForPhaseTransitionAsync(conversationMessages);
+            return summary;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Warning: Failed to generate phase transition summary: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    private async Task<string> SummarizeMessagesForPhaseTransitionAsync(IEnumerable<ChatMessageContent> messages)
+    {
+        var chatManagementPrompt = await LoadChatManagementPromptAsync();
+        
+        // Format messages for summarization
+        var conversationText = string.Join("\n", messages.Select(m => $"{m.Role}: {m.Content}"));
+        
+        var summarizationPrompt = $@"{chatManagementPrompt}
+
+This is a PHASE TRANSITION summary. Please create a comprehensive summary of this conversation that will provide context for the next game phase, focusing on:
+
+**Story Progress**: Major plot developments, narrative beats, and story decisions
+**Character Development**: Player character creation, growth, relationships, and interactions
+**Game State Changes**: Items acquired, pokemon caught/trained, locations visited, achievements unlocked
+**World Building**: New locations discovered, NPCs met, factions encountered
+**Active Threads**: Ongoing quests, unresolved conflicts, immediate next objectives
+**Phase Context**: Why this phase is ending and what should carry forward to the next phase
+
+Conversation to summarize:
+{conversationText}
+
+Provide a detailed but concise summary that preserves essential context for the next phase:";
+
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            MaxTokens = 600, // Slightly longer for phase transitions
+            Temperature = 0.3 // Lower temperature for more consistent summaries
+        };
+
+        var result = await _kernel.InvokePromptAsync(
+            summarizationPrompt,
+            new KernelArguments(executionSettings)
+        );
+
+        return result.ToString();
+    }
+
+    private async Task StorePhaseTransitionConversationAsync(string summary, ChatHistory originalHistory, GamePhase oldPhase, GamePhase newPhase)
+    {
+        try
+        {
+            var conversationMessages = originalHistory
+                .Where(m => m.Role == AuthorRole.User || m.Role == AuthorRole.Assistant)
+                .ToList();
+                
+            var chunkContent = string.Join("\n", conversationMessages.Select(m => $"{m.Role}: {m.Content}"));
+            var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+            
+            await _vectorStoreService.UpsertInformationAsync(
+                name: $"Phase Transition - {oldPhase} to {newPhase} - {timestamp}",
+                description: summary,
+                content: chunkContent,
+                type: "phase_transition",
+                tags: new[] { oldPhase.ToString().ToLower(), newPhase.ToString().ToLower(), "phase_transition", "conversation_summary" },
+                relatedEntries: null
+            );
+            
+            Debug.WriteLine($"Stored phase transition conversation in vector store: {oldPhase} -> {newPhase}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Warning: Failed to store phase transition conversation in vector store: {ex.Message}");
+        }
     }
 
     private async Task EnsureAllPhaseHistoriesExistAsync()
@@ -468,7 +592,25 @@ Provide a concise but comprehensive summary:";
                 GamePhase.LevelUp => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "LevelUpPhase.md"),
                 _ => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "GameCreationPhase.md")
             };
-            var systemPrompt = await File.ReadAllTextAsync(promptPath);//load prompts,
+            var systemPrompt = await File.ReadAllTextAsync(promptPath);
+
+            // Add phase transition context if available
+            var gameState = await _gameStateRepository.LoadLatestStateAsync();
+            if (gameState != null)
+            {
+                // Add previous phase conversation summary for context
+                if (!string.IsNullOrEmpty(gameState.PreviousPhaseConversationSummary))
+                {
+                    systemPrompt += $"\n\n## Previous Phase Context\n{gameState.PreviousPhaseConversationSummary}";
+                }
+
+                // Add phase change summary (reason for transition)
+                if (!string.IsNullOrEmpty(gameState.PhaseChangeSummary))
+                {
+                    systemPrompt += $"\n\n## Phase Change Summary\n{gameState.PhaseChangeSummary}";
+                }
+            }
+
             return systemPrompt;
         }
         catch (Exception ex)

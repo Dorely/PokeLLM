@@ -21,6 +21,10 @@ public class GameStateModel
     [Description("A summary what has taken place and why the phase is changing")]
     public string PhaseChangeSummary { get; set; } = string.Empty;
 
+    [JsonPropertyName("previousPhaseConversationSummary")]
+    [Description("A summary of the conversation from the previous phase to provide context for the new phase")]
+    public string PreviousPhaseConversationSummary { get; set; } = string.Empty;
+
     [JsonPropertyName("player")]
     public PlayerState Player { get; set; } = new();
 

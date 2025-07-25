@@ -28,7 +28,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_character_creation")]
     [Description("Transition from Game Creation to Character Creation phase")]
-    public async Task<string> TransitionToCharacterCreation([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
+    public async Task<string> TransitionToCharacterCreation()
     {
         Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToCharacterCreation called");
         try
@@ -42,7 +42,6 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.CharacterCreation;
             gameState.LastSaveTime = DateTime.UtcNow;
-            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -59,7 +58,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_world_generation")]
     [Description("Transition from Character Creation to World Generation phase")]
-    public async Task<string> TransitionToWorldGeneration([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
+    public async Task<string> TransitionToWorldGeneration()
     {
         Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToWorldGeneration called");
         try
@@ -76,7 +75,6 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.WorldGeneration;
             gameState.LastSaveTime = DateTime.UtcNow;
-            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -93,7 +91,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_exploration")]
     [Description("Transition to Exploration phase from World Generation or other phases")]
-    public async Task<string> TransitionToExploration([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
+    public async Task<string> TransitionToExploration()
     {
         Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToExploration called");
         try
@@ -109,7 +107,6 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.Exploration;
             gameState.LastSaveTime = DateTime.UtcNow;
-            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -126,7 +123,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_combat")]
     [Description("Transition to Combat phase from Exploration")]
-    public async Task<string> TransitionToCombat([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
+    public async Task<string> TransitionToCombat()
     {
         Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToCombat called");
         try
@@ -140,7 +137,6 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.Combat;
             gameState.LastSaveTime = DateTime.UtcNow;
-            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 
@@ -157,7 +153,7 @@ public class PhaseTransitionPlugin
 
     [KernelFunction("transition_to_level_up")]
     [Description("Transition to Level Up phase from Combat or Exploration")]
-    public async Task<string> TransitionToLevelUp([Description("A summary what has taken place and why the phase is changing")] string phaseChangeSummary)
+    public async Task<string> TransitionToLevelUp()
     {
         Debug.WriteLine($"[PhaseTransitionPlugin] TransitionToLevelUp called");
         try
@@ -172,7 +168,6 @@ public class PhaseTransitionPlugin
 
             gameState.CurrentPhase = GamePhase.LevelUp;
             gameState.LastSaveTime = DateTime.UtcNow;
-            gameState.PhaseChangeSummary = phaseChangeSummary;
             await _repository.SaveStateAsync(gameState);
 
             return JsonSerializer.Serialize(new { 

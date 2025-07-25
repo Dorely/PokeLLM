@@ -48,7 +48,7 @@ public static class ServiceConfiguration
             var gameStateRepository = serviceProvider.GetRequiredService<IGameStateRepository>();
             var vectorStoreService = serviceProvider.GetRequiredService<IVectorStoreService>();
             
-            return new OpenAiProvider(options, gameStateRepository, vectorStoreService, serviceProvider);
+            return new OpenAiProvider(options, gameStateRepository, vectorStoreService);
         });
 
         return services;
