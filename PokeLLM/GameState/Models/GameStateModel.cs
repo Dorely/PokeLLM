@@ -211,8 +211,8 @@ public class Pokemon
     public int Level { get; set; } = 1;
 
     [JsonPropertyName("knownMoves")]
-    [Description("List of move names. Consider upgrading to a Move object for more complex mechanics.")]
-    public List<string> KnownMoves { get; set; } = new();
+    [Description("List of moves this Pokemon knows. Up to 4 moves can be known at once.")]
+    public List<Move> KnownMoves { get; set; } = new();
 
     [JsonPropertyName("currentVigor")]
     public int CurrentVigor { get; set; } = 10;
@@ -300,29 +300,168 @@ public class ItemInstance
     public int Quantity { get; set; }
 }
 
+/// <summary>
+/// D&D 5e-style ability scores for characters and Pokemon.
+/// Each score typically ranges from 3-20, with 10-11 being average for humans.
+/// </summary>
 public class Stats
 {
-    [JsonPropertyName("power")]
-    public StatLevel Power { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("strength")]
+    [Description("Physical power and raw muscle. Affects melee attack damage and athletic feats.")]
+    public int Strength { get; set; } = 10;
 
-    [JsonPropertyName("speed")]
-    public StatLevel Speed { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("dexterity")]
+    [Description("Agility, reflexes, and hand-eye coordination. Affects AC, initiative, and ranged attacks.")]
+    public int Dexterity { get; set; } = 10;
 
-    [JsonPropertyName("mind")]
-    public StatLevel Mind { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("constitution")]
+    [Description("Health, stamina, and vital force. Affects hit points and endurance.")]
+    public int Constitution { get; set; } = 10;
 
-    [JsonPropertyName("charm")]
-    public StatLevel Charm { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("intelligence")]
+    [Description("Reasoning ability, memory, and analytical thinking. Affects special attack accuracy and damage.")]
+    public int Intelligence { get; set; } = 10;
 
-    [JsonPropertyName("defense")]
-    public StatLevel Defense { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("wisdom")]
+    [Description("Awareness, intuition, and insight. Affects perception and saving throws.")]
+    public int Wisdom { get; set; } = 10;
 
-    [JsonPropertyName("spirit")]
-    public StatLevel Spirit { get; set; } = StatLevel.Novice;
+    [JsonPropertyName("charisma")]
+    [Description("Force of personality, leadership, and social ability. Affects Pokemon capture and friendship.")]
+    public int Charisma { get; set; } = 10;
+}
+
+/// <summary>
+/// Represents a Pokemon move with complete mechanical data for D&D 5e-style combat.
+/// </summary>
+public class Move
+{
+    [JsonPropertyName("id")]
+    [Description("Unique move identifier, e.g., 'move_tackle' or 'move_thunderbolt'.")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    [Description("Display name of the move, e.g., 'Tackle' or 'Thunderbolt'.")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("category")]
+    [Description("The type of move: Physical (uses Strength), Special (uses Intelligence), or Status (no damage).")]
+    public MoveCategory Category { get; set; } = MoveCategory.Physical;
+
+    [JsonPropertyName("damageDice")]
+    [Description("Damage dice notation for the move, e.g., '1d6', '2d10', '1d4+3', or empty for status moves.")]
+    public string DamageDice { get; set; } = string.Empty;
+
+    [JsonPropertyName("type")]
+    [Description("The Pokemon type of this move for type effectiveness calculations.")]
+    public PokemonType Type { get; set; } = PokemonType.Normal;
+
+    [JsonPropertyName("vigorCost")]
+    [Description("Amount of Vigor (energy) this move costs to use. Typical range 1-5")]
+    public int VigorCost { get; set; } = 1;
+
+    [JsonPropertyName("description")]
+    [Description("Narrative description of the move's effects and appearance.")]
+    public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Blueprint data for Pokemon species, defining their base characteristics.
+/// Used as templates when creating new Pokemon instances.
+/// </summary>
+public class PokemonSpeciesData
+{
+    [JsonPropertyName("speciesName")]
+    [Description("The name of the Pokemon species, e.g., 'Pikachu'.")]
+    public string SpeciesName { get; set; } = string.Empty;
+
+    [JsonPropertyName("baseAbilityScores")]
+    [Description("Base ability scores that all Pokemon of this species start with.")]
+    public Stats BaseAbilityScores { get; set; } = new();
+
+    [JsonPropertyName("learnableMoves")]
+    [Description("List of moves that Pokemon of this species can learn through leveling or training.")]
+    public List<Move> LearnableMoves { get; set; } = new();
+
+    [JsonPropertyName("evolutionInfo")]
+    [Description("Simple evolution data - can be expanded later for complex evolution requirements.")]
+    public EvolutionData EvolutionInfo { get; set; } = new();
+
+    [JsonPropertyName("type1")]
+    [Description("Primary type of this Pokemon species.")]
+    public PokemonType Type1 { get; set; } = PokemonType.Normal;
+
+    [JsonPropertyName("type2")]
+    [Description("Secondary type of this Pokemon species, if any.")]
+    public PokemonType? Type2 { get; set; }
+
+    [JsonPropertyName("baseVigor")]
+    [Description("Base vigor (health/energy) for this species.")]
+    public int BaseVigor { get; set; } = 10;
+}
+
+/// <summary>
+/// Blueprint data for trainer classes, defining their progression and abilities.
+/// </summary>
+public class TrainerClassData
+{
+    [JsonPropertyName("className")]
+    [Description("The name of the trainer class, e.g., 'Researcher', 'Athlete', 'Coordinator'.")]
+    public string ClassName { get; set; } = string.Empty;
+
+    [JsonPropertyName("levelUpTable")]
+    [Description("Features gained at each level for this class.")]
+    public Dictionary<int, ClassFeature> LevelUpTable { get; set; } = new();
+
+    [JsonPropertyName("description")]
+    [Description("Description of the trainer class and its role.")]
+    public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Represents a feature or ability gained by a trainer class at a specific level.
+/// </summary>
+public class ClassFeature
+{
+    [JsonPropertyName("name")]
+    [Description("Name of the class feature.")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("description")]
+    [Description("Description of what the class feature does.")]
+    public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Simple evolution data structure - can be expanded for complex evolution requirements.
+/// </summary>
+public class EvolutionData
+{
+    [JsonPropertyName("evolutionLevel")]
+    [Description("Level at which this Pokemon evolves, or 0 if it doesn't evolve by level.")]
+    public int EvolutionLevel { get; set; } = 0;
+
+    [JsonPropertyName("evolvesInto")]
+    [Description("Species name this Pokemon evolves into, or empty if it doesn't evolve.")]
+    public string EvolvesInto { get; set; } = string.Empty;
+
+    [JsonPropertyName("evolutionRequirements")]
+    [Description("Additional requirements for evolution beyond level, if any.")]
+    public string EvolutionRequirements { get; set; } = string.Empty;
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum StatLevel { Hopeless = -2, Incompetent = -1, Novice = 0, Trained = 1, Experienced = 2, Expert = 3, Veteran = 4, Master = 5, Grandmaster = 6, Legendary = 7 }
+public enum MoveCategory 
+{ 
+    [Description("Physical moves use Strength for attack rolls and damage.")]
+    Physical, 
+    
+    [Description("Special moves use Intelligence for attack rolls and damage.")]
+    Special, 
+    
+    [Description("Status moves don't deal damage but apply effects.")]
+    Status 
+}
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PokemonType { Normal, Fire, Water, Grass, Electric, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Steel, Dark, Fairy }

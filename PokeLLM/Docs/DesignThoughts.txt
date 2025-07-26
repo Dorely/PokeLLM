@@ -1,0 +1,366 @@
+# PokeLLM Game Design Document
+
+## Table of Contents
+1. [Game Architecture Overview](#game-architecture-overview)
+2. [Game Phases](#game-phases)
+3. [Core Subroutines](#core-subroutines)
+4. [Function Requirements by Phase](#function-requirements-by-phase)
+5. [Implementation Priorities](#implementation-priorities)
+6. [Development Status](#development-status)
+
+---
+
+## Game Architecture Overview
+
+### Core Concept
+PokeLLM is an LLM-driven Pokemon adventure game that creates procedural stories and worlds. The game operates through distinct phases, each handling specific aspects of the gameplay experience.
+
+### State Management
+- **Game State File**: Contains current world state, player data, NPCs, Pokemon, and progress
+- **Vector Store**: Holds persistent world knowledge, class data, species information, and conversation history
+- **Phase System**: Controls game flow and determines available functions and prompts
+
+### Key Design Principles
+- **Narrative-Driven**: Story always comes first, mechanics support narrative
+- **Procedural Generation**: Content created dynamically but stored for consistency
+- **Context Management**: AI maintains world consistency through vector storage and state tracking
+- **Player Agency**: Player choices drive story while AI guides toward engaging content
+
+---
+
+## Game Phases
+
+### 1. GameCreation Phase
+**Purpose**: Initialize game and guide player through world selection
+
+**Objectives**:
+- Create initial game state file
+- Present regional choices (canonical and custom)
+- Gather setting information for non-canonical regions
+- Confirm player readiness to begin
+- Transition to WorldGeneration
+
+**Player Interaction**:
+- Choose from 5+ regional options (Kanto, Johto, Orre, Orange Islands, Lental, etc.)
+- Option to request additional choices or create custom region
+- Provide description for custom regions (appearance, real-world inspiration, Pokemon types)
+- Confirm readiness to start adventure
+
+**Completion Criteria**:
+- Region selected and documented
+- "Region selected" event logged
+- Game creation summary generated
+- Phase transition to WorldGeneration
+
+**Required Functions**:
+- `set_region` - Save region selection to game state
+- `finalize_game_creation` - Save summary, transition phase
+
+---
+
+### 2. WorldGeneration Phase
+**Purpose**: Procedurally generate complete world before gameplay begins
+
+**Objectives**:
+- Create detailed region description
+- Generate locations (8+ gyms, dungeons, towns)
+- Establish plot threads
+- Create NPCs and important Pokemon
+- Craft opening scenario for player
+
+**Generation Steps**:
+1. **Region Details**: Complete description with landmarks, culture, politics, crime syndicates, legendaries, history
+2. **Location Generation**: 
+   - 8+ gym towns with associated challenges
+   - Equal number of dungeon/adventure locations
+   - Each location includes: NPCs, items, Pokemon, quests, travel requirements
+3. **Plot Thread Creation**:
+   - Pokemon League/Gym Challenge
+   - Rivalry storyline
+   - Crime syndicate operations
+   - Legendary Pokemon mysteries
+   - Friends and traveling companions
+4. **Location Enhancement**: Update locations to tie into plot threads
+5. **NPC Population**: Create all important NPCs with full details
+6. **Pokemon Creation**: Generate legendary/quest/trainer Pokemon instances
+7. **Opening Scenario**: Design starting situation with starter Pokemon choice
+
+**Completion Criteria**:
+- All major plot threads established
+- World fully populated with NPCs and Pokemon
+- Opening scenario ready
+- Context prepared for CharacterCreation
+
+**Required Functions**:
+- `vector_lookups` - Check existing context and find IDs
+- `vector_upserts` - Store contextual world data
+- `create_npc` - Add NPCs to game state
+- `create_pokemon` - Add Pokemon instances to world
+- `update_npc` - Assign Pokemon to NPC teams
+- `finalize_world_creation` - Save context, transition phase
+- `dice_roll` - Add procedural randomness
+
+---
+
+### 3. CharacterCreation Phase
+**Purpose**: Introduce player to world and create their character
+
+**Objectives**:
+- Start narrative with opening scenario
+- Guide character creation within story context
+- Establish player identity and capabilities
+- Transition to main gameplay
+
+**Process**:
+1. **Narrative Opening**: Drop player into pre-generated scenario
+2. **Character Setup**: Name, optional roleplay background
+3. **Class Selection**: Search vector store, generate if needed
+4. **Stat Assignment**: Standard spread or optional rolling
+5. **Story Integration**: Continue narrative with new character
+
+**Player Choices**:
+- Character name
+- Optional roleplay background
+- Class selection (existing or custom description)
+- Stat distribution method
+
+**Completion Criteria**:
+- Character fully created
+- Narrative context maintained
+- Ready to continue opening scenario
+- Summary prepared for Exploration phase
+
+**Required Functions**:
+- `vector_lookups` - Find class information
+- `vector_upserts` - Store new class data if needed
+- `set_player_name` - Save character name
+- `set_player_class` - Set class with descriptive ID
+- `set_player_stats` - Configure character stats
+- `dice_roll` - Optional stat rolling
+- `finalize_character_creation` - Save data, transition phase
+
+---
+
+### 4. Exploration Phase
+**Purpose**: Main gameplay phase for story and adventure
+
+**Objectives**:
+- Continue narrative from character creation
+- Guide player through opening scenario
+- Facilitate starter Pokemon selection
+- Manage ongoing adventures and story progression
+
+**Core Gameplay Loop**:
+1. **Narrative Description**: Describe current situation/location
+2. **Event Generation**: Create 5 potential events, randomly select one
+3. **Player Response**: Handle player actions and choices
+4. **Consequence Resolution**: Narrate results, update world state
+5. **Context Management**: Maintain world consistency
+
+**Key Responsibilities**:
+- Story progression and plot development
+- Starter Pokemon introduction and selection
+- World exploration and location visits
+- NPC interactions and dialogue
+- Quest and challenge management
+- Combat initiation when appropriate
+- Inventory and resource management
+
+**Example Flow**:GM: *Describes town entrance with details*
+GM: *Generates 5 events, rolls for "old man yelling at cloud"*
+GM: *Describes the scene*
+Player: "I want to talk to the old man"
+GM: *Narrates approach and conversation*
+Player: "I try to sneak up and scare him"
+GM: *Calls skill_check(12, dex), gets 16*
+GM: *Success! Describes stealth approach*
+Player: "Boo!"
+GM: *Generates 5 responses, selects combat*
+GM: *Old man gets angry, calls out Growlithe*
+GM: *Calls initiate_combat function*
+[Combat Phase handles battle]
+GM: *Receives combat summary, continues story*
+**Transition Triggers**:
+- Combat situations ? Combat Phase
+- Level up earned ? LevelUp Phase
+- Major story milestones ? Continue in Exploration
+
+**Required Functions**:
+- All game state management functions
+- All lookup and dice roll functions
+- Damage abilities (for non-combat scenarios)
+- Context management tools
+- Combat initiation when needed
+
+---
+
+### 5. Combat Phase
+**Purpose**: Handle tactical Pokemon battles
+
+**System**: D&D 5e inspired combat mechanics
+
+**Status**: TODO - Detailed design needed
+
+---
+
+### 6. LevelUp Phase
+**Purpose**: Guide player/Pokemon through leveling process
+
+**Objectives**:
+- Handle player character advancement
+- Manage Pokemon level progression
+- Apply level-based improvements
+
+**Data Requirements**:
+- Level tables for Pokemon species
+- Class progression tables for players
+- Generate tables if missing
+
+**Status**: TODO - Detailed design needed
+
+---
+
+## Core Subroutines
+
+### Context Management (formerly Context Gathering)
+**Purpose**: Maintain world consistency and continuity
+
+**Responsibilities**:
+- Run after every player input during main phases
+- Add relevant vector store content to conversation
+- Update missing data in vector store
+- Correct game state to ensure proper population
+- Maintain NPC, location, and Pokemon data integrity
+
+**When Active**: All main gameplay phases
+
+### Chat Management
+**Purpose**: Optimize conversation performance
+
+**Responsibilities**:
+- Trim chat context for performance
+- Store periodic summaries in vector store
+- Maintain chat histories with turn counters
+- Provide reference material for context subroutine
+
+**When Active**: All phases
+
+---
+
+## Function Requirements by Phase
+
+### GameCreation Phase
+- `set_region(string regionName)`
+- `finalize_game_creation(string summary)`
+
+### WorldGeneration Phase
+- `vector_lookups(array queries)`
+- `vector_upserts(array data)`
+- `create_npc(string npcId)`
+- `create_pokemon(string pokemonId)`
+- `update_npc(string npcId, object updates)`
+- `finalize_world_creation(string context)`
+- `dice_roll(int sides, int count)` [optional]
+
+### CharacterCreation Phase
+- `vector_lookups(array queries)`
+- `vector_upserts(array data)`
+- `set_player_name(string name)`
+- `set_player_class(string classId)`
+- `set_player_stats(object stats)`
+- `dice_roll(int sides, int count)`
+- `finalize_character_creation(string summary)`
+
+### Exploration Phase
+- All game state management functions
+- All vector store functions
+- All dice rolling functions
+- Damage calculation functions
+- `initiate_combat(string summary, array combatants)`
+- `skill_check(int dc, string attribute)`
+- Inventory management functions
+- Event logging functions
+
+### Combat Phase
+- Combat-specific functions (TODO)
+
+### LevelUp Phase
+- Level progression functions (TODO)
+
+### All Phases
+- Context management functions
+- Chat management functions
+- Error handling and logging
+
+---
+
+## Implementation Priorities
+
+### Phase 1: Core Infrastructure ?
+- [x] Game state management
+- [x] Vector store integration
+- [x] Plugin architecture
+- [x] Phase transition system
+
+### Phase 2: Essential Phases
+- [x] GameCreation prompts and functions
+- [x] CharacterCreation prompts and functions  
+- [x] WorldGeneration prompts and functions
+- [ ] Complete function implementations
+- [ ] Context management subroutine
+- [ ] Chat management subroutine
+
+### Phase 3: Main Gameplay
+- [ ] Exploration phase implementation
+- [ ] Combat system design and implementation
+- [ ] LevelUp phase implementation
+- [ ] Comprehensive testing
+
+### Phase 4: Polish and Enhancement
+- [ ] Advanced procedural generation
+- [ ] Enhanced AI storytelling
+- [ ] Performance optimization
+- [ ] Save/load game functionality
+
+---
+
+## Development Status
+
+### Completed ?
+- Basic project structure
+- Game state models and repository
+- Vector store integration
+- Plugin system architecture
+- Phase-specific prompt files
+- Core game state functions
+
+### In Progress ??
+- Function plugin implementations
+- Context management system
+- Chat history management
+
+### Pending ?
+- Complete Exploration phase
+- Combat system
+- LevelUp system
+- Integration testing
+- Save/load functionality
+
+### Future Enhancements ??
+- Multiple save slots
+- Advanced procedural generation
+- Enhanced AI personalities
+- Multiplayer considerations
+- Performance optimizations
+
+---
+
+## Notes for Future Development
+
+1. **Function Implementation**: Most functions are designed but need complete implementation in plugins
+2. **Error Handling**: Add comprehensive error handling for all functions
+3. **Testing Strategy**: Develop unit tests for each phase and function
+4. **Performance**: Monitor LLM token usage and optimize context management
+5. **User Experience**: Consider adding configuration options for different play styles
+6. **Content Generation**: Develop templates and guidelines for consistent world generation
+7. **Documentation**: Maintain detailed API documentation for all functions

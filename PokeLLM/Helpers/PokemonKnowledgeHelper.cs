@@ -263,18 +263,17 @@ public static class PokemonKnowledgeHelper
         string moveType, int numDice, int hitDiceRoll, bool isSpecialMove, Random random)
     {
         // Get attacker's relevant stat for calculating bonus dice
-        var attackStat = isSpecialMove ? attacker.Stats.Mind : attacker.Stats.Power;
-        var attackStatValue = (int)attackStat;
+        var attackStat = isSpecialMove ? attacker.Stats.Intelligence : attacker.Stats.Strength;
+        var attackModifier = (int)Math.Floor((attackStat - 10) / 2.0);
         
-        // Calculate bonus dice: +1 die for every 2 skill levels above Novice (0)
-        // Assuming StatLevel enum starts at 0 for Novice
-        var bonusDice = attackStatValue / 2;
+        // Calculate bonus dice: +1 die for every +2 ability modifier above 0
+        var bonusDice = Math.Max(0, attackModifier / 2);
         var totalDice = numDice + bonusDice;
         
         int baseDamage = 0;
         
         // Apply type effectiveness for advantage/disadvantage on dice rolls only
-        var typeEffectiveness = CalculateDualTypeEffectiveness(moveType, defender.Type1.ToString(), defender.Type2.ToString());
+        var typeEffectiveness = CalculateDualTypeEffectiveness(moveType, defender.Type1.ToString(), defender.Type2?.ToString() ?? "");
         
         // Roll damage dice with advantage/disadvantage based on type effectiveness
         if (typeEffectiveness > 1.0)
@@ -336,16 +335,16 @@ public static class PokemonKnowledgeHelper
     }
 
     /// <summary>
-    /// Calculate initiative for a Pokemon in battle using Speed stat + d20 roll
+    /// Calculate initiative for a Pokemon in battle using Dexterity stat + d20 roll
     /// </summary>
     /// <param name="pokemon">Pokemon to calculate initiative for</param>
     /// <param name="random">Random number generator</param>
     /// <returns>Initiative value for turn order</returns>
-    public static int CalculateInitiative(StatLevel speedLevel, Random random)
+    public static int CalculateInitiative(Pokemon pokemon, Random random)
     {
-        int speedModifier = (int)speedLevel;
+        int dexterityModifier = (int)Math.Floor((pokemon.Stats.Dexterity - 10) / 2.0);
         int roll = random.Next(1, 21); // 1d20
-        return roll + speedModifier;
+        return roll + dexterityModifier;
     }
 
 }

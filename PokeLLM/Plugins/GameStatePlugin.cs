@@ -476,9 +476,12 @@ public class GameStatePlugin
             var healthModifier = (targetPokemon.MaxVigor - targetPokemon.CurrentVigor) * 2; // Lower health = better chance
             var levelModifier = Math.Max(0, 20 - targetPokemon.Level); // Lower level = better chance
             var ballModifier = GetPokeBallModifier(pokeballItemId);
-            var charmModifier = trainerId == "player" ? (int)gameState.Player.Character.Stats.Charm * 5 : 0;
             
-            var totalChance = baseChance + healthModifier + levelModifier + ballModifier + charmModifier + (catchModifier ?? 0);
+            // Use Charisma modifier for catch attempts (D&D 5e style)
+            var charismaScore = trainerId == "player" ? gameState.Player.Character.Stats.Charisma : 10;
+            var charismaModifier = CalculateAbilityModifier(charismaScore) * 5;
+            
+            var totalChance = baseChance + healthModifier + levelModifier + ballModifier + charismaModifier + (catchModifier ?? 0);
             totalChance = Math.Clamp(totalChance, 5, 95); // Never 0% or 100%
 
             var random = new Random();
@@ -875,39 +878,39 @@ public class GameStatePlugin
     {
         var updated = false;
 
-        if (updates.ContainsKey("power") && Enum.TryParse<StatLevel>(updates["power"].ToString(), out var power))
+        if (updates.ContainsKey("strength"))
         {
-            stats.Power = power;
+            stats.Strength = Convert.ToInt32(updates["strength"]);
             updated = true;
         }
 
-        if (updates.ContainsKey("speed") && Enum.TryParse<StatLevel>(updates["speed"].ToString(), out var speed))
+        if (updates.ContainsKey("dexterity"))
         {
-            stats.Speed = speed;
+            stats.Dexterity = Convert.ToInt32(updates["dexterity"]);
             updated = true;
         }
 
-        if (updates.ContainsKey("mind") && Enum.TryParse<StatLevel>(updates["mind"].ToString(), out var mind))
+        if (updates.ContainsKey("constitution"))
         {
-            stats.Mind = mind;
+            stats.Constitution = Convert.ToInt32(updates["constitution"]);
             updated = true;
         }
 
-        if (updates.ContainsKey("charm") && Enum.TryParse<StatLevel>(updates["charm"].ToString(), out var charm))
+        if (updates.ContainsKey("intelligence"))
         {
-            stats.Charm = charm;
+            stats.Intelligence = Convert.ToInt32(updates["intelligence"]);
             updated = true;
         }
 
-        if (updates.ContainsKey("defense") && Enum.TryParse<StatLevel>(updates["defense"].ToString(), out var defense))
+        if (updates.ContainsKey("wisdom"))
         {
-            stats.Defense = defense;
+            stats.Wisdom = Convert.ToInt32(updates["wisdom"]);
             updated = true;
         }
 
-        if (updates.ContainsKey("spirit") && Enum.TryParse<StatLevel>(updates["spirit"].ToString(), out var spirit))
+        if (updates.ContainsKey("charisma"))
         {
-            stats.Spirit = spirit;
+            stats.Charisma = Convert.ToInt32(updates["charisma"]);
             updated = true;
         }
 
@@ -1021,6 +1024,17 @@ public class GameStatePlugin
     {
         // Experience curve: 1000 * (level - 1)^1.5
         return (int)(1000 * Math.Pow(level - 1, 1.5));
+    }
+
+    /// <summary>
+    /// Calculates the D&D 5e ability modifier from an ability score.
+    /// Formula: floor((abilityScore - 10) / 2)
+    /// </summary>
+    /// <param name="abilityScore">The ability score (typically 3-20)</param>
+    /// <returns>The modifier (-4 to +5 for typical scores)</returns>
+    private int CalculateAbilityModifier(int abilityScore)
+    {
+        return (int)Math.Floor((abilityScore - 10) / 2.0);
     }
 }
 

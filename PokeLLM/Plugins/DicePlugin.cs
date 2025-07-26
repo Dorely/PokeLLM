@@ -100,7 +100,7 @@ public class DicePlugin
 
     [KernelFunction("make_skill_check")]
     public async Task<string> MakeSkillCheck(
-        [Description("Stat to use: Power, Speed, Mind, Charm, Defense, Spirit")] string statName,
+        [Description("Stat to use: Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma")] string statName,
         [Description("Difficulty Class (5=Very Easy, 8=Easy, 11=Medium, 14=Hard, 17=Very Hard, 20=Nearly Impossible)")] int difficultyClass,
         [Description("Whether the check has advantage (roll twice, take higher)")] bool advantage = false,
         [Description("Whether the check has disadvantage (roll twice, take lower)")] bool disadvantage = false,
@@ -114,11 +114,11 @@ public class DicePlugin
 
         // Validate stat name
         if (!IsValidStatName(statName))
-            return JsonSerializer.Serialize(new { error = "Invalid stat name. Use: Power, Speed, Mind, Charm, Defense, or Spirit" }, _jsonOptions);
+            return JsonSerializer.Serialize(new { error = "Invalid stat name. Use: Strength, Dexterity, Constitution, Intelligence, Wisdom, or Charisma" }, _jsonOptions);
 
-        // Get stat modifier
-        var statLevel = GetStatLevel(gameState.Player.Character.Stats, statName);
-        var statModifier = (int)statLevel;
+        // Get stat modifier using D&D 5e rules
+        var abilityScore = GetAbilityScore(gameState.Player.Character.Stats, statName);
+        var statModifier = CalculateAbilityModifier(abilityScore);
 
         // Roll the dice based on advantage/disadvantage
         int diceRoll;
@@ -183,23 +183,38 @@ public class DicePlugin
 
     #region Helper Methods
 
-    private StatLevel GetStatLevel(Stats stats, string statName)
+    /// <summary>
+    /// Gets the ability score for the specified stat name using D&D 5e ability scores
+    /// </summary>
+    private int GetAbilityScore(Stats stats, string statName)
     {
         return statName.ToLower() switch
         {
-            "power" => stats.Power,
-            "speed" => stats.Speed,
-            "mind" => stats.Mind,
-            "charm" => stats.Charm,
-            "defense" => stats.Defense,
-            "spirit" => stats.Spirit,
-            _ => StatLevel.Novice
+            "strength" => stats.Strength,
+            "dexterity" => stats.Dexterity,
+            "constitution" => stats.Constitution,
+            "intelligence" => stats.Intelligence,
+            "wisdom" => stats.Wisdom,
+            "charisma" => stats.Charisma,
+            _ => 10 // Default to 10 (average) if invalid stat name
         };
     }
 
+    /// <summary>
+    /// Calculates the D&D 5e ability modifier from an ability score
+    /// Formula: floor((abilityScore - 10) / 2)
+    /// </summary>
+    private int CalculateAbilityModifier(int abilityScore)
+    {
+        return (int)Math.Floor((abilityScore - 10) / 2.0);
+    }
+
+    /// <summary>
+    /// Validates that the stat name is one of the six D&D 5e ability scores
+    /// </summary>
     private bool IsValidStatName(string statName)
     {
-        return statName.ToLower() is "power" or "speed" or "mind" or "charm" or "defense" or "spirit";
+        return statName.ToLower() is "strength" or "dexterity" or "constitution" or "intelligence" or "wisdom" or "charisma";
     }
 
     #endregion
