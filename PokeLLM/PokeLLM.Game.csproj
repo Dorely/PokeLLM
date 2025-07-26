@@ -61,8 +61,4 @@
     <PackageReference Include="Qdrant.Client" Version="1.14.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Docs\" />
-  </ItemGroup>
-
 </Project>
