@@ -117,6 +117,9 @@ public class PlayerState
     [JsonPropertyName("character")]
     public Character Character { get; set; } = new();
 
+    [JsonPropertyName("class")]
+    public string Class { get; set; } = string.Empty;
+
     [JsonPropertyName("experience")]
     public int Experience { get; set; } = 0;
 

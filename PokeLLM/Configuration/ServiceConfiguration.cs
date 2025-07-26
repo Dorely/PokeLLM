@@ -54,6 +54,8 @@ public static class ServiceConfiguration
         
         // Register OpenAI-specific LLM provider (low-level)
         services.AddTransient<OpenAiLLMProvider>();
+        // Register ILLMProvider as OpenAiLLMProvider for DI
+        services.AddTransient<ILLMProvider, OpenAiLLMProvider>();
         
         // Register the main orchestration service
         services.AddTransient<IOrchestrationService>(serviceProvider =>
