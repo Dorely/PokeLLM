@@ -10,7 +10,6 @@
   <ItemGroup>
     <None Remove="appsettings.json" />
     <None Remove="Prompts\CharacterCreationPhase.md" />
-    <None Remove="Prompts\ChatManagementPrompt.md" />
     <None Remove="Prompts\CombatPhase.md" />
     <None Remove="Prompts\ExplorationPhase.md" />
     <None Remove="Prompts\GameCreationPhase.md" />
@@ -25,7 +24,7 @@
     <Content Include="Prompts\CharacterCreationPhase.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Prompts\ChatManagementPrompt.md">
+    <Content Include="Prompts\ChatManagementSubroutine.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Prompts\CombatPhase.md">

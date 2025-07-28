@@ -6,7 +6,7 @@ using Qdrant.Client;
 
 namespace PokeLLM.Game.VectorStore;
 
-public class VectorStoreService : IVectorStoreService
+public class QdrantVectorStoreService : IVectorStoreService
 {
     private readonly QdrantVectorStore _vectorStore;
     private readonly IEmbeddingGenerator _embeddingGenerator;
@@ -16,7 +16,7 @@ public class VectorStoreService : IVectorStoreService
     private const string LORE_COLLECTION = "lore_and_rules";
     private const string NARRATIVE_LOG_COLLECTION = "narrative_log";
 
-    public VectorStoreService(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, IOptions<QdrantConfig> qdrantOptions)
+    public QdrantVectorStoreService(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, IOptions<QdrantConfig> qdrantOptions)
     {
         _embeddingGenerator = embeddingGenerator;
         

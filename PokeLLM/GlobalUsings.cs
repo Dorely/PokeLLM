@@ -1,6 +1,5 @@
 // Global usings for PokeLLM namespaces that exist
 global using PokeLLM.GameState;
-global using PokeLLM.GameState.Interfaces;
 global using PokeLLM.GameState.Models;
 
 // Global usings for PokeLLM.Game namespaces

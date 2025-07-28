@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.Extensions.DependencyInjection;
-using PokeLLM.Game.Orchestration.Interfaces;
 
 namespace PokeLLM.Game.LLM;
 
@@ -56,7 +55,7 @@ public class OpenAiLLMProvider : ILLMProvider
         return kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
     }
 
-    public object GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = false)
+    public PromptExecutionSettings GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = false)
     {
         return new OpenAIPromptExecutionSettings
         {

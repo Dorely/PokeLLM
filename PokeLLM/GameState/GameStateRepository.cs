@@ -1,10 +1,15 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PokeLLM.GameState.Interfaces;
 using PokeLLM.GameState.Models;
 
 namespace PokeLLM.GameState;
-
+public interface IGameStateRepository
+{
+    Task<GameStateModel> CreateNewGameStateAsync();
+    Task SaveStateAsync(GameStateModel gameState);
+    Task<GameStateModel> LoadLatestStateAsync();
+    Task<bool> HasGameStateAsync();
+}
 public class GameStateRepository : IGameStateRepository
 {
     private readonly string _gameStateDirectory;
@@ -32,13 +37,10 @@ public class GameStateRepository : IGameStateRepository
         Directory.CreateDirectory(_gameStateDirectory);
     }
 
-    public async Task<GameStateModel> CreateNewGameStateAsync(string playerName)
+    public async Task<GameStateModel> CreateNewGameStateAsync()
     {
         var state = new GameStateModel();
-        state.Player.Character.Name = playerName;
-        state.Player.Character.IsTrainer = true;
-        state.Player.AvailableStatPoints = 1;
-        state.AdventureSummary = $"New Game - The Player's name is {playerName}. Character Creation is not complete. The Adventure has not yet begun";
+        state.AdventureSummary = $"New Game - The Region has not been selected. Character Creation is not complete. The Adventure has not yet begun";
 
         await SaveStateAsync(state);
 

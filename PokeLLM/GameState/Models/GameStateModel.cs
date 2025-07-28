@@ -40,7 +40,7 @@ public class GameStateModel
 
     [JsonPropertyName("worldNpcs")]
     [Description("All generated NPCs, keyed by their unique Character ID.")]
-    public Dictionary<string, Character> WorldNpcs { get; set; } = new();
+    public Dictionary<string, CharacterDetails> WorldNpcs { get; set; } = new();
 
     [JsonPropertyName("worldPokemon")]
     [Description("All generated pokemon (wild or otherwise not on the player's team), keyed by their unique Pokemon Instance ID.")]
@@ -54,81 +54,38 @@ public class GameStateModel
     [Description("A short log of the most recent significant actions and dialogues to maintain short-term context for the LLM.")]
     public List<string> RecentEvents { get; set; } = new();
 
+    [JsonPropertyName("contextCache")]
+    [Description("A list of json objects that are cached for contextual use.")]
+    public List<string> ContextCache { get; set; } = new();
+
     [JsonPropertyName("currentPhase")]
     public GamePhase CurrentPhase { get; set; } = GamePhase.GameCreation;
-
-    [JsonPropertyName("phaseChangeSummary")]
-    [Description("A summary what has taken place and why the phase is changing.")]
-    public string PhaseChangeSummary { get; set; } = string.Empty;
-
-    [JsonPropertyName("previousPhaseConversationSummary")]
-    [Description("A summary of the conversation from the previous phase to provide context for the new phase.")]
-    public string PreviousPhaseConversationSummary { get; set; } = string.Empty;
 }
-
-/// <summary>
-/// Structured object containing all necessary context for the main game chat to properly orchestrate the game.
-/// This is returned by the Context Gathering Subroutine.
-/// </summary>
-public class GameContext
-{
-    [JsonPropertyName("relevantEntities")]
-    [Description("Characters, Pokémon, locations, and items that are relevant to the current player input.")]
-    public Dictionary<string, object> RelevantEntities { get; set; } = new();
-
-    [JsonPropertyName("missingEntities")]
-    [Description("List of entities that were referenced but don't exist in game state or vector store.")]
-    public List<string> MissingEntities { get; set; } = new();
-
-    [JsonPropertyName("gameStateUpdates")]
-    [Description("Any updates that were made to the game state during context gathering.")]
-    public List<string> GameStateUpdates { get; set; } = new();
-
-    [JsonPropertyName("vectorStoreData")]
-    [Description("Relevant lore, descriptions, and background information retrieved from the vector store.")]
-    public List<VectorStoreResult> VectorStoreData { get; set; } = new();
-
-    [JsonPropertyName("contextSummary")]
-    [Description("A high-level summary of the gathered context and its relevance to the player's input.")]
-    public string ContextSummary { get; set; } = string.Empty;
-
-    [JsonPropertyName("recommendedActions")]
-    [Description("Suggested actions or considerations for the main game chat based on the gathered context.")]
-    public List<string> RecommendedActions { get; set; } = new();
-}
-
-public class VectorStoreResult
-{
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("content")]
-    public string Content { get; set; } = string.Empty;
-
-    [JsonPropertyName("relevanceScore")]
-    public float RelevanceScore { get; set; }
-
-    [JsonPropertyName("metadata")]
-    public Dictionary<string, object> Metadata { get; set; } = new();
-}
-
 public class PlayerState
 {
-    [JsonPropertyName("character")]
-    public Character Character { get; set; } = new();
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("class")]
-    public string Class { get; set; } = string.Empty;
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = string.Empty;
+
+    [JsonPropertyName("abilities")]
+    public List<string> Abilities { get; set; } = new();
+
+    [JsonPropertyName("characterDetails")]
+    public CharacterDetails CharacterDetails { get; set; } = new();
 
     [JsonPropertyName("experience")]
     public int Experience { get; set; } = 0;
 
-    [JsonPropertyName("availableStatPoints")]
-    [Description("1 point awarded per level up.")]
-    public int AvailableStatPoints { get; set; } = 1;
+    [JsonPropertyName("level")]
+    public int Level { get; set; } = 1;
 
-    [JsonPropertyName("characterCreationComplete")]
-    public bool CharacterCreationComplete { get; set; } = false;
+    [JsonPropertyName("stats")]
+    public Stats Stats { get; set; } = new();
+
+    [JsonPropertyName("conditions")]
+    public List<string> Conditions { get; set; } = new();
 
     [JsonPropertyName("teamPokemon")]
     [Description("Caught pokemon actively on the team. Limit 6.")]
@@ -150,41 +107,20 @@ public class PlayerState
     public List<string> GymBadges { get; set; } = new();
 }
 
-public class Character
+public class Npc
 {
     [JsonPropertyName("id")]
-    [Description("Unique, descriptive character ID, e.g., 'player' or 'char_gary_oak'. Used as a key in dictionaries and for vector DB lookups.")]
+    [Description("Unique, descriptive character ID, e.g., 'char_gary_oak' or 'char_lance'. Used as a key in dictionaries and for vector DB lookups.")]
     public string Id { get; set; } = string.Empty;
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("level")]
-    public int Level { get; set; } = 1;
-
     [JsonPropertyName("stats")]
     public Stats Stats { get; set; } = new();
 
-    [JsonPropertyName("conditions")]
-    public List<string> Conditions { get; set; } = new();
-
-    [JsonPropertyName("inventory")]
-    public List<ItemInstance> Inventory { get; set; } = new();
-
-    [JsonPropertyName("money")]
-    public int Money { get; set; } = 3000;
-
-    [JsonPropertyName("globalRenown")]
-    [Description("0-100 scale of how famous this entity is in a positive way.")]
-    public int GlobalRenown { get; set; } = 0;
-
-    [JsonPropertyName("globalNotoriety")]
-    [Description("0-100 scale of how famous this entity is in a negative way.")]
-    public int GlobalNotoriety { get; set; } = 0;
-
-    [JsonPropertyName("factions")]
-    [Description("List of the Faction IDs this entity belongs to.")]
-    public List<string> Factions { get; set; } = new();
+    [JsonPropertyName("characterDetails")]
+    public CharacterDetails CharacterDetails { get; set; } = new();
 
     [JsonPropertyName("isTrainer")]
     public bool IsTrainer { get; set; } = false;
@@ -192,6 +128,30 @@ public class Character
     [JsonPropertyName("pokemonOwned")]
     [Description("List of the unique instance IDs of the pokemon this character owns. Pokemon data is stored in the WorldPokemon collection.")]
     public List<string> PokemonOwned { get; set; } = new();
+
+    [JsonPropertyName("factions")]
+    [Description("List of the Faction IDs this entity belongs to.")]
+    public List<string> Factions { get; set; } = new();
+}
+
+public class CharacterDetails
+{
+    [JsonPropertyName("class")]
+    public string Class { get; set; } = string.Empty;
+
+    [JsonPropertyName("inventory")]
+    public List<ItemInstance> Inventory { get; set; } = new();
+
+    [JsonPropertyName("money")]
+    public int Money { get; set; } = 500;
+
+    [JsonPropertyName("globalRenown")]
+    [Description("0-100 scale of how famous this character is in a positive way.")]
+    public int GlobalRenown { get; set; } = 0;
+
+    [JsonPropertyName("globalNotoriety")]
+    [Description("0-100 scale of how famous this character is in a negative way.")]
+    public int GlobalNotoriety { get; set; } = 0;
 }
 
 public class Pokemon
@@ -214,11 +174,9 @@ public class Pokemon
     [Description("List of moves this Pokemon knows. Up to 4 moves can be known at once.")]
     public List<Move> KnownMoves { get; set; } = new();
 
-    [JsonPropertyName("currentVigor")]
-    public int CurrentVigor { get; set; } = 10;
-
-    [JsonPropertyName("maxVigor")]
-    public int MaxVigor { get; set; } = 10;
+    [JsonPropertyName("heldItem")]
+    [Description("The item this pokemon is holding")]
+    public string HeldItem { get; set; } = string.Empty;
 
     [JsonPropertyName("stats")]
     public Stats Stats { get; set; } = new();
@@ -247,9 +205,6 @@ public class OwnedPokemon
 
     [JsonPropertyName("experience")]
     public int Experience { get; set; } = 0;
-
-    [JsonPropertyName("availableStatPoints")]
-    public int AvailableStatPoints { get; set; } = 0;
 
     [JsonPropertyName("caughtLocationId")]
     [Description("The ID of the location where the pokemon was caught.")]
@@ -306,6 +261,13 @@ public class ItemInstance
 /// </summary>
 public class Stats
 {
+
+    [JsonPropertyName("currentVigor")]
+    public int CurrentVigor { get; set; } = 10;
+
+    [JsonPropertyName("maxVigor")]
+    public int MaxVigor { get; set; } = 10;
+
     [JsonPropertyName("strength")]
     [Description("Physical power and raw muscle. Affects melee attack damage and athletic feats.")]
     public int Strength { get; set; } = 10;
@@ -384,8 +346,8 @@ public class PokemonSpeciesData
     public List<Move> LearnableMoves { get; set; } = new();
 
     [JsonPropertyName("evolutionInfo")]
-    [Description("Simple evolution data - can be expanded later for complex evolution requirements.")]
-    public EvolutionData EvolutionInfo { get; set; } = new();
+    [Description("A description of what the pokemon evolves into and it's requirements")]
+    public string EvolutionInfo { get; set; } = string.Empty;
 
     [JsonPropertyName("type1")]
     [Description("Primary type of this Pokemon species.")]
@@ -411,43 +373,11 @@ public class TrainerClassData
 
     [JsonPropertyName("levelUpTable")]
     [Description("Features gained at each level for this class.")]
-    public Dictionary<int, ClassFeature> LevelUpTable { get; set; } = new();
+    public Dictionary<int, string> LevelUpTable { get; set; } = new();
 
     [JsonPropertyName("description")]
     [Description("Description of the trainer class and its role.")]
     public string Description { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Represents a feature or ability gained by a trainer class at a specific level.
-/// </summary>
-public class ClassFeature
-{
-    [JsonPropertyName("name")]
-    [Description("Name of the class feature.")]
-    public string Name { get; set; } = string.Empty;
-
-    [JsonPropertyName("description")]
-    [Description("Description of what the class feature does.")]
-    public string Description { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Simple evolution data structure - can be expanded for complex evolution requirements.
-/// </summary>
-public class EvolutionData
-{
-    [JsonPropertyName("evolutionLevel")]
-    [Description("Level at which this Pokemon evolves, or 0 if it doesn't evolve by level.")]
-    public int EvolutionLevel { get; set; } = 0;
-
-    [JsonPropertyName("evolvesInto")]
-    [Description("Species name this Pokemon evolves into, or empty if it doesn't evolve.")]
-    public string EvolvesInto { get; set; } = string.Empty;
-
-    [JsonPropertyName("evolutionRequirements")]
-    [Description("Additional requirements for evolution beyond level, if any.")]
-    public string EvolutionRequirements { get; set; } = string.Empty;
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

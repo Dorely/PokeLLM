@@ -1,27 +1,20 @@
 ﻿using Microsoft.SemanticKernel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Diagnostics;
-using PokeLLM.GameState.Interfaces;
-using PokeLLM.GameState.Models;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PokeLLM.Game.Plugins;
 
 /// <summary>
 /// Plugin for managing D&D 5e-style Pokemon combat encounters
 /// </summary>
-public class CombatManagementPlugin
+public class CombatPhasePlugin
 {
     private readonly IGameStateRepository _repository;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public CombatManagementPlugin(IGameStateRepository repository)
+    public CombatPhasePlugin(IGameStateRepository repository)
     {
         _repository = repository;
         _jsonOptions = new JsonSerializerOptions
@@ -69,19 +62,19 @@ public class CombatManagementPlugin
                 return JsonSerializer.Serialize(new { error = $"Move {moveId} not known by {attackerId}" }, _jsonOptions);
 
             // Check if attacker has enough vigor
-            if (attacker.CurrentVigor < move.VigorCost)
+            if (attacker.Stats.CurrentVigor < move.VigorCost)
                 return JsonSerializer.Serialize(new { error = $"{attacker.Species} doesn't have enough vigor to use {move.Name}" }, _jsonOptions);
 
             // Resolve the attack
             var result = CombatRules.ResolveAttack(attacker, move, target, attackModifier);
 
             // Apply vigor cost
-            attacker.CurrentVigor = Math.Max(0, attacker.CurrentVigor - move.VigorCost);
+            attacker.Stats.CurrentVigor = Math.Max(0, attacker.Stats.CurrentVigor - move.VigorCost);
 
             // Apply damage
             if (result.Damage > 0)
             {
-                target.CurrentVigor = Math.Max(0, target.CurrentVigor - result.Damage);
+                target.Stats.CurrentVigor = Math.Max(0, target.Stats.CurrentVigor - result.Damage);
             }
 
             // Save game state
@@ -100,8 +93,8 @@ public class CombatManagementPlugin
                 critical = result.Critical,
                 typeEffectiveness = result.TypeEffectiveness,
                 description = result.Description,
-                targetVigor = target.CurrentVigor,
-                attackerVigor = attacker.CurrentVigor
+                targetVigor = target.Stats.CurrentVigor,
+                attackerVigor = attacker.Stats.CurrentVigor
             }, _jsonOptions);
         }
         catch (Exception ex)

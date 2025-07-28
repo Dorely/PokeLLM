@@ -1,13 +1,9 @@
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
-using PokeLLM.Game.GameLoop.Interfaces;
-using PokeLLM.Game.GameLoop;
-using PokeLLM.Game.LLM.Interfaces;
-using PokeLLM.Game.LLM;
-using PokeLLM.Game.Orchestration.Interfaces;
+using PokeLLM.Game.GameLogic;
 using PokeLLM.Game.Orchestration;
 
 namespace PokeLLM.Game.Configuration;
@@ -45,12 +41,8 @@ public static class ServiceConfiguration
 
         // Add core services (order matters to avoid circular dependencies)
         services.AddSingleton<IGameStateRepository, GameStateRepository>();
-        services.AddTransient<IVectorStoreService, VectorStoreService>();
+        services.AddTransient<IVectorStoreService, QdrantVectorStoreService>();
 
-        // Register orchestration components
-        services.AddTransient<IPromptManager, PromptManager>();
-        services.AddTransient<IPluginManager, PluginManager>();
-        services.AddTransient<IConversationHistoryManager, ConversationHistoryManager>();
         
         // Register OpenAI-specific LLM provider (low-level)
         services.AddTransient<OpenAiLLMProvider>();
@@ -62,20 +54,14 @@ public static class ServiceConfiguration
         {
             var openAiLLMProvider = serviceProvider.GetRequiredService<OpenAiLLMProvider>();
             var gameStateRepository = serviceProvider.GetRequiredService<IGameStateRepository>();
-            var historyManager = serviceProvider.GetRequiredService<IConversationHistoryManager>();
-            var pluginManager = serviceProvider.GetRequiredService<IPluginManager>();
-            var promptManager = serviceProvider.GetRequiredService<IPromptManager>();
             
             return new OrchestrationService(
                 openAiLLMProvider,
-                gameStateRepository,
-                historyManager,
-                pluginManager,
-                promptManager);
+                gameStateRepository);
         });
 
         // Register Game Loop Service
-        services.AddTransient<IGameLoopService, GameLoopService>();
+        services.AddTransient<IGameLogicService, GameLogicService>();
 
         return services;
     }

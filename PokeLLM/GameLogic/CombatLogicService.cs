@@ -1,8 +1,28 @@
-﻿namespace PokeLLM.Game.Helpers;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public static class PokemonKnowledgeHelper
+namespace PokeLLM.Game.GameLogic;
+
+public interface ICombatLogicService
 {
-    public static double EffectivenessChart(string attackType, string defenseType)
+    //TODO
+}
+
+/// <summary>
+/// This service contains methods for managing pokemon within the game state
+/// </summary>
+public class CombatLogicService : ICombatLogicService
+{
+    private readonly IGameStateRepository _gameStateRepository;
+    public CombatLogicService(IGameStateRepository gameStateRepository)
+    {
+        _gameStateRepository = gameStateRepository;
+    }
+
+    private double EffectivenessChart(string attackType, string defenseType)
     {
         // Complete Pokemon type effectiveness chart
         var effectiveness = new Dictionary<string, double>();
@@ -170,18 +190,18 @@ public static class PokemonKnowledgeHelper
     /// <summary>
     /// Calculate total type effectiveness considering dual types
     /// </summary>
-    public static double CalculateDualTypeEffectiveness(string attackType, string defenseType1, string defenseType2 = "")
+    public double CalculateDualTypeEffectiveness(string attackType, string defenseType1, string defenseType2 = "")
     {
         var effectiveness1 = EffectivenessChart(attackType, defenseType1);
         var effectiveness2 = string.IsNullOrEmpty(defenseType2) ? 1.0 : EffectivenessChart(attackType, defenseType2);
-        
+
         return effectiveness1 * effectiveness2;
     }
 
     /// <summary>
     /// Get a list of all Pokemon types available in the system
     /// </summary>
-    public static List<string> GetAllTypes()
+    public List<string> GetAllTypes()
     {
         var list = new List<string>(Enum.GetNames(typeof(PokemonType)));
 
@@ -191,11 +211,11 @@ public static class PokemonKnowledgeHelper
     /// <summary>
     /// Get all types that a given attacking type is super effective against
     /// </summary>
-    public static List<string> GetSuperEffectiveTypes(string attackType)
+    public List<string> GetSuperEffectiveTypes(string attackType)
     {
         var superEffectiveTypes = new List<string>();
         var allTypes = GetAllTypes();
-        
+
         foreach (var defenseType in allTypes)
         {
             if (EffectivenessChart(attackType, defenseType) == 2.0)
@@ -203,18 +223,18 @@ public static class PokemonKnowledgeHelper
                 superEffectiveTypes.Add(defenseType);
             }
         }
-        
+
         return superEffectiveTypes;
     }
 
     /// <summary>
     /// Get all types that a given attacking type is not very effective against
     /// </summary>
-    public static List<string> GetNotVeryEffectiveTypes(string attackType)
+    public List<string> GetNotVeryEffectiveTypes(string attackType)
     {
         var notVeryEffectiveTypes = new List<string>();
         var allTypes = GetAllTypes();
-        
+
         foreach (var defenseType in allTypes)
         {
             var effectiveness = EffectivenessChart(attackType, defenseType);
@@ -223,18 +243,18 @@ public static class PokemonKnowledgeHelper
                 notVeryEffectiveTypes.Add(defenseType);
             }
         }
-        
+
         return notVeryEffectiveTypes;
     }
 
     /// <summary>
     /// Get all types that a given attacking type has no effect against
     /// </summary>
-    public static List<string> GetNoEffectTypes(string attackType)
+    public List<string> GetNoEffectTypes(string attackType)
     {
         var noEffectTypes = new List<string>();
         var allTypes = GetAllTypes();
-        
+
         foreach (var defenseType in allTypes)
         {
             if (EffectivenessChart(attackType, defenseType) == 0.0)
@@ -242,7 +262,7 @@ public static class PokemonKnowledgeHelper
                 noEffectTypes.Add(defenseType);
             }
         }
-        
+
         return noEffectTypes;
     }
 
@@ -259,22 +279,22 @@ public static class PokemonKnowledgeHelper
     /// <param name="isSpecialMove">Whether this uses special attack/defense stats</param>
     /// <param name="random">Random number generator for dice rolls</param>
     /// <returns>Final damage amount after all calculations</returns>
-    public static int CalculateMoveDamage(Pokemon attacker, Pokemon defender, string moveName, 
+    public int CalculateMoveDamage(Pokemon attacker, Pokemon defender, string moveName,
         string moveType, int numDice, int hitDiceRoll, bool isSpecialMove, Random random)
     {
         // Get attacker's relevant stat for calculating bonus dice
         var attackStat = isSpecialMove ? attacker.Stats.Intelligence : attacker.Stats.Strength;
         var attackModifier = (int)Math.Floor((attackStat - 10) / 2.0);
-        
+
         // Calculate bonus dice: +1 die for every +2 ability modifier above 0
         var bonusDice = Math.Max(0, attackModifier / 2);
         var totalDice = numDice + bonusDice;
-        
+
         int baseDamage = 0;
-        
+
         // Apply type effectiveness for advantage/disadvantage on dice rolls only
         var typeEffectiveness = CalculateDualTypeEffectiveness(moveType, defender.Type1.ToString(), defender.Type2?.ToString() ?? "");
-        
+
         // Roll damage dice with advantage/disadvantage based on type effectiveness
         if (typeEffectiveness > 1.0)
         {
@@ -304,16 +324,16 @@ public static class PokemonKnowledgeHelper
                 baseDamage += random.Next(1, 7); // 1d6
             }
         }
-                
+
         // Ensure minimum 1 damage before critical hit calculation
         baseDamage = Math.Max(1, baseDamage);
-        
+
         // Check for critical hit (natural 20 on hit dice)
         if (hitDiceRoll == 20)
         {
             baseDamage = (int)(baseDamage * 1.5); // 50% increased damage for critical hit
         }
-        
+
         return baseDamage;
     }
 
@@ -322,13 +342,13 @@ public static class PokemonKnowledgeHelper
     /// </summary>
     /// <param name="effectiveness">Effectiveness multiplier (0.0, 0.5, 1.0, 2.0, etc.)</param>
     /// <returns>Description string</returns>
-    public static string GetEffectivenessDescription(double effectiveness)
+    public string GetEffectivenessDescription(double effectiveness)
     {
         return effectiveness switch
         {
             0.0 => "No Effect",
             <= 0.5 => "Not Very Effective",
-            1.0 => "Normal Effectiveness", 
+            1.0 => "Normal Effectiveness",
             >= 2.0 => "Super Effective",
             _ => "Normal Effectiveness"
         };
@@ -340,7 +360,7 @@ public static class PokemonKnowledgeHelper
     /// <param name="pokemon">Pokemon to calculate initiative for</param>
     /// <param name="random">Random number generator</param>
     /// <returns>Initiative value for turn order</returns>
-    public static int CalculateInitiative(Pokemon pokemon, Random random)
+    public int CalculateInitiative(Pokemon pokemon, Random random)
     {
         int dexterityModifier = (int)Math.Floor((pokemon.Stats.Dexterity - 10) / 2.0);
         int roll = random.Next(1, 21); // 1d20

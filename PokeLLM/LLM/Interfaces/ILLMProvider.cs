@@ -1,4 +1,5 @@
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel;
 using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Game.LLM.Interfaces;
@@ -22,5 +23,5 @@ public interface ILLMProvider
     /// <summary>
     /// Gets provider-specific execution settings
     /// </summary>
-    object GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = false);
+    PromptExecutionSettings GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = false);
 }

@@ -3,22 +3,16 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PokeLLM.GameState.Interfaces;
-using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Game.Plugins;
 
-/// <summary>
-/// Plugin for handling D&D-style dice mechanics, skill checks, and random events
-/// Provides the core dice rolling functionality for the Pokemon D&D campaign
-/// </summary>
-public class DicePlugin
+public class ExplorationPhasePlugin
 {
     private readonly IGameStateRepository _repository;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly Random _random;
 
-    public DicePlugin(IGameStateRepository repository)
+    public ExplorationPhasePlugin(IGameStateRepository repository)
     {
         _repository = repository;
         _random = new Random();
@@ -48,19 +42,6 @@ public class DicePlugin
         };
 
         Debug.WriteLine($"[DicePlugin] d20 roll: {roll}");
-        return result;
-    }
-
-    [KernelFunction("roll_specific_dice")]
-    public async Task<string> RollSpecifiedDice(int sizeOfDice = 6)
-    {
-        Debug.WriteLine($"[DicePlugin] RollSpecifiedDice called: d{sizeOfDice}");
-        
-        var roll = _random.Next(1, sizeOfDice + 1);
-
-        var result = $"Rolled {roll}";
-
-        Debug.WriteLine($"[DicePlugin] d{sizeOfDice} roll: {roll}");
         return result;
     }
 
@@ -117,7 +98,7 @@ public class DicePlugin
             return JsonSerializer.Serialize(new { error = "Invalid stat name. Use: Strength, Dexterity, Constitution, Intelligence, Wisdom, or Charisma" }, _jsonOptions);
 
         // Get stat modifier using D&D 5e rules
-        var abilityScore = GetAbilityScore(gameState.Player.Character.Stats, statName);
+        var abilityScore = GetAbilityScore(gameState.Player.Stats, statName);
         var statModifier = CalculateAbilityModifier(abilityScore);
 
         // Roll the dice based on advantage/disadvantage
@@ -215,6 +196,85 @@ public class DicePlugin
     private bool IsValidStatName(string statName)
     {
         return statName.ToLower() is "strength" or "dexterity" or "constitution" or "intelligence" or "wisdom" or "charisma";
+    }
+
+    #endregion
+
+    #region Exploration Phase Functions
+
+
+    [KernelFunction("dice_roll")]
+    [Description("Rolls dice with the specified number of sides and count. Used for procedural generation and damage calculations.")]
+    public async Task<string> DiceRoll(
+        [Description("Number of sides on each die (e.g., 6 for d6, 20 for d20)")]
+            int sides,
+        [Description("Number of dice to roll (default 1)")]
+            int count = 1)
+    {
+        Debug.WriteLine($"[DicePlugin] DiceRoll called: {count}d{sides}");
+        
+        if (count <= 0 || sides <= 0)
+        {
+            return JsonSerializer.Serialize(new { error = "Count and sides must be positive numbers" }, _jsonOptions);
+        }
+
+        if (count > 100 || sides > 1000)
+        {
+            return JsonSerializer.Serialize(new { error = "Dice roll too large (max 100d1000)" }, _jsonOptions);
+        }
+
+        var rolls = new List<int>();
+        var total = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            var roll = _random.Next(1, sides + 1);
+            rolls.Add(roll);
+            total += roll;
+        }
+
+        var result = JsonSerializer.Serialize(new {
+            success = true,
+            total = total,
+            rolls = rolls,
+            diceNotation = $"{count}d{sides}",
+            message = count == 1 ? $"Rolled {total}" : $"Rolled {count}d{sides}: {string.Join(", ", rolls)} = {total}"
+        }, _jsonOptions);
+
+        Debug.WriteLine($"[DicePlugin] {count}d{sides} result: {total}");
+        return result;
+    }
+
+    [KernelFunction("decide_random")]
+    [Description("Randomly selects from a number of options. Useful for procedural event generation in exploration.")]
+    public async Task<string> DecideRandom(
+        [Description("Number of options to choose from (e.g., 5 to choose from options 1-5)")]
+            int numberOfOptions)
+    {
+//TODO make this take a string list of options and return one randomly, instead of just returning a random number
+        Debug.WriteLine($"[DicePlugin] DecideRandom called with {numberOfOptions} options");
+        
+        if (numberOfOptions <= 0)
+        {
+            return JsonSerializer.Serialize(new { error = "Number of options must be positive" }, _jsonOptions);
+        }
+
+        if (numberOfOptions > 100)
+        {
+            return JsonSerializer.Serialize(new { error = "Too many options (max 100)" }, _jsonOptions);
+        }
+
+        var selection = _random.Next(1, numberOfOptions + 1);
+
+        var result = JsonSerializer.Serialize(new {
+            success = true,
+            selection = selection,
+            totalOptions = numberOfOptions,
+            message = $"Randomly selected option {selection} out of {numberOfOptions}"
+        }, _jsonOptions);
+
+        Debug.WriteLine($"[DicePlugin] Random selection: {selection} out of {numberOfOptions}");
+        return result;
     }
 
     #endregion
