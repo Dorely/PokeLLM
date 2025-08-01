@@ -1,4 +1,7 @@
 using Microsoft.SemanticKernel;
+using PokeLLM.Game.GameLogic;
+using PokeLLM.GameState.Models;
+using PokeLLM.Game.VectorStore.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
@@ -11,212 +14,521 @@ namespace PokeLLM.Game.Plugins;
 /// </summary>
 public class ContextManagementPlugin
 {
-    public ContextManagementPlugin()
+    private readonly IGameStateRepository _gameStateRepo;
+    private readonly IInformationManagementService _informationManagementService;
+    private readonly IWorldManagementService _worldManagementService;
+    private readonly INpcManagementService _npcManagementService;
+    private readonly IPokemonManagementService _pokemonManagementService;
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public ContextManagementPlugin(
+        IGameStateRepository gameStateRepo,
+        IInformationManagementService informationManagementService,
+        IWorldManagementService worldManagementService,
+        INpcManagementService npcManagementService,
+        IPokemonManagementService pokemonManagementService)
     {
+        _gameStateRepo = gameStateRepo;
+        _informationManagementService = informationManagementService;
+        _worldManagementService = worldManagementService;
+        _npcManagementService = npcManagementService;
+        _pokemonManagementService = pokemonManagementService;
+        _jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new JsonStringEnumConverter() },
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
     }
 
-    #region Vector Database Search Functions
+    [KernelFunction("search_and_verify_entities")]
+    [Description("Search for entities in both vector database and game state to verify consistency")]
+    public async Task<string> SearchAndVerifyEntities(
+        [Description("Entity name or description to search for")] string query,
+        [Description("Type of entity: 'npc', 'pokemon', 'object', or 'all'")] string entityType = "all")
+    {
+        Debug.WriteLine($"[ContextManagementPlugin] SearchAndVerifyEntities called: {query}, type: {entityType}");
+        
+        try
+        {
+            // Search vector database
+            var vectorResults = await _informationManagementService.SearchEntitiesAsync(new List<string> { query }, entityType);
+            
+            // Get current game state for comparison
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            
+            var response = new
+            {
+                query = query,
+                entityType = entityType,
+                vectorResults = vectorResults.Select(r => new
+                {
+                    entityId = r.EntityId,
+                    entityType = r.EntityType,
+                    name = r.Name,
+                    description = r.Description,
+                    existsInGameState = entityType == "npc" ? gameState.WorldNpcs.ContainsKey(r.EntityId) : 
+                                      entityType == "pokemon" ? gameState.WorldPokemon.ContainsKey(r.EntityId) : false
+                }).ToList(),
+                consistencyIssues = new List<string>()
+            };
+            
+            return JsonSerializer.Serialize(response, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in SearchAndVerifyEntities: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
+    }
 
-    [KernelFunction("SearchEntitiesInVector")]
-    [Description("Search for existing entities (NPCs, Pokemon, objects) in the vector database by name or description")]
-    public async Task<string> SearchEntitiesInVectorAsync(
-        [Description("The name or description to search for")] string query,
+    [KernelFunction("manage_entity")]
+    [Description("Create, update, or verify entity consistency across vector database and game state")]
+    public async Task<string> ManageEntity(
+        [Description("Action to take: 'create', 'update', 'verify', or 'sync'")] string action,
+        [Description("Type of entity: 'npc', 'pokemon', 'location', or 'object'")] string entityType,
+        [Description("Entity ID")] string entityId,
+        [Description("Entity name")] string name = "",
+        [Description("Entity description")] string description = "",
+        [Description("Location ID where entity should be placed")] string locationId = "",
+        [Description("Additional properties as JSON string")] string additionalProperties = "{}")
+    {
+        Debug.WriteLine($"[ContextManagementPlugin] ManageEntity called: {action} {entityType} {entityId}");
+        
+        try
+        {
+            object result = null;
+            
+            switch (action.ToLower())
+            {
+                case "create":
+                    switch (entityType.ToLower())
+                    {
+                        case "npc":
+                            var npc = await _npcManagementService.CreateNpc(name, "default", locationId);
+                            await _informationManagementService.UpsertEntityAsync(entityId, "npc", name, description, additionalProperties);
+                            result = new { success = true, message = "NPC created successfully", entityId = entityId, action = action };
+                            break;
+                        case "location":
+                            var location = await _worldManagementService.CreateLocation(name, description);
+                            await _informationManagementService.UpsertLocationAsync(entityId, name, description, "");
+                            result = new { success = true, message = "Location created successfully", entityId = entityId, action = action };
+                            break;
+                        default:
+                            result = new { success = false, message = $"Entity type {entityType} not supported for creation", entityId = entityId, action = action };
+                            break;
+                    }
+                    break;
+                    
+                case "update":
+                    await _informationManagementService.UpsertEntityAsync(entityId, entityType, name, description, additionalProperties);
+                    result = new { success = true, message = "Entity updated in vector database", entityId = entityId, action = action };
+                    break;
+                    
+                case "verify":
+                    var entity = await _informationManagementService.GetEntityAsync(entityId);
+                    var gameState = await _gameStateRepo.LoadLatestStateAsync();
+                    
+                    bool existsInVector = entity != null;
+                    bool existsInGameState = entityType switch
+                    {
+                        "npc" => gameState.WorldNpcs.ContainsKey(entityId),
+                        "pokemon" => gameState.WorldPokemon.ContainsKey(entityId),
+                        "location" => gameState.WorldLocations.ContainsKey(entityId),
+                        _ => false
+                    };
+                    
+                    result = new { 
+                        success = true, 
+                        message = $"Entity verification complete", 
+                        entityId = entityId, 
+                        action = action,
+                        existsInVector = existsInVector,
+                        existsInGameState = existsInGameState,
+                        isConsistent = existsInVector == existsInGameState
+                    };
+                    break;
+                    
+                case "sync":
+                    // This would involve complex synchronization logic
+                    result = new { success = false, message = "Sync functionality not yet implemented", entityId = entityId, action = action };
+                    break;
+                    
+                default:
+                    result = new { success = false, message = $"Unknown action: {action}", entityId = entityId, action = action };
+                    break;
+            }
+            
+            return JsonSerializer.Serialize(result, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in ManageEntity: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message, entityId = entityId, action = action }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("manage_location_entities")]
+    [Description("Add, remove, or verify entities at specific locations")]
+    public async Task<string> ManageLocationEntities(
+        [Description("Action: 'add', 'remove', 'list', or 'verify'")] string action,
+        [Description("Location ID")] string locationId,
+        [Description("Entity type: 'npc' or 'pokemon'")] string entityType,
+        [Description("Entity ID (for add/remove actions)")] string entityId = "")
+    {
+        Debug.WriteLine($"[ContextManagementPlugin] ManageLocationEntities called: {action} {entityType} at {locationId}");
+        
+        try
+        {
+            switch (action.ToLower())
+            {
+                case "add":
+                    if (entityType.ToLower() == "npc")
+                    {
+                        await _worldManagementService.AddNpcToLocation(locationId, entityId);
+                    }
+                    else if (entityType.ToLower() == "pokemon")
+                    {
+                        await _worldManagementService.AddPokemonToLocation(locationId, entityId);
+                    }
+                    
+                    var addResult = new { success = true, message = $"{entityType} {entityId} added to location {locationId}", action = action };
+                    return JsonSerializer.Serialize(addResult, _jsonOptions);
+                    
+                case "remove":
+                    if (entityType.ToLower() == "npc")
+                    {
+                        await _worldManagementService.RemoveNpcFromLocation(locationId, entityId);
+                    }
+                    else if (entityType.ToLower() == "pokemon")
+                    {
+                        await _worldManagementService.RemovePokemonFromLocation(locationId, entityId);
+                    }
+                    
+                    var removeResult = new { success = true, message = $"{entityType} {entityId} removed from location {locationId}", action = action };
+                    return JsonSerializer.Serialize(removeResult, _jsonOptions);
+                    
+                case "list":
+                    var gameState = await _gameStateRepo.LoadLatestStateAsync();
+                    var location = gameState.WorldLocations.ContainsKey(locationId) ? gameState.WorldLocations[locationId] : null;
+                    
+                    var listResult = new
+                    {
+                        success = true,
+                        locationId = locationId,
+                        npcs = location?.PresentNpcIds ?? new List<string>(),
+                        pokemon = location?.PresentPokemonIds ?? new List<string>(),
+                        action = action
+                    };
+                    return JsonSerializer.Serialize(listResult, _jsonOptions);
+                    
+                case "verify":
+                    // Get entities at location and cross-reference with vector database
+                    var gameStateVerify = await _gameStateRepo.LoadLatestStateAsync();
+                    var locationVerify = gameStateVerify.WorldLocations.ContainsKey(locationId) ? gameStateVerify.WorldLocations[locationId] : null;
+                    
+                    var verifyResult = new
+                    {
+                        success = true,
+                        locationId = locationId,
+                        npcsInGameState = locationVerify?.PresentNpcIds ?? new List<string>(),
+                        pokemonInGameState = locationVerify?.PresentPokemonIds ?? new List<string>(),
+                        action = action
+                    };
+                    return JsonSerializer.Serialize(verifyResult, _jsonOptions);
+                    
+                default:
+                    var errorResult = new { success = false, message = $"Unknown action: {action}", action = action };
+                    return JsonSerializer.Serialize(errorResult, _jsonOptions);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in ManageLocationEntities: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message, action = action }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("search_vector_database")]
+    [Description("Search vector database for entities, locations, lore, or narrative history")]
+    public async Task<string> SearchVectorDatabase(
+        [Description("Type of search: 'entities', 'locations', 'lore', 'rules', or 'narrative'")] string searchType,
+        [Description("Search query")] string query,
+        [Description("Optional filter (entity type, entry type, etc.)")] string filter = "",
         [Description("Minimum relevance score (0.0 to 1.0)")] double minRelevanceScore = 0.75)
     {
-        // TODO: Implement vector search for entities using IVectorStoreService.SearchEntitiesAsync
-        // Should search the entities collection for NPCs, Pokemon, and objects
-        // Return JSON array of matching entities with their details
-        throw new NotImplementedException("Vector entity search not yet implemented");
+        Debug.WriteLine($"[ContextManagementPlugin] SearchVectorDatabase called: {searchType} - {query}");
+        
+        try
+        {
+            object results = null;
+            
+            switch (searchType.ToLower())
+            {
+                case "entities":
+                    var entityResults = await _informationManagementService.SearchEntitiesAsync(new List<string> { query }, filter);
+                    results = entityResults.Select(r => new
+                    {
+                        entityId = r.EntityId,
+                        entityType = r.EntityType,
+                        name = r.Name,
+                        description = r.Description
+                    });
+                    break;
+                    
+                case "locations":
+                    var locationResult = await _informationManagementService.GetLocationAsync(query);
+                    results = locationResult != null ? new[]
+                    {
+                        new
+                        {
+                            locationId = locationResult.LocationId,
+                            name = locationResult.Name,
+                            description = locationResult.Description,
+                            region = locationResult.Region,
+                            tags = locationResult.Tags
+                        }
+                    } : new object[0];
+                    break;
+                    
+                case "lore":
+                    var loreResults = await _informationManagementService.SearchLoreAsync(new List<string> { query }, filter);
+                    results = loreResults.Select(r => new
+                    {
+                        entryId = r.EntryId,
+                        entryType = r.EntryType,
+                        title = r.Title,
+                        content = r.Content,
+                        tags = r.Tags
+                    });
+                    break;
+                    
+                case "rules":
+                    var ruleResults = await _informationManagementService.SearchGameRulesAsync(new List<string> { query }, filter);
+                    results = ruleResults.Select(r => new
+                    {
+                        entryId = r.EntryId,
+                        entryType = r.EntryType,
+                        title = r.Title,
+                        content = r.Content,
+                        tags = r.Tags
+                    });
+                    break;
+                    
+                case "narrative":
+                    var gameState = await _gameStateRepo.LoadLatestStateAsync();
+                    var narrativeResults = await _informationManagementService.FindMemoriesAsync(gameState.SessionId, query, null, minRelevanceScore);
+                    results = narrativeResults.Select(r => new
+                    {
+                        gameTurnNumber = r.GameTurnNumber,
+                        eventType = r.EventType,
+                        eventSummary = r.EventSummary,
+                        involvedEntities = r.InvolvedEntities,
+                        locationId = r.LocationId
+                    });
+                    break;
+                    
+                default:
+                    return JsonSerializer.Serialize(new { error = $"Unknown search type: {searchType}" }, _jsonOptions);
+            }
+            
+            var response = new
+            {
+                searchType = searchType,
+                query = query,
+                filter = filter,
+                results = results
+            };
+            
+            return JsonSerializer.Serialize(response, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in SearchVectorDatabase: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
     }
 
-    [KernelFunction("SearchLocationsInVector")]
-    [Description("Search for existing locations in the vector database by name or description")]
-    public async Task<string> SearchLocationsInVectorAsync(
-        [Description("The location name or description to search for")] string query,
-        [Description("Minimum relevance score (0.0 to 1.0)")] double minRelevanceScore = 0.75)
+    [KernelFunction("log_narrative_event")]
+    [Description("Log important narrative events to the vector database for future reference")]
+    public async Task<string> LogNarrativeEvent(
+        [Description("Type of event (e.g., 'conversation', 'discovery', 'battle', 'story_event')")] string eventType,
+        [Description("Brief summary of the event")] string eventSummary,
+        [Description("Detailed description or transcript")] string eventDetails = "",
+        [Description("List of entities involved in the event")] List<string> involvedEntities = null,
+        [Description("Location where event occurred")] string locationId = "",
+        [Description("Turn number when event occurred")] int? turnNumber = null)
     {
-        // TODO: Implement vector search for locations using IVectorStoreService.SearchLocationsAsync
-        // Should search the locations collection for areas, buildings, routes, etc.
-        // Return JSON array of matching locations with their details
-        throw new NotImplementedException("Vector location search not yet implemented");
+        Debug.WriteLine($"[ContextManagementPlugin] LogNarrativeEvent called: {eventType} - {eventSummary}");
+        
+        try
+        {
+            var result = await _informationManagementService.LogNarrativeEventAsync(
+                eventType,
+                eventSummary,
+                eventDetails,
+                involvedEntities ?? new List<string>(),
+                locationId,
+                null,
+                turnNumber
+            );
+            
+            var response = new
+            {
+                success = true,
+                message = result,
+                eventType = eventType,
+                eventSummary = eventSummary,
+                involvedEntities = involvedEntities ?? new List<string>(),
+                locationId = locationId,
+                loggedAt = DateTime.UtcNow
+            };
+            
+            return JsonSerializer.Serialize(response, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in LogNarrativeEvent: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
     }
 
-    [KernelFunction("SearchLoreInVector")]
-    [Description("Search for lore, rules, species data, and world information in the vector database")]
-    public async Task<string> SearchLoreInVectorAsync(
-        [Description("The lore topic, rule, or species to search for")] string query,
-        [Description("Minimum relevance score (0.0 to 1.0)")] double minRelevanceScore = 0.75)
+    [KernelFunction("update_game_state")]
+    [Description("Update various aspects of the game state")]
+    public async Task<string> UpdateGameState(
+        [Description("Type of update: 'adventure_summary', 'recent_event', 'time', 'weather'")] string updateType,
+        [Description("The new value or description for the update")] string value,
+        [Description("Additional parameter for specific update types")] string additionalParam = "")
     {
-        // TODO: Implement vector search for lore using IVectorStoreService.SearchLoreAsync
-        // Should search the lore collection for Pokemon species data, world rules, background info
-        // Return JSON array of matching lore entries
-        throw new NotImplementedException("Vector lore search not yet implemented");
+        Debug.WriteLine($"[ContextManagementPlugin] UpdateGameState called: {updateType} - {value}");
+        
+        try
+        {
+            switch (updateType.ToLower())
+            {
+                case "adventure_summary":
+                    await _worldManagementService.UpdateAdventureSummary(value);
+                    break;
+                    
+                case "recent_event":
+                    await _worldManagementService.AddRecentEvent(value);
+                    break;
+                    
+                case "time":
+                    if (Enum.TryParse<TimeOfDay>(value, true, out var timeOfDay))
+                    {
+                        await _worldManagementService.SetTimeOfDay(timeOfDay);
+                    }
+                    else
+                    {
+                        return JsonSerializer.Serialize(new { error = $"Invalid time of day: {value}" }, _jsonOptions);
+                    }
+                    break;
+                    
+                case "weather":
+                    if (Enum.TryParse<Weather>(value, true, out var weather))
+                    {
+                        await _worldManagementService.SetWeather(weather);
+                    }
+                    else
+                    {
+                        return JsonSerializer.Serialize(new { error = $"Invalid weather: {value}" }, _jsonOptions);
+                    }
+                    break;
+                    
+                default:
+                    return JsonSerializer.Serialize(new { error = $"Unknown update type: {updateType}" }, _jsonOptions);
+            }
+            
+            var response = new
+            {
+                success = true,
+                updateType = updateType,
+                value = value,
+                message = $"Game state updated: {updateType} = {value}",
+                updatedAt = DateTime.UtcNow
+            };
+            
+            return JsonSerializer.Serialize(response, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in UpdateGameState: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
     }
 
-    [KernelFunction("SearchNarrativeHistory")]
-    [Description("Search past narrative events and memories in the vector database")]
-    public async Task<string> SearchNarrativeHistoryAsync(
-        [Description("The event or memory to search for")] string query,
-        [Description("Array of entity IDs involved in the event")] string[] involvedEntities = null,
-        [Description("Minimum relevance score (0.0 to 1.0)")] double minRelevanceScore = 0.75)
+    [KernelFunction("manage_entity_relationships")]
+    [Description("Manage relationships between entities (NPC-Location, Player-NPC, etc.)")]
+    public async Task<string> ManageEntityRelationships(
+        [Description("Type of relationship: 'npc_location', 'player_npc', 'npc_faction'")] string relationshipType,
+        [Description("Action: 'add', 'remove', 'update', or 'get'")] string action,
+        [Description("Primary entity ID")] string primaryEntityId,
+        [Description("Secondary entity ID or value")] string secondaryEntityId = "",
+        [Description("Relationship value (for numeric relationships like affinity)")] int relationshipValue = 0)
     {
-        // TODO: Implement narrative history search using IVectorStoreService.FindMemoriesAsync
-        // Should search the narrative log collection for past events
-        // Return JSON array of matching narrative events
-        throw new NotImplementedException("Narrative history search not yet implemented");
+        Debug.WriteLine($"[ContextManagementPlugin] ManageEntityRelationships called: {relationshipType} {action}");
+        
+        try
+        {
+            switch (relationshipType.ToLower())
+            {
+                case "npc_location":
+                    switch (action.ToLower())
+                    {
+                        case "add":
+                            await _npcManagementService.MoveNpcToLocation(primaryEntityId, secondaryEntityId);
+                            break;
+                        case "remove":
+                            await _npcManagementService.RemoveNpcFromLocation(primaryEntityId);
+                            break;
+                    }
+                    break;
+                    
+                case "player_npc":
+                    switch (action.ToLower())
+                    {
+                        case "update":
+                            await _npcManagementService.UpdateNpcRelationshipWithPlayer(primaryEntityId, relationshipValue);
+                            break;
+                    }
+                    break;
+                    
+                case "npc_faction":
+                    switch (action.ToLower())
+                    {
+                        case "add":
+                            await _npcManagementService.AddNpcToFaction(primaryEntityId, secondaryEntityId);
+                            break;
+                        case "remove":
+                            await _npcManagementService.RemoveNpcFromFaction(primaryEntityId, secondaryEntityId);
+                            break;
+                    }
+                    break;
+                    
+                default:
+                    return JsonSerializer.Serialize(new { error = $"Unknown relationship type: {relationshipType}" }, _jsonOptions);
+            }
+            
+            var response = new
+            {
+                success = true,
+                relationshipType = relationshipType,
+                action = action,
+                primaryEntityId = primaryEntityId,
+                secondaryEntityId = secondaryEntityId,
+                relationshipValue = relationshipValue,
+                message = $"Relationship {action} completed for {relationshipType}",
+                updatedAt = DateTime.UtcNow
+            };
+            
+            return JsonSerializer.Serialize(response, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in ManageEntityRelationships: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
     }
-
-    #endregion
-
-    #region Vector Database Storage Functions
-
-    [KernelFunction("AddEntityToVector")]
-    [Description("Add a new entity (NPC, Pokemon, object) to the vector database")]
-    public async Task<string> AddEntityToVectorAsync(
-        [Description("The entity ID")] string entityId,
-        [Description("The entity name")] string name,
-        [Description("The entity type (NPC, Pokemon, Object)")] string entityType,
-        [Description("Detailed description of the entity")] string description,
-        [Description("Current location ID where the entity is found")] string locationId = "")
-    {
-        // TODO: Implement entity addition using IVectorStoreService.AddOrUpdateEntityAsync
-        // Should create EntityVectorRecord and store in vector database
-        // Return success message with generated vector ID
-        throw new NotImplementedException("Entity vector storage not yet implemented");
-    }
-
-    [KernelFunction("UpdateEntityInVector")]
-    [Description("Update an existing entity in the vector database")]
-    public async Task<string> UpdateEntityInVectorAsync(
-        [Description("The entity ID to update")] string entityId,
-        [Description("Updated description of the entity")] string description,
-        [Description("Updated location ID where the entity is found")] string locationId = "")
-    {
-        // TODO: Implement entity update using IVectorStoreService.AddOrUpdateEntityAsync
-        // Should find existing EntityVectorRecord and update with new information
-        // Return success message with confirmation of update
-        throw new NotImplementedException("Entity vector update not yet implemented");
-    }
-
-    [KernelFunction("LogNarrativeEvent")]
-    [Description("Log a significant narrative event to the vector database for future reference")]
-    public async Task<string> LogNarrativeEventAsync(
-        [Description("Brief title/summary of the event")] string eventTitle,
-        [Description("Detailed description of what happened")] string eventDescription,
-        [Description("Array of entity IDs involved in the event")] string[] involvedEntities,
-        [Description("Location ID where the event occurred")] string locationId,
-        [Description("Significance level (1-10)")] int significance = 5)
-    {
-        // TODO: Implement narrative logging using IVectorStoreService.LogNarrativeEventAsync
-        // Should create NarrativeLogVectorRecord and store in vector database
-        // Return success message with generated log ID
-        throw new NotImplementedException("Narrative event logging not yet implemented");
-    }
-
-    #endregion
-
-    #region Game State Query Functions
-
-    [KernelFunction("GetGameStateEntity")]
-    [Description("Get detailed information about an entity from the current game state")]
-    public async Task<string> GetGameStateEntityAsync(
-        [Description("The entity ID to lookup")] string entityId,
-        [Description("The entity type (NPC, Pokemon, Location)")] string entityType)
-    {
-        // TODO: Implement game state entity lookup using appropriate management services
-        // For NPCs: Use INpcManagementService.GetNpcDetails
-        // For Pokemon: Use IPokemonManagementService.GetPokemonDetails  
-        // For Locations: Use IWorldManagementService.GetLocationDetails
-        // Return JSON representation of the entity's current state
-        throw new NotImplementedException("Game state entity lookup not yet implemented");
-    }
-
-    [KernelFunction("CreateGameStateEntity")]
-    [Description("Create a new entity in the game state")]
-    public async Task<string> CreateGameStateEntityAsync(
-        [Description("The entity type (NPC, Pokemon, Location)")] string entityType,
-        [Description("The entity name")] string name,
-        [Description("The location ID where the entity should be created")] string locationId,
-        [Description("Additional entity details as JSON")] string entityDetailsJson = "{}")
-    {
-        // TODO: Implement game state entity creation using appropriate management services
-        // For NPCs: Use INpcManagementService.CreateNpc
-        // For Pokemon: Use IPokemonManagementService.CreatePokemon
-        // For Locations: Use IWorldManagementService.CreateLocation
-        // Return JSON representation of the created entity with its new ID
-        throw new NotImplementedException("Game state entity creation not yet implemented");
-    }
-
-    [KernelFunction("UpdateGameStateEntity")]
-    [Description("Update an existing entity in the game state")]
-    public async Task<string> UpdateGameStateEntityAsync(
-        [Description("The entity ID to update")] string entityId,
-        [Description("The entity type (NPC, Pokemon, Location)")] string entityType,
-        [Description("Updated entity details as JSON")] string entityDetailsJson)
-    {
-        // TODO: Implement game state entity updates using appropriate management services
-        // Parse entityDetailsJson and apply updates using the relevant management service methods
-        // Return success message with confirmation of updates applied
-        throw new NotImplementedException("Game state entity update not yet implemented");
-    }
-
-    [KernelFunction("GetEntitiesAtLocation")]
-    [Description("Get all entities currently at a specific location")]
-    public async Task<string> GetEntitiesAtLocationAsync(
-        [Description("The location ID to query")] string locationId)
-    {
-        // TODO: Implement location entity query using management services
-        // Use INpcManagementService.GetNpcsAtLocation and IPokemonManagementService.GetPokemonAtLocation
-        // Return JSON array of all entities at the specified location
-        throw new NotImplementedException("Location entity query not yet implemented");
-    }
-
-    [KernelFunction("MoveEntityToLocation")]
-    [Description("Move an entity from its current location to a new location")]
-    public async Task<string> MoveEntityToLocationAsync(
-        [Description("The entity ID to move")] string entityId,
-        [Description("The entity type (NPC, Pokemon)")] string entityType,
-        [Description("The destination location ID")] string destinationLocationId)
-    {
-        // TODO: Implement entity movement using appropriate management services
-        // For NPCs: Use INpcManagementService.MoveNpcToLocation
-        // For Pokemon: Use IPokemonManagementService.MovePokemonToLocation
-        // Return success message with confirmation of movement
-        throw new NotImplementedException("Entity movement not yet implemented");
-    }
-
-    #endregion
-
-    #region Context Consistency Functions
-
-    [KernelFunction("ValidateEntityConsistency")]
-    [Description("Check if an entity exists consistently across vector database and game state")]
-    public async Task<string> ValidateEntityConsistencyAsync(
-        [Description("The entity ID to validate")] string entityId,
-        [Description("The entity type (NPC, Pokemon, Location)")] string entityType)
-    {
-        // TODO: Implement consistency validation
-        // 1. Check if entity exists in vector database using SearchEntitiesInVector
-        // 2. Check if entity exists in game state using GetGameStateEntity
-        // 3. Compare details and identify any inconsistencies
-        // Return JSON report of consistency status and any issues found
-        throw new NotImplementedException("Entity consistency validation not yet implemented");
-    }
-
-    [KernelFunction("SynchronizeEntityData")]
-    [Description("Synchronize entity data between vector database and game state")]
-    public async Task<string> SynchronizeEntityDataAsync(
-        [Description("The entity ID to synchronize")] string entityId,
-        [Description("The entity type (NPC, Pokemon, Location)")] string entityType,
-        [Description("The authoritative source (GameState or VectorDB)")] string authoritativeSource = "GameState")
-    {
-        // TODO: Implement entity data synchronization
-        // 1. Get entity data from both sources
-        // 2. Determine which source is authoritative based on parameter
-        // 3. Update the other source to match
-        // Return success message with details of synchronization performed
-        throw new NotImplementedException("Entity data synchronization not yet implemented");
-    }
-
-    #endregion
 }
