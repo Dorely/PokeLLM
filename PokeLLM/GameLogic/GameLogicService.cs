@@ -157,6 +157,9 @@ public interface IGameLogicService
     Task<SkillCheckResult> MakeSkillCheckAsync(string statName, int difficultyClass, bool advantage = false, bool disadvantage = false, int modifier = 0);
     Task<RandomDecisionResult> MakeRandomDecisionAsync(int numberOfOptions);
     Task<RandomDecisionResult> MakeRandomDecisionFromOptionsAsync(List<string> options);
+    
+    // Character Creation Dice Rolling
+    Task<DiceRollResult> Roll4d6DropLowestAsync();
 
     // Helper Methods
     int CalculateAbilityModifier(int abilityScore);
@@ -433,6 +436,31 @@ public class GameLogicService : IGameLogicService
             TotalOptions = options.Count,
             AllOptions = new List<string>(options),
             Message = $"Randomly selected: {selectedOption} (option {selectionIndex + 1} out of {options.Count})"
+        };
+    }
+
+    public async Task<DiceRollResult> Roll4d6DropLowestAsync()
+    {
+        await Task.Yield();
+        
+        var rolls = new List<int>();
+        for (int i = 0; i < 4; i++)
+        {
+            rolls.Add(_random.Next(1, 7));
+        }
+        
+        rolls.Sort();
+        var droppedRoll = rolls[0];
+        rolls.RemoveAt(0); // Remove the lowest
+        var total = rolls.Sum();
+        
+        return new DiceRollResult
+        {
+            Success = true,
+            Total = total,
+            Rolls = rolls,
+            DiceNotation = "4d6 drop lowest",
+            Message = $"Rolled 4d6 drop lowest: {string.Join(", ", rolls)} (dropped {droppedRoll}) = {total}"
         };
     }
 

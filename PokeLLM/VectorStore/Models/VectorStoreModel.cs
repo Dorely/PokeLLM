@@ -69,22 +69,50 @@ public class LocationVectorRecord : VectorRecordBase
 }
 
 /// <summary>
-/// Represents a record for a piece of lore, a game rule, or a quest description
+/// Represents a record for a piece of lore, or a quest description
 /// in the vector store.
 /// </summary>
 public class LoreVectorRecord : VectorRecordBase
 {
 
     [VectorStoreData(IsIndexed = true)]
-    [Description("The unique, human-readable ID for the entry (e.g., 'rule_poison_effect', 'quest_oaks_parcel').")]
+    [Description("The unique, human-readable ID for the entry (e.g. 'quest_oaks_parcel', 'lore_legend_earth_sea').")]
     public string EntryId { get; set; } = string.Empty;
 
     [VectorStoreData(IsIndexed = true)]
-    [Description("The type of the entry, used for filtering. E.g., 'Rule', 'History', 'QuestInfo'.")]
+    [Description("The type of the entry, used for filtering. E.g., 'Legend', 'History', 'QuestInfo'.")]
     public string EntryType { get; set; } = string.Empty;
 
     [VectorStoreData(IsFullTextIndexed = true)]
-    [Description("The title of the lore or rule entry.")]
+    [Description("The title of the lore entry.")]
+    public string Title { get; set; } = string.Empty;
+
+    [VectorStoreData(IsFullTextIndexed = true)]
+    [Description("The full text content of the entry. This text is used to generate the vector embedding.")]
+    public string Content { get; set; } = string.Empty;
+
+    [VectorStoreData(IsIndexed = true)]
+    [Description("A list of searchable keywords associated with the entry (e.g., 'history', 'legendary').")]
+    public string[] Tags { get; set; } = Array.Empty<string>();
+}
+
+/// <summary>
+/// Represents a record for a game rule, or a class definition
+/// in the vector store.
+/// </summary>
+public class GameRuleVectorRecord : VectorRecordBase
+{
+
+    [VectorStoreData(IsIndexed = true)]
+    [Description("The unique, human-readable ID for the entry (e.g., 'rule_poison_effect', 'class_ace_trainer').")]
+    public string EntryId { get; set; } = string.Empty;
+
+    [VectorStoreData(IsIndexed = true)]
+    [Description("The type of the entry, used for filtering. E.g., 'Rule', 'Class'.")]
+    public string EntryType { get; set; } = string.Empty;
+
+    [VectorStoreData(IsFullTextIndexed = true)]
+    [Description("The title of the rule entry.")]
     public string Title { get; set; } = string.Empty;
 
     [VectorStoreData(IsFullTextIndexed = true)]

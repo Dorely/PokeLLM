@@ -12,6 +12,9 @@ public class GameStateModel
     [JsonPropertyName("sessionId")]
     public string SessionId { get; set; } = Guid.NewGuid().ToString();
 
+    [JsonPropertyName("gameTurnNumber")]
+    public int GameTurnNumber { get; set; } = 0;
+
     [JsonPropertyName("sessionStartTime")]
     public DateTime SessionStartTime { get; set; } = DateTime.UtcNow;
 
@@ -56,6 +59,10 @@ public class GameStateModel
 
     [JsonPropertyName("currentPhase")]
     public GamePhase CurrentPhase { get; set; } = GamePhase.GameCreation;
+
+    [JsonPropertyName("phaseChangeSummary")]
+    [Description("A details report of what has occurred and why the phase is changing. To be passed to the next chat handler.")]
+    public string PhaseChangeSummary { get; set; } = string.Empty;
 
     [JsonPropertyName("combatState")]
     [Description("The state of the current combat encounter. This is null when not in combat.")]

@@ -13,7 +13,8 @@ public class QdrantVectorStoreService : IVectorStoreService
     // Define constants for our collection names
     private const string ENTITIES_COLLECTION = "entities";
     private const string LOCATIONS_COLLECTION = "locations";
-    private const string LORE_COLLECTION = "lore_and_rules";
+    private const string LORE_COLLECTION = "lore";
+    private const string RULE_COLLECTION = "rules";
     private const string NARRATIVE_LOG_COLLECTION = "narrative_log";
 
     public QdrantVectorStoreService(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, IOptions<QdrantConfig> qdrantOptions)
@@ -67,6 +68,58 @@ public class QdrantVectorStoreService : IVectorStoreService
 
     #endregion
 
+    #region GameRule Queries
+
+    public async Task<Guid> AddOrUpdateGameRuleAsync(GameRuleVectorRecord rule)
+    {
+        var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
+        if (rule.Id == Guid.Empty)
+        {
+            rule.Id = Guid.NewGuid();
+        }
+        await collection.UpsertAsync(rule);
+        return rule.Id;
+    }
+
+    public async Task<GameRuleVectorRecord> GetGameRuleByIdAsync(string entryId)
+    {
+        var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
+
+        // This is a filtered search to find an exact match, not a semantic search.
+        var options = new VectorSearchOptions<GameRuleVectorRecord>
+        {
+            Filter = rule => rule.EntryId == entryId,
+            Skip = 0,
+            IncludeVectors = false
+        };
+
+        // We pass an empty query string because we only care about the filter.
+        var results = collection.SearchAsync("", 1, options);
+
+        await foreach (var item in results)
+        {
+            return item.Record;
+        }
+
+        return null;
+    }
+
+    public async Task<IEnumerable<VectorSearchResult<GameRuleVectorRecord>>> SearchGameRulesAsync(string query, double minRelevanceScore = 0.75, int limit = 3)
+    {
+        // This is a standard semantic search, just like your example.
+        var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
+        var results = collection.SearchAsync(query, limit);
+
+        var resultCollection = new List<VectorSearchResult<GameRuleVectorRecord>>();
+        await foreach (var item in results)
+        {
+            if(item.Score >= minRelevanceScore)
+                resultCollection.Add(item);
+        }
+        return resultCollection;
+    }
+
+    #endregion
 
     #region Location and Lore Queries
 
@@ -81,6 +134,29 @@ public class QdrantVectorStoreService : IVectorStoreService
         return location.Id;
     }
 
+    public async Task<LocationVectorRecord> GetLocationByIdAsync(string locationId)
+    {
+        var collection = _vectorStore.GetCollection<Guid, LocationVectorRecord>(LOCATIONS_COLLECTION);
+
+        // This is a filtered search to find an exact match, not a semantic search.
+        var options = new VectorSearchOptions<LocationVectorRecord>
+        {
+            Filter = location => location.LocationId == locationId,
+            Skip = 0,
+            IncludeVectors = false
+        };
+
+        // We pass an empty query string because we only care about the filter.
+        var results = collection.SearchAsync("", 1, options);
+
+        await foreach (var item in results)
+        {
+            return item.Record;
+        }
+
+        return null;
+    }
+
     public async Task<Guid> AddOrUpdateLoreAsync(LoreVectorRecord lore)
     {
         var collection = _vectorStore.GetCollection<Guid, LoreVectorRecord>(LORE_COLLECTION);
@@ -92,6 +168,29 @@ public class QdrantVectorStoreService : IVectorStoreService
         return lore.Id;
     }
 
+    public async Task<LoreVectorRecord> GetLoreByIdAsync(string entryId)
+    {
+        var collection = _vectorStore.GetCollection<Guid, LoreVectorRecord>(LORE_COLLECTION);
+
+        // This is a filtered search to find an exact match, not a semantic search.
+        var options = new VectorSearchOptions<LoreVectorRecord>
+        {
+            Filter = lore => lore.EntryId == entryId,
+            Skip = 0,
+            IncludeVectors = false
+        };
+
+        // We pass an empty query string because we only care about the filter.
+        var results = collection.SearchAsync("", 1, options);
+
+        await foreach (var item in results)
+        {
+            return item.Record;
+        }
+
+        return null;
+    }
+
     public async Task<IEnumerable<VectorSearchResult<LoreVectorRecord>>> SearchLoreAsync(string query, double minRelevanceScore = 0.75, int limit = 3)
     {
         // This is a standard semantic search, just like your example.
@@ -101,7 +200,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         var resultCollection = new List<VectorSearchResult<LoreVectorRecord>>();
         await foreach (var item in results)
         {
-            if(item.Score >= minRelevanceScore)
+            if (item.Score >= minRelevanceScore)
                 resultCollection.Add(item);
         }
         return resultCollection;
@@ -120,6 +219,29 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         await collection.UpsertAsync(narrativeLog);
         return narrativeLog.Id;
+    }
+
+    public async Task<NarrativeLogVectorRecord> GetNarrativeEventAsync(string sessionId, int gameTurnNumber)
+    {
+        var collection = _vectorStore.GetCollection<Guid, NarrativeLogVectorRecord>(NARRATIVE_LOG_COLLECTION);
+
+        // This is a filtered search to find an exact match using session ID and game turn number.
+        var options = new VectorSearchOptions<NarrativeLogVectorRecord>
+        {
+            Filter = entry => entry.SessionId == sessionId && entry.GameTurnNumber == gameTurnNumber,
+            Skip = 0,
+            IncludeVectors = false
+        };
+
+        // We pass an empty query string because we only care about the filter.
+        var results = collection.SearchAsync("", 1, options);
+
+        await foreach (var item in results)
+        {
+            return item.Record;
+        }
+
+        return null;
     }
 
     public async Task<IEnumerable<VectorSearchResult<NarrativeLogVectorRecord>>> FindMemoriesAsync(string sessionId, string query, string[] involvedEntities, double minRelevanceScore = 0.75, int limit = 5)

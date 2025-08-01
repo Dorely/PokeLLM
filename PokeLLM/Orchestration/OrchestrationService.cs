@@ -163,13 +163,17 @@ public class OrchestrationService : IOrchestrationService
         }
         
         // Post-processing: Check for phase transitions and manage context
+        string phaseTransitionMessage = null;
+        bool hasPhaseTransition = false;
+        GamePhase finalPhase = initialPhase;
+        
         try
         {
             var fullResponse = responseBuilder.ToString();
             
             // Reload game state to check if phase was changed by plugin functions
             var updatedGameState = await _gameStateRepository.LoadLatestStateAsync();
-            var finalPhase = updatedGameState.CurrentPhase;
+            finalPhase = updatedGameState.CurrentPhase;
             
             // Check if phase has changed during processing
             if (initialPhase != finalPhase)
@@ -200,6 +204,12 @@ Please validate and update:
                 newPhaseHistory.AddSystemMessage($"PHASE TRANSITION CONTEXT: {contextManagementResult}");
                 
                 Debug.WriteLine($"[OrchestrationService] Context management completed for phase transition to {finalPhase}");
+                
+                // Prepare for recursive call
+                phaseTransitionMessage = CreatePhaseTransitionMessage(initialPhase, finalPhase, updatedGameState.PhaseChangeSummary);
+                hasPhaseTransition = true;
+                
+                Debug.WriteLine($"[OrchestrationService] Prepared recursive call to new phase {finalPhase}");
             }
             else
             {
@@ -214,10 +224,55 @@ Please validate and update:
         catch (Exception ex)
         {
             Debug.WriteLine($"[OrchestrationService] Error in OrchestrateAsync post-processing: {ex.Message}");
-            // Note: We can't yield return here since streaming is already complete
+            // Note: Continue even if there's an error in post-processing
+        }
+        
+        // Handle phase transition outside of try-catch to avoid yield return restrictions
+        if (hasPhaseTransition)
+        {
+            // Yield a separator to indicate phase transition
+            yield return $"\n\n--- Phase Transition: {initialPhase} ? {finalPhase} ---\n\n";
+            
+            Debug.WriteLine($"[OrchestrationService] Recursively calling new phase {finalPhase} with transition message");
+            
+            // Recursively call OrchestrateAsync with the new phase continuation message
+            await foreach (var chunk in OrchestrateAsync(phaseTransitionMessage, cancellationToken))
+            {
+                yield return chunk;
+            }
         }
     }
     
+    /// <summary>
+    /// Creates an appropriate continuation message for the new phase based on the transition context
+    /// </summary>
+    private string CreatePhaseTransitionMessage(GamePhase fromPhase, GamePhase toPhase, string phaseChangeSummary)
+    {
+        var baseMessage = $"The adventure has just transitioned from {fromPhase} to {toPhase} phase.";
+        
+        if (!string.IsNullOrEmpty(phaseChangeSummary))
+        {
+            baseMessage += $" {phaseChangeSummary}";
+        }
+
+        return toPhase switch
+        {
+            GamePhase.CharacterCreation => $"{baseMessage} Please continue by helping the player create their character and choose their starting abilities.",
+            
+            GamePhase.WorldGeneration => $"{baseMessage} Please continue by generating the world and setting up the initial adventure location.",
+            
+            GamePhase.Exploration => $"{baseMessage} Please continue the adventure in exploration mode. The player can now explore the world, interact with NPCs, and discover new locations.",
+            
+            GamePhase.Combat => $"{baseMessage} Please continue managing the combat encounter that has just begun. Describe the battle situation and guide the player through their combat options.",
+            
+            GamePhase.LevelUp => $"{baseMessage} Please guide the player through the level up process, allowing them to improve their abilities and grow stronger.",
+            
+            GamePhase.GameCreation => $"{baseMessage} Please help set up a new game session.",
+            
+            _ => $"{baseMessage} Please continue the adventure in the new {toPhase} phase."
+        };
+    }
+
     private string GetPhaseKernelName(GamePhase phase)
     {
         return phase switch

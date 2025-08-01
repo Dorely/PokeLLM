@@ -6,6 +6,9 @@ using Microsoft.SemanticKernel;
 using PokeLLM.Game.GameLogic;
 using PokeLLM.Game.Orchestration;
 using PokeLLM.Game.Plugins;
+using PokeLLM.GameState;
+using PokeLLM.Game.VectorStore.Interfaces;
+using PokeLLM.Game.VectorStore;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -46,6 +49,11 @@ public static class ServiceConfiguration
 
         // Register Game Logic Services
         services.AddTransient<IGameLogicService, GameLogicService>();
+        services.AddTransient<ICharacterManagementService, CharacterManagementService>();
+        services.AddTransient<IInformationManagementService, InformationManagementService>();
+        services.AddTransient<INpcManagementService, NpcManagementService>();
+        services.AddTransient<IPokemonManagementService, PokemonManagementService>();
+        services.AddTransient<IWorldManagementService, WorldManagementService>();
         
         // Register all plugins
         services.AddTransient<GameCreationPhasePlugin>();

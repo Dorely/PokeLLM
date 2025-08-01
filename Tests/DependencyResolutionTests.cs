@@ -6,7 +6,7 @@ using PokeLLM.GameState;
 
 namespace Tests;
 
-public class ProgramIntegrationTests
+public class DependencyResolutionTests
 {
     [Fact]
     public void ServiceDependenciesResolve()
