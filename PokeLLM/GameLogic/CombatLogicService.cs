@@ -8,11 +8,37 @@ namespace PokeLLM.Game.GameLogic;
 
 public interface ICombatLogicService
 {
-    //TODO
+    Task<bool> InitiateCombat(string attackerId, string defenderId);
+    Task<bool> ProcessCombatTurn(string activeParticipantId, string actionType, Dictionary<string, object> actionParams);
+    Task<bool> IsCombatActive();
+    Task<List<string>> GetCombatParticipants();
+    Task<string> GetCurrentTurnParticipant();
+    Task EndCombat();
+    Task<int> CalculateAttackRoll(string attackerId, string moveId);
+    Task<int> CalculateDamage(string attackerId, string defenderId, string moveId);
+    Task<bool> AttemptPokemonCapture(string pokemonInstanceId, string ballType);
+    Task<List<string>> GetAvailableMoves(string pokemonInstanceId);
+    Task<bool> CanUseMoveVigorCost(string pokemonInstanceId, string moveId);
+    Task ApplyDamage(string targetId, int damage);
+    Task ApplyHealing(string targetId, int healing);
+    Task ApplyStatusEffect(string targetId, string statusEffect);
+    Task RemoveStatusEffect(string targetId, string statusEffect);
+    Task ProcessStatusEffects(string participantId);
+    Task<bool> CheckFaintedStatus(string participantId);
+    Task HandleFaintedParticipant(string participantId);
+    Task<List<int>> CalculateInitiativeOrder(List<string> participantIds);
+    Task SwitchActivePokemon(string trainerId, string newPokemonId);
+    Task<bool> CanSwitchPokemon(string trainerId);
+    Task<double> CalculateTypeEffectiveness(string moveType, string defenderType1, string defenderType2);
+    Task<bool> AttemptFlee(string participantId);
+    Task<string> GetCombatSummary();
+    Task<bool> IsTrainerBattle();
+    Task<bool> IsWildPokemonBattle();
+    Task ProcessCombatEndRewards(string winnerId);
 }
 
 /// <summary>
-/// This service contains methods for managing pokemon within the game state
+/// This service contains methods for managing combat mechanics and battle resolution
 /// </summary>
 public class CombatLogicService : ICombatLogicService
 {
@@ -22,6 +48,142 @@ public class CombatLogicService : ICombatLogicService
         _gameStateRepository = gameStateRepository;
     }
 
+    public async Task<bool> InitiateCombat(string attackerId, string defenderId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> ProcessCombatTurn(string activeParticipantId, string actionType, Dictionary<string, object> actionParams)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> IsCombatActive()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<List<string>> GetCombatParticipants()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<string> GetCurrentTurnParticipant()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task EndCombat()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<int> CalculateAttackRoll(string attackerId, string moveId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<int> CalculateDamage(string attackerId, string defenderId, string moveId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> AttemptPokemonCapture(string pokemonInstanceId, string ballType)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<List<string>> GetAvailableMoves(string pokemonInstanceId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> CanUseMoveVigorCost(string pokemonInstanceId, string moveId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task ApplyDamage(string targetId, int damage)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task ApplyHealing(string targetId, int healing)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task ApplyStatusEffect(string targetId, string statusEffect)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task RemoveStatusEffect(string targetId, string statusEffect)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task ProcessStatusEffects(string participantId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> CheckFaintedStatus(string participantId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task HandleFaintedParticipant(string participantId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<List<int>> CalculateInitiativeOrder(List<string> participantIds)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task SwitchActivePokemon(string trainerId, string newPokemonId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> CanSwitchPokemon(string trainerId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<double> CalculateTypeEffectiveness(string moveType, string defenderType1, string defenderType2)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> AttemptFlee(string participantId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<string> GetCombatSummary()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> IsTrainerBattle()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<bool> IsWildPokemonBattle()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task ProcessCombatEndRewards(string winnerId)
+    {
+        throw new NotImplementedException();
+    }
+
+    // ...existing type effectiveness code...
     private double EffectivenessChart(string attackType, string defenseType)
     {
         // Complete Pokemon type effectiveness chart
@@ -366,5 +528,4 @@ public class CombatLogicService : ICombatLogicService
         int roll = random.Next(1, 21); // 1d20
         return roll + dexterityModifier;
     }
-
 }

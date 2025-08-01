@@ -54,13 +54,14 @@ public class GameStateModel
     [Description("A short log of the most recent significant actions and dialogues to maintain short-term context for the LLM.")]
     public List<string> RecentEvents { get; set; } = new();
 
-    [JsonPropertyName("contextCache")]
-    [Description("A list of json objects that are cached for contextual use.")]
-    public List<string> ContextCache { get; set; } = new();
-
     [JsonPropertyName("currentPhase")]
     public GamePhase CurrentPhase { get; set; } = GamePhase.GameCreation;
+
+    [JsonPropertyName("combatState")]
+    [Description("The state of the current combat encounter. This is null when not in combat.")]
+    public CombatState CombatState { get; set; }
 }
+
 public class PlayerState
 {
     [JsonPropertyName("name")]
@@ -378,6 +379,70 @@ public class TrainerClassData
     [JsonPropertyName("description")]
     [Description("Description of the trainer class and its role.")]
     public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Contains all information about an active combat encounter.
+/// </summary>
+public class CombatState
+{
+    [JsonPropertyName("combatId")]
+    [Description("A unique identifier for this combat encounter.")]
+    public string CombatId { get; set; } = Guid.NewGuid().ToString();
+
+    [JsonPropertyName("combatants")]
+    [Description("A list of all participants in the combat.")]
+    public List<Combatant> Combatants { get; set; } = new();
+
+    [JsonPropertyName("turnOrder")]
+    [Description("The initiative order of combatants, from highest to lowest initiative.")]
+    public List<string> TurnOrder { get; set; } = new();
+
+    [JsonPropertyName("currentTurnIndex")]
+    [Description("The index in the TurnOrder list of the combatant whose turn it is.")]
+    public int CurrentTurnIndex { get; set; } = 0;
+
+    [JsonPropertyName("roundNumber")]
+    [Description("The current round number of the combat.")]
+    public int RoundNumber { get; set; } = 1;
+
+    [JsonPropertyName("combatLog")]
+    [Description("A log of significant events that have occurred during the combat.")]
+    public List<string> CombatLog { get; set; } = new();
+
+    [JsonPropertyName("environmentEffects")]
+    [Description("Any active environmental effects that might affect the combat (e.g., 'Rainy', 'Tall Grass').")]
+    public List<string> EnvironmentEffects { get; set; } = new();
+}
+
+/// <summary>
+/// Represents a single participant in a combat encounter.
+/// </summary>
+public class Combatant
+{
+    [JsonPropertyName("combatantId")]
+    [Description("A unique ID for this combatant in this specific combat, typically the Pokemon or NPC instance ID.")]
+    public string CombatantId { get; set; } = string.Empty;
+
+    [JsonPropertyName("displayName")]
+    [Description("The name to display for this combatant (e.g., 'Pikachu' or 'Team Rocket Grunt').")]
+    public string DisplayName { get; set; } = string.Empty;
+
+    [JsonPropertyName("team")]
+    [Description("The team this combatant belongs to, e.g., 'Player' or 'Opponent'.")]
+    public string Team { get; set; } = string.Empty;
+
+    [JsonPropertyName("initiative")]
+    [Description("The combatant's initiative roll, determining their place in the turn order.")]
+    public int Initiative { get; set; } = 0;
+
+    [JsonPropertyName("isDefeated")]
+    [Description("Whether this combatant has been defeated.")]
+    public bool IsDefeated { get; set; } = false;
+
+    [JsonPropertyName("temporaryEffects")]
+    [Description("A list of temporary effects on this combatant, with their duration in rounds.")]
+    public Dictionary<string, int> TemporaryEffects { get; set; } = new();
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using PokeLLM.Game.GameLogic;
 using PokeLLM.Game.Orchestration;
+using PokeLLM.Game.Plugins;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -43,6 +44,19 @@ public static class ServiceConfiguration
         services.AddSingleton<IGameStateRepository, GameStateRepository>();
         services.AddTransient<IVectorStoreService, QdrantVectorStoreService>();
 
+        // Register Game Logic Services
+        services.AddTransient<IGameLogicService, GameLogicService>();
+        
+        // Register all plugins
+        services.AddTransient<GameCreationPhasePlugin>();
+        services.AddTransient<CharacterCreationPhasePlugin>();
+        services.AddTransient<WorldGenerationPhasePlugin>();
+        services.AddTransient<ExplorationPhasePlugin>();
+        services.AddTransient<CombatPhasePlugin>();
+        services.AddTransient<LevelUpPhasePlugin>();
+        services.AddTransient<ContextGatheringPlugin>();
+        services.AddTransient<ContextManagementPlugin>();
+        services.AddTransient<ChatManagementPlugin>();
         
         // Register OpenAI-specific LLM provider (low-level)
         services.AddTransient<OpenAiLLMProvider>();
@@ -50,18 +64,7 @@ public static class ServiceConfiguration
         services.AddTransient<ILLMProvider, OpenAiLLMProvider>();
         
         // Register the main orchestration service
-        services.AddTransient<IOrchestrationService>(serviceProvider =>
-        {
-            var openAiLLMProvider = serviceProvider.GetRequiredService<OpenAiLLMProvider>();
-            var gameStateRepository = serviceProvider.GetRequiredService<IGameStateRepository>();
-            
-            return new OrchestrationService(
-                openAiLLMProvider,
-                gameStateRepository);
-        });
-
-        // Register Game Loop Service
-        services.AddTransient<IGameLogicService, GameLogicService>();
+        services.AddTransient<IOrchestrationService, OrchestrationService>();
 
         return services;
     }

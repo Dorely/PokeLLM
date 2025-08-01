@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using PokeLLM.Game;
+using PokeLLM.Game.GameLogic;
 using PokeLLM.Game.Orchestration;
 using PokeLLM.GameState;
 
@@ -16,5 +17,15 @@ public class ProgramIntegrationTests
         var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
 
         Assert.NotNull(orchestrator);
+    }
+
+    [Fact]
+    public void GameLogicServiceResolves()
+    {
+        var provider = Program.BuildServiceProvider();
+
+        var gameLogicService = provider.GetRequiredService<IGameLogicService>();
+        
+        Assert.NotNull(gameLogicService);
     }
 }

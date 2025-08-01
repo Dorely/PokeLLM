@@ -11,6 +11,8 @@
     <None Remove="appsettings.json" />
     <None Remove="Prompts\CharacterCreationPhase.md" />
     <None Remove="Prompts\CombatPhase.md" />
+    <None Remove="Prompts\ContextGatheringSubroutine.md" />
+    <None Remove="Prompts\ContextManagementSubroutine.md" />
     <None Remove="Prompts\ExplorationPhase.md" />
     <None Remove="Prompts\GameCreationPhase.md" />
     <None Remove="Prompts\LevelUpPhase.md" />
@@ -28,6 +30,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Prompts\CombatPhase.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\ContextGatheringSubroutine.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\ContextManagementSubroutine.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Prompts\ExplorationPhase.md">

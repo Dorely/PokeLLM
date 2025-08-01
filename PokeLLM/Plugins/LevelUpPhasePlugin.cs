@@ -9,4 +9,12 @@ public class LevelUpPhasePlugin
     public LevelUpPhasePlugin()
     {
     }
+
+    [KernelFunction("placeholder")]
+    [Description("Placeholder function for level up phase")]
+    public async Task<string> Placeholder()
+    {
+        await Task.Yield();
+        return "Level up phase placeholder";
+    }
 }

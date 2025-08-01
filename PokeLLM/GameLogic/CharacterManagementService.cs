@@ -8,7 +8,27 @@ namespace PokeLLM.Game.GameLogic;
 
 public interface ICharacterManagementService
 {
-    //TODO
+    Task<PlayerState> GetPlayerDetails();
+    Task SetPlayerName(string playerName);
+    Task SetPlayerStats(int[] stats);
+    Task SetPlayerClass(string classId);
+    Task DamagePlayerVigor(int damage);
+    Task HealPlayerVigor(int amount);
+    Task HealPlayerVigorToMax();
+    Task LearnPlayerAbility(string ability);
+    Task AddItemPlayerInventory(ItemInstance item);
+    Task RemoveItemPlayerInventory(string itemId, int quantity);
+    Task ChangePlayerMoney(int deltaChange);
+    Task ChangePlayerRenown(int deltaChange);
+    Task ChangePlayerNotoriety(int deltaChange);
+    Task SetPlayerDescription(string description);
+    Task<bool> AddPlayerExperiencePoints(int exp);
+    Task SetPlayerCondition(string condition);
+    Task AddPokemonToTeam(string pokeId);
+    Task AddPokemonToBox(string pokeId);
+    Task AddPlayerNpcRelationShipPoints(string npcId, int delta);
+    Task AddPlayerFactionRelationShipPoints(string factionId, int delta);
+    Task AddPlayerBadge(string badge);
 }
 
 /// <summary>
@@ -119,7 +139,7 @@ public class CharacterManagementService : ICharacterManagementService
         throw new NotImplementedException();
     }
 
-    public async Task AddPlayerFactionRelationShipPoints(string npcId, int delta)
+    public async Task AddPlayerFactionRelationShipPoints(string factionId, int delta)
     {
         throw new NotImplementedException();
     }
