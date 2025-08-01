@@ -32,7 +32,7 @@ public interface IInformationManagementService
     Task<IEnumerable<GameRuleVectorRecord>> SearchGameRulesAsync(List<string> queries, string entryType = null);
 
     // Narrative log methods
-    Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, List<string> involvedEntities, string locationId, Guid? id = null);
+    Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, List<string> involvedEntities, string locationId, Guid? id = null, int? turnNumber = null);
     Task<NarrativeLogVectorRecord> GetNarrativeEventAsync(string sessionId, int gameTurnNumber);
     Task<IEnumerable<NarrativeLogVectorRecord>> FindMemoriesAsync(string sessionId, string query, List<string> involvedEntities = null, double minRelevanceScore = 0.75);
 }
@@ -304,12 +304,12 @@ public class InformationManagementService : IInformationManagementService
 
     #region Narrative Log Methods
 
-    public async Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, List<string> involvedEntities, string locationId, Guid? id = null)
+    public async Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, List<string> involvedEntities, string locationId, Guid? id = null, int? turnNumber = null)
     {
         // Load current game state to get sessionId and gameTurnNumber
         var gameState = await _gameStateRepository.LoadLatestStateAsync();
         var sessionId = gameState.SessionId;
-        var gameTurnNumber = gameState.GameTurnNumber;
+        var gameTurnNumber = turnNumber ?? gameState.GameTurnNumber;
         
         Guid actualId;
         

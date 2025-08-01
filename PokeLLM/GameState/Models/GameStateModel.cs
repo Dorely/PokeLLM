@@ -55,7 +55,7 @@ public class GameStateModel
 
     [JsonPropertyName("recentEvents")]
     [Description("A short log of the most recent significant actions and dialogues to maintain short-term context for the LLM.")]
-    public List<string> RecentEvents { get; set; } = new();
+    public List<EventLog> RecentEvents { get; set; } = new();
 
     [JsonPropertyName("currentPhase")]
     public GamePhase CurrentPhase { get; set; } = GamePhase.GameCreation;
@@ -67,6 +67,12 @@ public class GameStateModel
     [JsonPropertyName("combatState")]
     [Description("The state of the current combat encounter. This is null when not in combat.")]
     public CombatState CombatState { get; set; }
+}
+
+public class EventLog
+{
+    public int TurnNumber { get; set; }
+    public string EventDescription {  get; set; }
 }
 
 public class PlayerState

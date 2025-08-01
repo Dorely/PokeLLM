@@ -94,8 +94,10 @@ public class OrchestrationService : IOrchestrationService
         
         try
         {
-            // Load current game state to determine phase and track changes
+            // Load current game state to determine phase and track changes and to increment turn number
             gameState = await _gameStateRepository.LoadLatestStateAsync();
+            gameState.GameTurnNumber++;
+            await _gameStateRepository.SaveStateAsync(gameState);
             initialPhase = gameState.CurrentPhase;
             
             // Update current phase tracker if needed
@@ -121,7 +123,7 @@ public class OrchestrationService : IOrchestrationService
                 // Add the gathered context as a system message if successful
                 if (!string.IsNullOrEmpty(contextResult) && !contextResult.Contains("Context gathering failed"))
                 {
-                    history.AddSystemMessage($"GATHERED CONTEXT: {contextResult}");
+                    history.AddSystemMessage($"TURN NUMBER: {gameState.GameTurnNumber}; GATHERED CONTEXT: {contextResult}");
                     Debug.WriteLine($"[OrchestrationService] Added context: {contextResult.Length} characters");
                 }
                 else if (!string.IsNullOrEmpty(contextResult))

@@ -89,6 +89,49 @@ public class CharacterCreationPhasePlugin
         }
     }
 
+    [KernelFunction("get_player_stats")]
+    [Description("Get the player's current ability scores and vigor")]
+    public async Task<string> GetPlayerStats()
+    {
+        Debug.WriteLine($"[CharacterCreationPhasePlugin] GetPlayerStats called");
+        
+        try
+        {
+            var playerState = await _characterManagementService.GetPlayerDetails();
+            
+            var result = new
+            {
+                stats = new
+                {
+                    strength = playerState.Stats.Strength,
+                    dexterity = playerState.Stats.Dexterity,
+                    constitution = playerState.Stats.Constitution,
+                    intelligence = playerState.Stats.Intelligence,
+                    wisdom = playerState.Stats.Wisdom,
+                    charisma = playerState.Stats.Charisma
+                },
+                vigor = new
+                {
+                    current = playerState.Stats.CurrentVigor,
+                    max = playerState.Stats.MaxVigor
+                },
+                level = playerState.Level,
+                experience = playerState.Experience,
+                name = playerState.Name,
+                description = playerState.Description,
+                characterClass = playerState.CharacterDetails.Class
+            };
+            
+            Debug.WriteLine($"[CharacterCreationPhasePlugin] Retrieved player stats: STR={result.stats.strength}, DEX={result.stats.dexterity}, CON={result.stats.constitution}, INT={result.stats.intelligence}, WIS={result.stats.wisdom}, CHA={result.stats.charisma}");
+            return JsonSerializer.Serialize(result, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[CharacterCreationPhasePlugin] Error getting player stats: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
+    }
+
     [KernelFunction("set_player_name")]
     [Description("Set the player's trainer name")]
     public async Task<string> SetPlayerName(
@@ -240,7 +283,7 @@ public class CharacterCreationPhasePlugin
             gameState.PhaseChangeSummary = summary;
             
             // Add character creation completion to recent events
-            gameState.RecentEvents.Add($"Character Creation Completed: {summary}");
+            gameState.RecentEvents.Add(new EventLog { TurnNumber = gameState.GameTurnNumber, EventDescription = $"Character Creation Completed: {summary}" });
             
             // Update the last save time
             gameState.LastSaveTime = DateTime.UtcNow;

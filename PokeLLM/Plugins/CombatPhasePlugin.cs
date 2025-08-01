@@ -51,7 +51,7 @@ public class CombatPhasePlugin
             gameState.CombatState = null;
             
             // Add the combat result to recent events for continuity
-            gameState.RecentEvents.Add($"Combat Ended: {combatSummary}");
+            gameState.RecentEvents.Add(new EventLog { TurnNumber = gameState.GameTurnNumber, EventDescription = $"Combat Ended: {combatSummary}" });
             
             // Update the last save time
             gameState.LastSaveTime = DateTime.UtcNow;
