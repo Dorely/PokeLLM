@@ -15,26 +15,26 @@ public interface IInformationManagementService
     // Entity methods
     Task<string> UpsertEntityAsync(string entityId, string entityType, string name, string description, string propertiesJson, Guid? id = null);
     Task<EntityVectorRecord> GetEntityAsync(string entityId);
-    Task<IEnumerable<EntityVectorRecord>> SearchEntitiesAsync(string[] queries, string entityType = null);
+    Task<IEnumerable<EntityVectorRecord>> SearchEntitiesAsync(List<string> queries, string entityType = null);
 
     // Location methods  
-    Task<string> UpsertLocationAsync(string locationId, string name, string description, string region, string[] tags = null, Guid? id = null);
+    Task<string> UpsertLocationAsync(string locationId, string name, string description, string region, List<string> tags = null, Guid? id = null);
     Task<LocationVectorRecord> GetLocationAsync(string locationId);
 
     // Lore methods
-    Task<string> UpsertLoreAsync(string entryId, string entryType, string title, string content, string[] tags = null, Guid? id = null);
+    Task<string> UpsertLoreAsync(string entryId, string entryType, string title, string content, List<string> tags = null, Guid? id = null);
     Task<LoreVectorRecord> GetLoreAsync(string entryId);
-    Task<IEnumerable<LoreVectorRecord>> SearchLoreAsync(string[] queries, string entryType = null);
+    Task<IEnumerable<LoreVectorRecord>> SearchLoreAsync(List<string> queries, string entryType = null);
 
     // Game rule methods
-    Task<string> UpsertGameRuleAsync(string entryId, string entryType, string title, string content, string[] tags = null, Guid? id = null);
+    Task<string> UpsertGameRuleAsync(string entryId, string entryType, string title, string content, List<string> tags = null, Guid? id = null);
     Task<GameRuleVectorRecord> GetGameRuleAsync(string entryId);
-    Task<IEnumerable<GameRuleVectorRecord>> SearchGameRulesAsync(string query, double minRelevanceScore = 0.75);
+    Task<IEnumerable<GameRuleVectorRecord>> SearchGameRulesAsync(List<string> queries, string entryType = null);
 
     // Narrative log methods
-    Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, string[] involvedEntities, string locationId, Guid? id = null);
+    Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, List<string> involvedEntities, string locationId, Guid? id = null);
     Task<NarrativeLogVectorRecord> GetNarrativeEventAsync(string sessionId, int gameTurnNumber);
-    Task<IEnumerable<NarrativeLogVectorRecord>> FindMemoriesAsync(string sessionId, string query, string[] involvedEntities = null, double minRelevanceScore = 0.75);
+    Task<IEnumerable<NarrativeLogVectorRecord>> FindMemoriesAsync(string sessionId, string query, List<string> involvedEntities = null, double minRelevanceScore = 0.75);
 }
 
 /// <summary>
@@ -98,7 +98,7 @@ public class InformationManagementService : IInformationManagementService
         return await _vectorStoreService.GetEntityByIdAsync(entityId);
     }
 
-    public async Task<IEnumerable<EntityVectorRecord>> SearchEntitiesAsync(string[] queries, string entityType = null)
+    public async Task<IEnumerable<EntityVectorRecord>> SearchEntitiesAsync(List<string> queries, string entityType = null)
     {
         var results = new List<EntityVectorRecord>();
         
@@ -119,7 +119,7 @@ public class InformationManagementService : IInformationManagementService
 
     #region Location Methods
 
-    public async Task<string> UpsertLocationAsync(string locationId, string name, string description, string region, string[] tags = null, Guid? id = null)
+    public async Task<string> UpsertLocationAsync(string locationId, string name, string description, string region, List<string> tags = null, Guid? id = null)
     {
         Guid actualId;
         
@@ -151,7 +151,7 @@ public class InformationManagementService : IInformationManagementService
             Name = name,
             Description = description,
             Region = region,
-            Tags = tags ?? Array.Empty<string>(),
+            Tags = tags.ToArray() ?? Array.Empty<string>(),
             Embedding = description // Set embedding to the description text
         };
 
@@ -168,7 +168,7 @@ public class InformationManagementService : IInformationManagementService
 
     #region Lore Methods
 
-    public async Task<string> UpsertLoreAsync(string entryId, string entryType, string title, string content, string[] tags = null, Guid? id = null)
+    public async Task<string> UpsertLoreAsync(string entryId, string entryType, string title, string content, List<string> tags = null, Guid? id = null)
     {
         Guid actualId;
         
@@ -200,7 +200,7 @@ public class InformationManagementService : IInformationManagementService
             EntryType = entryType,
             Title = title,
             Content = content,
-            Tags = tags ?? Array.Empty<string>(),
+            Tags = tags.ToArray() ?? Array.Empty<string>(),
             Embedding = content // Set embedding to the content text
         };
 
@@ -213,7 +213,7 @@ public class InformationManagementService : IInformationManagementService
         return await _vectorStoreService.GetLoreByIdAsync(entryId);
     }
 
-    public async Task<IEnumerable<LoreVectorRecord>> SearchLoreAsync(string[] queries, string entryType = null)
+    public async Task<IEnumerable<LoreVectorRecord>> SearchLoreAsync(List<string> queries, string entryType = null)
     {
         var results = new List<LoreVectorRecord>();
         
@@ -236,7 +236,7 @@ public class InformationManagementService : IInformationManagementService
 
     #region Game Rule Methods
 
-    public async Task<string> UpsertGameRuleAsync(string entryId, string entryType, string title, string content, string[] tags = null, Guid? id = null)
+    public async Task<string> UpsertGameRuleAsync(string entryId, string entryType, string title, string content, List<string> tags = null, Guid? id = null)
     {
         Guid actualId;
         
@@ -268,7 +268,7 @@ public class InformationManagementService : IInformationManagementService
             EntryType = entryType,
             Title = title,
             Content = content,
-            Tags = tags ?? Array.Empty<string>(),
+            Tags = tags.ToArray() ?? Array.Empty<string>(),
             Embedding = content // Set embedding to the content text
         };
 
@@ -281,17 +281,30 @@ public class InformationManagementService : IInformationManagementService
         return await _vectorStoreService.GetGameRuleByIdAsync(entryId);
     }
 
-    public async Task<IEnumerable<GameRuleVectorRecord>> SearchGameRulesAsync(string query, double minRelevanceScore = 0.75)
+    public async Task<IEnumerable<GameRuleVectorRecord>> SearchGameRulesAsync(List<string> queries, string entryType = null)
     {
-        var searchResults = await _vectorStoreService.SearchGameRulesAsync(query, minRelevanceScore);
-        return searchResults.Select(r => r.Record);
+        var results = new List<GameRuleVectorRecord>();
+
+        foreach (var query in queries)
+        {
+            var searchResults = await _vectorStoreService.SearchGameRulesAsync(query);
+            foreach (var result in searchResults)
+            {
+                if (entryType == null || result.Record.EntryType == entryType)
+                {
+                    results.Add(result.Record);
+                }
+            }
+        }
+
+        return results.Distinct();
     }
 
     #endregion
 
     #region Narrative Log Methods
 
-    public async Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, string[] involvedEntities, string locationId, Guid? id = null)
+    public async Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, List<string> involvedEntities, string locationId, Guid? id = null)
     {
         // Load current game state to get sessionId and gameTurnNumber
         var gameState = await _gameStateRepository.LoadLatestStateAsync();
@@ -329,7 +342,7 @@ public class InformationManagementService : IInformationManagementService
             EventType = eventType,
             EventSummary = eventSummary,
             FullTranscript = fullTranscript ?? string.Empty,
-            InvolvedEntities = involvedEntities ?? Array.Empty<string>(),
+            InvolvedEntities = involvedEntities.ToArray() ?? Array.Empty<string>(),
             LocationId = locationId,
             Embedding = eventSummary // Set embedding to the event summary text
         };
@@ -343,9 +356,9 @@ public class InformationManagementService : IInformationManagementService
         return await _vectorStoreService.GetNarrativeEventAsync(sessionId, gameTurnNumber);
     }
 
-    public async Task<IEnumerable<NarrativeLogVectorRecord>> FindMemoriesAsync(string sessionId, string query, string[] involvedEntities = null, double minRelevanceScore = 0.75)
+    public async Task<IEnumerable<NarrativeLogVectorRecord>> FindMemoriesAsync(string sessionId, string query, List<string> involvedEntities = null, double minRelevanceScore = 0.75)
     {
-        var searchResults = await _vectorStoreService.FindMemoriesAsync(sessionId, query, involvedEntities, minRelevanceScore);
+        var searchResults = await _vectorStoreService.FindMemoriesAsync(sessionId, query, involvedEntities.ToArray(), minRelevanceScore);
         return searchResults.Select(r => r.Record);
     }
 

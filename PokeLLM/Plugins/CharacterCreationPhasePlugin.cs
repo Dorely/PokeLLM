@@ -38,102 +38,53 @@ public class CharacterCreationPhasePlugin
         };
     }
 
-    //TODO refactor/rename this
-    [KernelFunction("vector_lookups")]
-    [Description("Search for trainer class data and other entities in the vector store")]
+    [KernelFunction("vector_game_rule_lookup")]
+    [Description("Search for trainer class data or other rule data in the vector store")]
     public async Task<string> VectorLookups(
-        [Description("List of search queries to find relevant entities (classes, lore, etc.)")] List<string> queries,
-        [Description("Optional entity type filter (e.g., 'TrainerClass', 'Rule')")] string entityType = null)
+        [Description("List of Search queries to find relevant class or other rule data")] List<string> queries)
     {
-        Debug.WriteLine($"[CharacterCreationPhasePlugin] VectorLookups called with queries: {string.Join(", ", queries)}");
+        Debug.WriteLine($"[CharacterCreationPhasePlugin] VectorLookups called with queries: {queries.ToString()}");
         
         try
         {
-            var entities = await _informationManagementService.SearchEntitiesAsync(queries.ToArray(), entityType);
-            var lore = await _informationManagementService.SearchLoreAsync(queries.ToArray(), entityType);
+            var ruleResults = await _informationManagementService.SearchGameRulesAsync(queries);
             
-            var results = new
-            {
-                entities = entities.Select(e => new
-                {
-                    id = e.EntityId,
-                    type = e.EntityType,
-                    name = e.Name,
-                    description = e.Description,
-                    properties = e.PropertiesJson
-                }).ToList(),
-                lore = lore.Select(l => new
-                {
-                    id = l.EntryId,
-                    type = l.EntryType,
-                    title = l.Title,
-                    content = l.Content,
-                    tags = l.Tags
-                }).ToList()
-            };
-            
-            var json = JsonSerializer.Serialize(results, _jsonOptions);
-            Debug.WriteLine($"[CharacterCreationPhasePlugin] Found {entities.Count()} entities and {lore.Count()} lore entries");
+            var json = JsonSerializer.Serialize(ruleResults, _jsonOptions);
+            Debug.WriteLine($"[CharacterCreationPhasePlugin] Found {ruleResults.Count()} Results");
             return json;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[CharacterCreationPhasePlugin] Error in VectorLookups: {ex.Message}");
+            Debug.WriteLine($"[CharacterCreationPhasePlugin] Error in VectorLookup: {ex.Message}");
             return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
         }
     }
 
-    //TODO refactor/rename this
-    [KernelFunction("vector_upserts")]
-    [Description("Store new trainer class or lore data in the vector store")]
-    public async Task<string> VectorUpserts(
-        [Description("JSON data containing entity or lore information to store")] string data)
+    [KernelFunction("vector_game_rule_upsert")]
+    [Description("Store new trainer class data to the vector store for future use")]
+    public async Task<string> VectorUpsert(
+        [Description("An object defining the class or other rule data to be inserted/updated")] GameRuleVectorRecord data)
     {
-        Debug.WriteLine($"[CharacterCreationPhasePlugin] VectorUpserts called with data length: {data.Length}");
+        Debug.WriteLine($"[CharacterCreationPhasePlugin] VectorUpserts called with data length: {data.ToString()}");
         
         try
         {
-            var dataObject = JsonSerializer.Deserialize<JsonElement>(data);
-            var results = new List<string>();
+            var result = await _informationManagementService
+                .UpsertGameRuleAsync(
+                    data.EntryId, 
+                    data.EntryType, 
+                    data.Title, 
+                    data.Content, 
+                    data.Tags?.ToList(), 
+                    data.Id
+                );
             
-            if (dataObject.TryGetProperty("entities", out var entitiesElement))
-            {
-                foreach (var entity in entitiesElement.EnumerateArray())
-                {
-                    var entityId = entity.GetProperty("id").GetString();
-                    var entityType = entity.GetProperty("type").GetString();
-                    var name = entity.GetProperty("name").GetString();
-                    var description = entity.GetProperty("description").GetString();
-                    var properties = entity.TryGetProperty("properties", out var prop) ? prop.GetRawText() : "{}";
-                    
-                    var result = await _informationManagementService.UpsertEntityAsync(entityId, entityType, name, description, properties);
-                    results.Add(result);
-                }
-            }
-            
-            if (dataObject.TryGetProperty("lore", out var loreElement))
-            {
-                foreach (var loreEntry in loreElement.EnumerateArray())
-                {
-                    var entryId = loreEntry.GetProperty("id").GetString();
-                    var entryType = loreEntry.GetProperty("type").GetString();
-                    var title = loreEntry.GetProperty("title").GetString();
-                    var content = loreEntry.GetProperty("content").GetString();
-                    var tags = loreEntry.TryGetProperty("tags", out var tagsArray) 
-                        ? tagsArray.EnumerateArray().Select(t => t.GetString()).ToArray() 
-                        : Array.Empty<string>();
-                    
-                    var result = await _informationManagementService.UpsertLoreAsync(entryId, entryType, title, content, tags);
-                    results.Add(result);
-                }
-            }
-            
-            Debug.WriteLine($"[CharacterCreationPhasePlugin] Successfully processed {results.Count} upserts");
-            return JsonSerializer.Serialize(new { success = true, results }, _jsonOptions);
+            Debug.WriteLine($"[CharacterCreationPhasePlugin] Successfully processed upsert. {result}");
+            return JsonSerializer.Serialize(new { success = true, result }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[CharacterCreationPhasePlugin] Error in VectorUpserts: {ex.Message}");
+            Debug.WriteLine($"[CharacterCreationPhasePlugin] Error in VectorUpsert: {ex.Message}");
             return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
         }
     }
@@ -225,18 +176,15 @@ public class CharacterCreationPhasePlugin
         try
         {
             var stats = await _characterManagementService.GenerateRandomStats();
-            var statNames = new[] { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
-            var statString = string.Join(", ", statNames.Zip(stats, (name, value) => $"{name}: {value}"));
             
             var result = new
             {
                 stats,
                 total = stats.Sum(),
-                average = stats.Average(),
-                description = statString
+                average = stats.Average()
             };
             
-            Debug.WriteLine($"[CharacterCreationPhasePlugin] Generated random stats: {statString}");
+            Debug.WriteLine($"[CharacterCreationPhasePlugin] Generated random stats: {stats.ToString()}");
             return JsonSerializer.Serialize(result, _jsonOptions);
         }
         catch (Exception ex)

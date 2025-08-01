@@ -116,7 +116,7 @@ public class GameRuleVectorRecord : VectorRecordBase
     public string Title { get; set; } = string.Empty;
 
     [VectorStoreData(IsFullTextIndexed = true)]
-    [Description("The full text content of the entry. This text is used to generate the vector embedding.")]
+    [Description("The full text content of the entry. This text is used to generate the vector embedding. For Classes this should include a 20 level levelup chart.")]
     public string Content { get; set; } = string.Empty;
 
     [VectorStoreData(IsIndexed = true)]
