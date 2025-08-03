@@ -3,37 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Game.GameLogic;
 
 public interface INpcManagementService
 {
+    Task<string> CreateNpcAsync(Npc npcData, string locationId = "");
+    Task<string> AssignPokemonToNpcAsync(string npcId, string pokemonId);
+    Task<string> MoveNpcToLocationAsync(string npcId, string locationId);
+    Task<string> RemoveNpcFromLocationAsync(string npcId);
+    Task<string> UpdateNpcRelationshipWithPlayerAsync(string npcId, int relationshipValue);
+    Task<string> AddNpcToFactionAsync(string npcId, string factionId);
+    Task<string> RemoveNpcFromFactionAsync(string npcId, string factionId);
+    Task<Npc> CreateNpc(string name, string characterClass, string locationId);
     Task<Npc> GetNpcDetails(string npcId);
     Task<List<Npc>> GetNpcsAtLocation(string locationId);
-    Task<Npc> CreateNpc(string name, string characterClass, string locationId);
-    Task SetNpcName(string npcId, string name);
-    Task SetNpcStats(string npcId, Stats stats);
-    Task SetNpcClass(string npcId, string characterClass);
-    Task SetNpcDescription(string npcId, string description);
-    Task SetNpcTrainerStatus(string npcId, bool isTrainer);
-    Task AddNpcPokemon(string npcId, string pokemonInstanceId);
-    Task RemoveNpcPokemon(string npcId, string pokemonInstanceId);
-    Task AddItemToNpcInventory(string npcId, ItemInstance item);
-    Task RemoveItemFromNpcInventory(string npcId, string itemId, int quantity);
-    Task ChangeNpcMoney(string npcId, int deltaChange);
-    Task ChangeNpcRenown(string npcId, int deltaChange);
-    Task ChangeNpcNotoriety(string npcId, int deltaChange);
-    Task MoveNpcToLocation(string npcId, string locationId);
-    Task RemoveNpcFromLocation(string npcId);
-    Task AddNpcToFaction(string npcId, string factionId);
-    Task RemoveNpcFromFaction(string npcId, string factionId);
-    Task SetNpcDialogue(string npcId, string dialogueKey);
-    Task SetNpcBehavior(string npcId, string behaviorPattern);
-    Task UpdateNpcRelationshipWithPlayer(string npcId, int deltaChange);
-    Task SetNpcHostility(string npcId, bool isHostile);
-    Task DamageNpcVigor(string npcId, int damage);
-    Task HealNpcVigor(string npcId, int amount);
-    Task HealNpcVigorToMax(string npcId);
 }
 
 /// <summary>
@@ -42,138 +27,281 @@ public interface INpcManagementService
 public class NpcManagementService : INpcManagementService
 {
     private readonly IGameStateRepository _gameStateRepository;
+    
     public NpcManagementService(IGameStateRepository gameStateRepository)
     {
         _gameStateRepository = gameStateRepository;
     }
 
-    public async Task<Npc> GetNpcDetails(string npcId)
+    public async Task<string> CreateNpcAsync(Npc npcData, string locationId = "")
     {
-        throw new NotImplementedException();
+        if (npcData == null)
+        {
+            throw new ArgumentNullException(nameof(npcData));
+        }
+
+        if (string.IsNullOrWhiteSpace(npcData.Id))
+        {
+            throw new ArgumentException("NPC must have a valid ID", nameof(npcData));
+        }
+
+        // Load current game state
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        // Add NPC to world NPCs collection
+        gameState.WorldNpcs[npcData.Id] = npcData;
+
+        // Add NPC to specified location if provided
+        if (!string.IsNullOrWhiteSpace(locationId) && gameState.WorldLocations.ContainsKey(locationId))
+        {
+            if (!gameState.WorldLocations[locationId].PresentNpcIds.Contains(npcData.Id))
+            {
+                gameState.WorldLocations[locationId].PresentNpcIds.Add(npcData.Id);
+            }
+        }
+
+        // Update save time and save
+        gameState.LastSaveTime = DateTime.UtcNow;
+        await _gameStateRepository.SaveStateAsync(gameState);
+
+        return $"NPC {npcData.Name} ({npcData.Id}) created successfully" + 
+               (string.IsNullOrWhiteSpace(locationId) ? "" : $" at location {locationId}");
     }
 
-    public async Task<List<Npc>> GetNpcsAtLocation(string locationId)
+    public async Task<string> AssignPokemonToNpcAsync(string npcId, string pokemonId)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(npcId))
+        {
+            throw new ArgumentException("NPC ID cannot be null or empty", nameof(npcId));
+        }
+
+        if (string.IsNullOrWhiteSpace(pokemonId))
+        {
+            throw new ArgumentException("Pokemon ID cannot be null or empty", nameof(pokemonId));
+        }
+
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        // Verify NPC exists
+        if (!gameState.WorldNpcs.ContainsKey(npcId))
+        {
+            throw new InvalidOperationException($"NPC with ID '{npcId}' not found in game state");
+        }
+
+        // Verify Pokemon exists
+        if (!gameState.WorldPokemon.ContainsKey(pokemonId))
+        {
+            throw new InvalidOperationException($"Pokemon with ID '{pokemonId}' not found in game state");
+        }
+
+        // Add Pokemon to NPC's owned Pokemon list
+        var npc = gameState.WorldNpcs[npcId];
+        if (!npc.PokemonOwned.Contains(pokemonId))
+        {
+            npc.PokemonOwned.Add(pokemonId);
+        }
+
+        // Update save time and save
+        gameState.LastSaveTime = DateTime.UtcNow;
+        await _gameStateRepository.SaveStateAsync(gameState);
+
+        return $"Pokemon {pokemonId} assigned to NPC {npcId} successfully";
+    }
+
+    public async Task<string> MoveNpcToLocationAsync(string npcId, string locationId)
+    {
+        if (string.IsNullOrWhiteSpace(npcId))
+        {
+            throw new ArgumentException("NPC ID cannot be null or empty", nameof(npcId));
+        }
+
+        if (string.IsNullOrWhiteSpace(locationId))
+        {
+            throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
+        }
+
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        // Verify NPC exists
+        if (!gameState.WorldNpcs.ContainsKey(npcId))
+        {
+            throw new InvalidOperationException($"NPC with ID '{npcId}' not found");
+        }
+
+        // Verify target location exists
+        if (!gameState.WorldLocations.ContainsKey(locationId))
+        {
+            throw new InvalidOperationException($"Location with ID '{locationId}' not found");
+        }
+
+        // Remove NPC from all current locations
+        foreach (var location in gameState.WorldLocations.Values)
+        {
+            location.PresentNpcIds.Remove(npcId);
+        }
+
+        // Add NPC to new location
+        gameState.WorldLocations[locationId].PresentNpcIds.Add(npcId);
+
+        gameState.LastSaveTime = DateTime.UtcNow;
+        await _gameStateRepository.SaveStateAsync(gameState);
+
+        return $"NPC {npcId} moved to location {locationId}";
+    }
+
+    public async Task<string> RemoveNpcFromLocationAsync(string npcId)
+    {
+        if (string.IsNullOrWhiteSpace(npcId))
+        {
+            throw new ArgumentException("NPC ID cannot be null or empty", nameof(npcId));
+        }
+
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        // Remove NPC from all locations
+        int locationsModified = 0;
+        foreach (var location in gameState.WorldLocations.Values)
+        {
+            if (location.PresentNpcIds.Remove(npcId))
+            {
+                locationsModified++;
+            }
+        }
+
+        gameState.LastSaveTime = DateTime.UtcNow;
+        await _gameStateRepository.SaveStateAsync(gameState);
+
+        return $"NPC {npcId} removed from {locationsModified} location(s)";
+    }
+
+    public async Task<string> UpdateNpcRelationshipWithPlayerAsync(string npcId, int relationshipValue)
+    {
+        if (string.IsNullOrWhiteSpace(npcId))
+        {
+            throw new ArgumentException("NPC ID cannot be null or empty", nameof(npcId));
+        }
+
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        // Verify NPC exists
+        if (!gameState.WorldNpcs.ContainsKey(npcId))
+        {
+            throw new InvalidOperationException($"NPC with ID '{npcId}' not found");
+        }
+
+        // Clamp relationship value to valid range (-100 to 100)
+        relationshipValue = Math.Max(-100, Math.Min(100, relationshipValue));
+
+        // Update or add relationship
+        gameState.Player.PlayerNpcRelationships[npcId] = relationshipValue;
+
+        gameState.LastSaveTime = DateTime.UtcNow;
+        await _gameStateRepository.SaveStateAsync(gameState);
+
+        return $"Player relationship with NPC {npcId} set to {relationshipValue}";
+    }
+
+    public async Task<string> AddNpcToFactionAsync(string npcId, string factionId)
+    {
+        if (string.IsNullOrWhiteSpace(npcId))
+        {
+            throw new ArgumentException("NPC ID cannot be null or empty", nameof(npcId));
+        }
+
+        if (string.IsNullOrWhiteSpace(factionId))
+        {
+            throw new ArgumentException("Faction ID cannot be null or empty", nameof(factionId));
+        }
+
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        // Verify NPC exists
+        if (!gameState.WorldNpcs.ContainsKey(npcId))
+        {
+            throw new InvalidOperationException($"NPC with ID '{npcId}' not found");
+        }
+
+        var npc = gameState.WorldNpcs[npcId];
+        if (!npc.Factions.Contains(factionId))
+        {
+            npc.Factions.Add(factionId);
+        }
+
+        gameState.LastSaveTime = DateTime.UtcNow;
+        await _gameStateRepository.SaveStateAsync(gameState);
+
+        return $"NPC {npcId} added to faction {factionId}";
+    }
+
+    public async Task<string> RemoveNpcFromFactionAsync(string npcId, string factionId)
+    {
+        if (string.IsNullOrWhiteSpace(npcId))
+        {
+            throw new ArgumentException("NPC ID cannot be null or empty", nameof(npcId));
+        }
+
+        if (string.IsNullOrWhiteSpace(factionId))
+        {
+            throw new ArgumentException("Faction ID cannot be null or empty", nameof(factionId));
+        }
+
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        // Verify NPC exists
+        if (!gameState.WorldNpcs.ContainsKey(npcId))
+        {
+            throw new InvalidOperationException($"NPC with ID '{npcId}' not found");
+        }
+
+        var npc = gameState.WorldNpcs[npcId];
+        npc.Factions.Remove(factionId);
+
+        gameState.LastSaveTime = DateTime.UtcNow;
+        await _gameStateRepository.SaveStateAsync(gameState);
+
+        return $"NPC {npcId} removed from faction {factionId}";
     }
 
     public async Task<Npc> CreateNpc(string name, string characterClass, string locationId)
     {
-        throw new NotImplementedException();
+        var npcId = $"char_{name.ToLower().Replace(" ", "_")}_{Guid.NewGuid().ToString()[..8]}";
+        var npc = new Npc
+        {
+            Id = npcId,
+            Name = name,
+            CharacterDetails = new CharacterDetails { Class = characterClass },
+            Stats = new Stats(),
+            IsTrainer = false,
+            PokemonOwned = new List<string>(),
+            Factions = new List<string>()
+        };
+        
+        await CreateNpcAsync(npc, locationId);
+        return npc;
     }
 
-    public async Task SetNpcName(string npcId, string name)
+    public async Task<Npc> GetNpcDetails(string npcId)
     {
-        throw new NotImplementedException();
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+        if (gameState.WorldNpcs.TryGetValue(npcId, out var npc))
+            return npc;
+        
+        return null;
     }
 
-    public async Task SetNpcStats(string npcId, Stats stats)
+    public async Task<List<Npc>> GetNpcsAtLocation(string locationId)
     {
-        throw new NotImplementedException();
-    }
-
-    public async Task SetNpcClass(string npcId, string characterClass)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task SetNpcDescription(string npcId, string description)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task SetNpcTrainerStatus(string npcId, bool isTrainer)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task AddNpcPokemon(string npcId, string pokemonInstanceId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task RemoveNpcPokemon(string npcId, string pokemonInstanceId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task AddItemToNpcInventory(string npcId, ItemInstance item)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task RemoveItemFromNpcInventory(string npcId, string itemId, int quantity)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task ChangeNpcMoney(string npcId, int deltaChange)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task ChangeNpcRenown(string npcId, int deltaChange)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task ChangeNpcNotoriety(string npcId, int deltaChange)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task MoveNpcToLocation(string npcId, string locationId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task RemoveNpcFromLocation(string npcId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task AddNpcToFaction(string npcId, string factionId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task RemoveNpcFromFaction(string npcId, string factionId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task SetNpcDialogue(string npcId, string dialogueKey)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task SetNpcBehavior(string npcId, string behaviorPattern)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task UpdateNpcRelationshipWithPlayer(string npcId, int deltaChange)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task SetNpcHostility(string npcId, bool isHostile)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task DamageNpcVigor(string npcId, int damage)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task HealNpcVigor(string npcId, int amount)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task HealNpcVigorToMax(string npcId)
-    {
-        throw new NotImplementedException();
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+        if (!gameState.WorldLocations.TryGetValue(locationId, out var location))
+            return new List<Npc>();
+        
+        var npcs = new List<Npc>();
+        foreach (var npcId in location.PresentNpcIds)
+        {
+            if (gameState.WorldNpcs.TryGetValue(npcId, out var npc))
+                npcs.Add(npc);
+        }
+        
+        return npcs;
     }
 }

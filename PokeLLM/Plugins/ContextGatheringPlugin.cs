@@ -307,15 +307,15 @@ public class ContextGatheringPlugin
                 {
                     if (gameState.WorldNpcs.ContainsKey(npcId))
                     {
-                        var npcCharacterDetails = gameState.WorldNpcs[npcId];
+                        var npcDetails = gameState.WorldNpcs[npcId];
                         presentNpcs.Add(new
                         {
                             id = npcId, // Use the key as the ID
-                            characterClass = npcCharacterDetails.Class,
-                            money = npcCharacterDetails.Money,
-                            globalRenown = npcCharacterDetails.GlobalRenown,
-                            globalNotoriety = npcCharacterDetails.GlobalNotoriety,
-                            inventory = npcCharacterDetails.Inventory
+                            characterClass = npcDetails.CharacterDetails.Class,
+                            money = npcDetails.CharacterDetails.Money,
+                            globalRenown = npcDetails.CharacterDetails.GlobalRenown,
+                            globalNotoriety = npcDetails.CharacterDetails.GlobalNotoriety,
+                            inventory = npcDetails.CharacterDetails.Inventory
                         });
                     }
                 }

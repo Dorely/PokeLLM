@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 using Qdrant.Client;
+using System.Diagnostics;
 
 namespace PokeLLM.Game.VectorStore;
 
@@ -19,51 +20,83 @@ public class QdrantVectorStoreService : IVectorStoreService
 
     public QdrantVectorStoreService(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, IOptions<QdrantConfig> qdrantOptions)
     {
-        _embeddingGenerator = embeddingGenerator;
-        
-        _vectorStore = new QdrantVectorStore(
-            new QdrantClient(qdrantOptions.Value.Host, qdrantOptions.Value.Port),
-            ownsClient: true,
-            new QdrantVectorStoreOptions
-            {
-                EmbeddingGenerator = _embeddingGenerator
-            }
-        );
+        try
+        {
+            _embeddingGenerator = embeddingGenerator;
+            
+            _vectorStore = new QdrantVectorStore(
+                new QdrantClient(qdrantOptions.Value.Host, qdrantOptions.Value.Port),
+                ownsClient: true,
+                new QdrantVectorStoreOptions
+                {
+                    EmbeddingGenerator = _embeddingGenerator
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in constructor: {ex.Message}");
+            throw;
+        }
     }
 
     #region Entity Queries
     public async Task<Guid> AddOrUpdateEntityAsync(EntityVectorRecord entity)
     {
-        var collection = _vectorStore.GetCollection<Guid, EntityVectorRecord>(ENTITIES_COLLECTION);
-        if (entity.Id == Guid.Empty)
+        try
         {
-            entity.Id = Guid.NewGuid();
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            var collection = _vectorStore.GetCollection<Guid, EntityVectorRecord>(ENTITIES_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
+            if (entity.Id == Guid.Empty)
+            {
+                entity.Id = Guid.NewGuid();
+            }
+            await collection.UpsertAsync(entity);
+            return entity.Id;
         }
-        await collection.UpsertAsync(entity);
-        return entity.Id;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in AddOrUpdateEntityAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<EntityVectorRecord> GetEntityByIdAsync(string entityId)
     {
-        var collection = _vectorStore.GetCollection<Guid, EntityVectorRecord>(ENTITIES_COLLECTION);
-
-        // This is a filtered search to find an exact match, not a semantic search.
-        var options = new VectorSearchOptions<EntityVectorRecord>
+        try
         {
-            Filter = entity => entity.EntityId == entityId,
-            Skip = 0,
-            IncludeVectors = false
-        };
+            if (string.IsNullOrEmpty(entityId))
+                throw new ArgumentException("EntityId cannot be null or empty", nameof(entityId));
 
-        // We pass an empty query string because we only care about the filter.
-        var results = collection.SearchAsync("", 1, options);
+            var collection = _vectorStore.GetCollection<Guid, EntityVectorRecord>(ENTITIES_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
 
-        await foreach (var item in results)
-        {
-            return item.Record;
+            // This is a filtered search to find an exact match, not a semantic search.
+            var options = new VectorSearchOptions<EntityVectorRecord>
+            {
+                Filter = entity => entity.EntityId == entityId,
+                Skip = 0,
+                IncludeVectors = false
+            };
+
+            // We pass an empty query string because we only care about the filter.
+            var results = collection.SearchAsync("", 1, options);
+
+            await foreach (var item in results)
+            {
+                return item.Record;
+            }
+
+            return null;
         }
-
-        return null;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in GetEntityByIdAsync: {ex.Message}");
+            throw;
+        }
     }
 
     #endregion
@@ -72,51 +105,87 @@ public class QdrantVectorStoreService : IVectorStoreService
 
     public async Task<Guid> AddOrUpdateGameRuleAsync(GameRuleVectorRecord rule)
     {
-        var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
-        if (rule.Id == Guid.Empty)
+        try
         {
-            rule.Id = Guid.NewGuid();
+            if (rule == null)
+                throw new ArgumentNullException(nameof(rule));
+
+            var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
+            if (rule.Id == Guid.Empty)
+            {
+                rule.Id = Guid.NewGuid();
+            }
+            await collection.UpsertAsync(rule);
+            return rule.Id;
         }
-        await collection.UpsertAsync(rule);
-        return rule.Id;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in AddOrUpdateGameRuleAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<GameRuleVectorRecord> GetGameRuleByIdAsync(string entryId)
     {
-        var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
-
-        // This is a filtered search to find an exact match, not a semantic search.
-        var options = new VectorSearchOptions<GameRuleVectorRecord>
+        try
         {
-            Filter = rule => rule.EntryId == entryId,
-            Skip = 0,
-            IncludeVectors = false
-        };
+            if (string.IsNullOrEmpty(entryId))
+                throw new ArgumentException("EntryId cannot be null or empty", nameof(entryId));
 
-        // We pass an empty query string because we only care about the filter.
-        var results = collection.SearchAsync("", 1, options);
+            var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
 
-        await foreach (var item in results)
-        {
-            return item.Record;
+            // This is a filtered search to find an exact match, not a semantic search.
+            var options = new VectorSearchOptions<GameRuleVectorRecord>
+            {
+                Filter = rule => rule.EntryId == entryId,
+                Skip = 0,
+                IncludeVectors = false
+            };
+
+            // We pass an empty query string because we only care about the filter.
+            var results = collection.SearchAsync("", 1, options);
+
+            await foreach (var item in results)
+            {
+                return item.Record;
+            }
+
+            return null;
         }
-
-        return null;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in GetGameRuleByIdAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<IEnumerable<VectorSearchResult<GameRuleVectorRecord>>> SearchGameRulesAsync(string query, double minRelevanceScore = 0.75, int limit = 3)
     {
-        // This is a standard semantic search, just like your example.
-        var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
-        var results = collection.SearchAsync(query, limit);
-
-        var resultCollection = new List<VectorSearchResult<GameRuleVectorRecord>>();
-        await foreach (var item in results)
+        try
         {
-            if(item.Score >= minRelevanceScore)
-                resultCollection.Add(item);
+            if (string.IsNullOrEmpty(query))
+                throw new ArgumentException("Query cannot be null or empty", nameof(query));
+
+            // This is a standard semantic search, just like your example.
+            var collection = _vectorStore.GetCollection<Guid, GameRuleVectorRecord>(RULE_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
+            var results = collection.SearchAsync(query, limit);
+
+            var resultCollection = new List<VectorSearchResult<GameRuleVectorRecord>>();
+            await foreach (var item in results)
+            {
+                if(item.Score >= minRelevanceScore)
+                    resultCollection.Add(item);
+            }
+            return resultCollection;
         }
-        return resultCollection;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in SearchGameRulesAsync: {ex.Message}");
+            throw;
+        }
     }
 
     #endregion
@@ -125,85 +194,145 @@ public class QdrantVectorStoreService : IVectorStoreService
 
     public async Task<Guid> AddOrUpdateLocationAsync(LocationVectorRecord location)
     {
-        var collection = _vectorStore.GetCollection<Guid, LocationVectorRecord>(LOCATIONS_COLLECTION);
-        if (location.Id == Guid.Empty)
+        try
         {
-            location.Id = Guid.NewGuid();
+            if (location == null)
+                throw new ArgumentNullException(nameof(location));
+
+            var collection = _vectorStore.GetCollection<Guid, LocationVectorRecord>(LOCATIONS_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
+            if (location.Id == Guid.Empty)
+            {
+                location.Id = Guid.NewGuid();
+            }
+            await collection.UpsertAsync(location);
+            return location.Id;
         }
-        await collection.UpsertAsync(location);
-        return location.Id;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in AddOrUpdateLocationAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<LocationVectorRecord> GetLocationByIdAsync(string locationId)
     {
-        var collection = _vectorStore.GetCollection<Guid, LocationVectorRecord>(LOCATIONS_COLLECTION);
-
-        // This is a filtered search to find an exact match, not a semantic search.
-        var options = new VectorSearchOptions<LocationVectorRecord>
+        try
         {
-            Filter = location => location.LocationId == locationId,
-            Skip = 0,
-            IncludeVectors = false
-        };
+            if (string.IsNullOrEmpty(locationId))
+                throw new ArgumentException("LocationId cannot be null or empty", nameof(locationId));
 
-        // We pass an empty query string because we only care about the filter.
-        var results = collection.SearchAsync("", 1, options);
+            var collection = _vectorStore.GetCollection<Guid, LocationVectorRecord>(LOCATIONS_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
 
-        await foreach (var item in results)
-        {
-            return item.Record;
+            // This is a filtered search to find an exact match, not a semantic search.
+            var options = new VectorSearchOptions<LocationVectorRecord>
+            {
+                Filter = location => location.LocationId == locationId,
+                Skip = 0,
+                IncludeVectors = false
+            };
+
+            // We pass an empty query string because we only care about the filter.
+            var results = collection.SearchAsync("", 1, options);
+
+            await foreach (var item in results)
+            {
+                return item.Record;
+            }
+
+            return null;
         }
-
-        return null;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in GetLocationByIdAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<Guid> AddOrUpdateLoreAsync(LoreVectorRecord lore)
     {
-        var collection = _vectorStore.GetCollection<Guid, LoreVectorRecord>(LORE_COLLECTION);
-        if (lore.Id == Guid.Empty)
+        try
         {
-            lore.Id = Guid.NewGuid();
+            if (lore == null)
+                throw new ArgumentNullException(nameof(lore));
+
+            var collection = _vectorStore.GetCollection<Guid, LoreVectorRecord>(LORE_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
+            if (lore.Id == Guid.Empty)
+            {
+                lore.Id = Guid.NewGuid();
+            }
+            await collection.UpsertAsync(lore);
+            return lore.Id;
         }
-        await collection.UpsertAsync(lore);
-        return lore.Id;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in AddOrUpdateLoreAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<LoreVectorRecord> GetLoreByIdAsync(string entryId)
     {
-        var collection = _vectorStore.GetCollection<Guid, LoreVectorRecord>(LORE_COLLECTION);
-
-        // This is a filtered search to find an exact match, not a semantic search.
-        var options = new VectorSearchOptions<LoreVectorRecord>
+        try
         {
-            Filter = lore => lore.EntryId == entryId,
-            Skip = 0,
-            IncludeVectors = false
-        };
+            if (string.IsNullOrEmpty(entryId))
+                throw new ArgumentException("EntryId cannot be null or empty", nameof(entryId));
 
-        // We pass an empty query string because we only care about the filter.
-        var results = collection.SearchAsync("", 1, options);
+            var collection = _vectorStore.GetCollection<Guid, LoreVectorRecord>(LORE_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
 
-        await foreach (var item in results)
-        {
-            return item.Record;
+            // This is a filtered search to find an exact match, not a semantic search.
+            var options = new VectorSearchOptions<LoreVectorRecord>
+            {
+                Filter = lore => lore.EntryId == entryId,
+                Skip = 0,
+                IncludeVectors = false
+            };
+
+            // We pass an empty query string because we only care about the filter.
+            var results = collection.SearchAsync("", 1, options);
+
+            await foreach (var item in results)
+            {
+                return item.Record;
+            }
+
+            return null;
         }
-
-        return null;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in GetLoreByIdAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<IEnumerable<VectorSearchResult<LoreVectorRecord>>> SearchLoreAsync(string query, double minRelevanceScore = 0.75, int limit = 3)
     {
-        // This is a standard semantic search, just like your example.
-        var collection = _vectorStore.GetCollection<Guid, LoreVectorRecord>(LORE_COLLECTION);
-        var results = collection.SearchAsync(query, limit);
-
-        var resultCollection = new List<VectorSearchResult<LoreVectorRecord>>();
-        await foreach (var item in results)
+        try
         {
-            if (item.Score >= minRelevanceScore)
-                resultCollection.Add(item);
+            if (string.IsNullOrEmpty(query))
+                throw new ArgumentException("Query cannot be null or empty", nameof(query));
+
+            // This is a standard semantic search, just like your example.
+            var collection = _vectorStore.GetCollection<Guid, LoreVectorRecord>(LORE_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
+            var results = collection.SearchAsync(query, limit);
+
+            var resultCollection = new List<VectorSearchResult<LoreVectorRecord>>();
+            await foreach (var item in results)
+            {
+                if (item.Score >= minRelevanceScore)
+                    resultCollection.Add(item);
+            }
+            return resultCollection;
         }
-        return resultCollection;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in SearchLoreAsync: {ex.Message}");
+            throw;
+        }
     }
 
     #endregion
@@ -212,63 +341,125 @@ public class QdrantVectorStoreService : IVectorStoreService
 
     public async Task<Guid> LogNarrativeEventAsync(NarrativeLogVectorRecord narrativeLog)
     {
-        var collection = _vectorStore.GetCollection<Guid, NarrativeLogVectorRecord>(NARRATIVE_LOG_COLLECTION);
-        if (narrativeLog.Id == Guid.Empty)
+        try
         {
-            narrativeLog.Id = Guid.NewGuid();
+            if (narrativeLog == null)
+                throw new ArgumentNullException(nameof(narrativeLog));
+
+            var collection = _vectorStore.GetCollection<Guid, NarrativeLogVectorRecord>(NARRATIVE_LOG_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
+            if (narrativeLog.Id == Guid.Empty)
+            {
+                narrativeLog.Id = Guid.NewGuid();
+            }
+            await collection.UpsertAsync(narrativeLog);
+            return narrativeLog.Id;
         }
-        await collection.UpsertAsync(narrativeLog);
-        return narrativeLog.Id;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in LogNarrativeEventAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<NarrativeLogVectorRecord> GetNarrativeEventAsync(string sessionId, int gameTurnNumber)
     {
-        var collection = _vectorStore.GetCollection<Guid, NarrativeLogVectorRecord>(NARRATIVE_LOG_COLLECTION);
-
-        // This is a filtered search to find an exact match using session ID and game turn number.
-        var options = new VectorSearchOptions<NarrativeLogVectorRecord>
+        try
         {
-            Filter = entry => entry.SessionId == sessionId && entry.GameTurnNumber == gameTurnNumber,
-            Skip = 0,
-            IncludeVectors = false
-        };
+            if (string.IsNullOrEmpty(sessionId))
+                throw new ArgumentException("SessionId cannot be null or empty", nameof(sessionId));
 
-        // We pass an empty query string because we only care about the filter.
-        var results = collection.SearchAsync("", 1, options);
+            var collection = _vectorStore.GetCollection<Guid, NarrativeLogVectorRecord>(NARRATIVE_LOG_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
 
-        await foreach (var item in results)
-        {
-            return item.Record;
+            // This is a filtered search to find an exact match using session ID and game turn number.
+            var options = new VectorSearchOptions<NarrativeLogVectorRecord>
+            {
+                Filter = entry => entry.SessionId == sessionId && entry.GameTurnNumber == gameTurnNumber,
+                Skip = 0,
+                IncludeVectors = false
+            };
+
+            // We pass an empty query string because we only care about the filter.
+            var results = collection.SearchAsync("", 1, options);
+
+            await foreach (var item in results)
+            {
+                return item.Record;
+            }
+
+            return null;
         }
-
-        return null;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in GetNarrativeEventAsync: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<IEnumerable<VectorSearchResult<NarrativeLogVectorRecord>>> FindMemoriesAsync(string sessionId, string query, string[] involvedEntities, double minRelevanceScore = 0.75, int limit = 5)
     {
-        var collection = _vectorStore.GetCollection<Guid, NarrativeLogVectorRecord>(NARRATIVE_LOG_COLLECTION);
-
-        // This is a HYBRID query: semantic search + filtering.
-        var options = new VectorSearchOptions<NarrativeLogVectorRecord>
+        try
         {
-            Filter = entry => entry.SessionId == sessionId &&
-                             (involvedEntities == null || involvedEntities.Length == 0 ||
-                              involvedEntities.Any(entity => entry.InvolvedEntities.Contains(entity))),
-            Skip = 0,
-            IncludeVectors = false
-        };
+            if (string.IsNullOrEmpty(sessionId))
+                throw new ArgumentException("SessionId cannot be null or empty", nameof(sessionId));
+            if (string.IsNullOrEmpty(query))
+                throw new ArgumentException("Query cannot be null or empty", nameof(query));
 
-        // Perform the hybrid search (semantic search + filtering)
-        var results = collection.SearchAsync(query, limit, options);
+            var collection = _vectorStore.GetCollection<Guid, NarrativeLogVectorRecord>(NARRATIVE_LOG_COLLECTION);
+            await collection.EnsureCollectionExistsAsync();
 
-        var resultCollection = new List<VectorSearchResult<NarrativeLogVectorRecord>>();
-        await foreach (var item in results)
-        {
-            if (item.Score >= minRelevanceScore)
-                resultCollection.Add(item);
+            // Simplify the filter to avoid complex LINQ expressions that cause translation issues
+            VectorSearchOptions<NarrativeLogVectorRecord> options;
+            
+            if (involvedEntities == null || involvedEntities.Length == 0)
+            {
+                // Simple session filter only
+                options = new VectorSearchOptions<NarrativeLogVectorRecord>
+                {
+                    Filter = entry => entry.SessionId == sessionId,
+                    Skip = 0,
+                    IncludeVectors = false
+                };
+            }
+            else
+            {
+                // For entity filtering, we'll filter manually after the search
+                // to avoid complex LINQ translation issues
+                options = new VectorSearchOptions<NarrativeLogVectorRecord>
+                {
+                    Filter = entry => entry.SessionId == sessionId,
+                    Skip = 0,
+                    IncludeVectors = false
+                };
+            }
+
+            // Perform the search
+            var results = collection.SearchAsync(query, limit * 2, options); // Get more results for entity filtering
+
+            var resultCollection = new List<VectorSearchResult<NarrativeLogVectorRecord>>();
+            await foreach (var item in results)
+            {
+                if (item.Score >= minRelevanceScore)
+                {
+                    // Manual entity filtering if needed
+                    if (involvedEntities == null || involvedEntities.Length == 0 ||
+                        involvedEntities.Any(entity => item.Record.InvolvedEntities.Contains(entity)))
+                    {
+                        resultCollection.Add(item);
+                        if (resultCollection.Count >= limit)
+                            break;
+                    }
+                }
+            }
+
+            return resultCollection.OrderByDescending(x => x.Score);
         }
-
-        return resultCollection.OrderByDescending(x => x.Score);
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QdrantVectorStoreService] Error in FindMemoriesAsync: {ex.Message}");
+            throw;
+        }
     }
     #endregion
 

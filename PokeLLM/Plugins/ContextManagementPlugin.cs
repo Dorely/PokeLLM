@@ -83,89 +83,85 @@ public class ContextManagementPlugin
         }
     }
 
-    [KernelFunction("manage_entity")]
-    [Description("Create, update, or verify entity consistency across vector database and game state")]
-    public async Task<string> ManageEntity(
-        [Description("Action to take: 'create', 'update', 'verify', or 'sync'")] string action,
-        [Description("Type of entity: 'npc', 'pokemon', 'location', or 'object'")] string entityType,
-        [Description("Entity ID")] string entityId,
-        [Description("Entity name")] string name = "",
-        [Description("Entity description")] string description = "",
-        [Description("Location ID where entity should be placed")] string locationId = "",
-        [Description("Additional properties as JSON string")] string additionalProperties = "{}")
+    [KernelFunction("create_npc")]
+    [Description("Create an NPC in the game state with complete NPC data")]
+    public async Task<string> CreateNpc(
+        [Description("Complete NPC object to create")] Npc npcData,
+        [Description("Optional location ID to place the NPC")] string locationId = "")
     {
-        Debug.WriteLine($"[ContextManagementPlugin] ManageEntity called: {action} {entityType} {entityId}");
+        Debug.WriteLine($"[ContextManagementPlugin] CreateNpc called: {npcData.Id}");
         
         try
         {
-            object result = null;
+            var result = await _npcManagementService.CreateNpcAsync(npcData, locationId);
             
-            switch (action.ToLower())
-            {
-                case "create":
-                    switch (entityType.ToLower())
-                    {
-                        case "npc":
-                            var npc = await _npcManagementService.CreateNpc(name, "default", locationId);
-                            await _informationManagementService.UpsertEntityAsync(entityId, "npc", name, description, additionalProperties);
-                            result = new { success = true, message = "NPC created successfully", entityId = entityId, action = action };
-                            break;
-                        case "location":
-                            var location = await _worldManagementService.CreateLocation(name, description);
-                            await _informationManagementService.UpsertLocationAsync(entityId, name, description, "");
-                            result = new { success = true, message = "Location created successfully", entityId = entityId, action = action };
-                            break;
-                        default:
-                            result = new { success = false, message = $"Entity type {entityType} not supported for creation", entityId = entityId, action = action };
-                            break;
-                    }
-                    break;
-                    
-                case "update":
-                    await _informationManagementService.UpsertEntityAsync(entityId, entityType, name, description, additionalProperties);
-                    result = new { success = true, message = "Entity updated in vector database", entityId = entityId, action = action };
-                    break;
-                    
-                case "verify":
-                    var entity = await _informationManagementService.GetEntityAsync(entityId);
-                    var gameState = await _gameStateRepo.LoadLatestStateAsync();
-                    
-                    bool existsInVector = entity != null;
-                    bool existsInGameState = entityType switch
-                    {
-                        "npc" => gameState.WorldNpcs.ContainsKey(entityId),
-                        "pokemon" => gameState.WorldPokemon.ContainsKey(entityId),
-                        "location" => gameState.WorldLocations.ContainsKey(entityId),
-                        _ => false
-                    };
-                    
-                    result = new { 
-                        success = true, 
-                        message = $"Entity verification complete", 
-                        entityId = entityId, 
-                        action = action,
-                        existsInVector = existsInVector,
-                        existsInGameState = existsInGameState,
-                        isConsistent = existsInVector == existsInGameState
-                    };
-                    break;
-                    
-                case "sync":
-                    // This would involve complex synchronization logic
-                    result = new { success = false, message = "Sync functionality not yet implemented", entityId = entityId, action = action };
-                    break;
-                    
-                default:
-                    result = new { success = false, message = $"Unknown action: {action}", entityId = entityId, action = action };
-                    break;
-            }
-            
-            return JsonSerializer.Serialize(result, _jsonOptions);
+            return JsonSerializer.Serialize(new 
+            { 
+                success = true,
+                npcId = npcData.Id,
+                npcName = npcData.Name,
+                locationId = locationId,
+                result = result
+            }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ContextManagementPlugin] Error in ManageEntity: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message, entityId = entityId, action = action }, _jsonOptions);
+            Debug.WriteLine($"[ContextManagementPlugin] Error in CreateNpc: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("create_pokemon")]
+    [Description("Create a Pokemon instance in the game state")]
+    public async Task<string> CreatePokemon(
+        [Description("Pokemon data to create")] Pokemon pokemonData,
+        [Description("Optional location ID to place the Pokemon")] string locationId = "")
+    {
+        Debug.WriteLine($"[ContextManagementPlugin] CreatePokemon called: {pokemonData.Id}");
+        
+        try
+        {
+            var result = await _pokemonManagementService.CreatePokemonAsync(pokemonData, locationId);
+            
+            return JsonSerializer.Serialize(new 
+            { 
+                success = true,
+                pokemonId = pokemonData.Id,
+                species = pokemonData.Species,
+                locationId = locationId,
+                result = result
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in CreatePokemon: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("create_location")]
+    [Description("Create a location in the game state")]
+    public async Task<string> CreateLocation(
+        [Description("Location data to create")] Location locationData)
+    {
+        Debug.WriteLine($"[ContextManagementPlugin] CreateLocation called: {locationData.Id}");
+        
+        try
+        {
+            var result = await _worldManagementService.CreateLocationAsync(locationData);
+            
+            return JsonSerializer.Serialize(new 
+            { 
+                success = true,
+                locationId = locationData.Id,
+                name = locationData.Name,
+                result = result
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ContextManagementPlugin] Error in CreateLocation: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
         }
     }
 
@@ -186,11 +182,11 @@ public class ContextManagementPlugin
                 case "add":
                     if (entityType.ToLower() == "npc")
                     {
-                        await _worldManagementService.AddNpcToLocation(locationId, entityId);
+                        await _worldManagementService.AddNpcToLocationAsync(locationId, entityId);
                     }
                     else if (entityType.ToLower() == "pokemon")
                     {
-                        await _worldManagementService.AddPokemonToLocation(locationId, entityId);
+                        await _worldManagementService.AddPokemonToLocationAsync(locationId, entityId);
                     }
                     
                     var addResult = new { success = true, message = $"{entityType} {entityId} added to location {locationId}", action = action };
@@ -199,11 +195,11 @@ public class ContextManagementPlugin
                 case "remove":
                     if (entityType.ToLower() == "npc")
                     {
-                        await _worldManagementService.RemoveNpcFromLocation(locationId, entityId);
+                        await _worldManagementService.RemoveNpcFromLocationAsync(locationId, entityId);
                     }
                     else if (entityType.ToLower() == "pokemon")
                     {
-                        await _worldManagementService.RemovePokemonFromLocation(locationId, entityId);
+                        await _worldManagementService.RemovePokemonFromLocationAsync(locationId, entityId);
                     }
                     
                     var removeResult = new { success = true, message = $"{entityType} {entityId} removed from location {locationId}", action = action };
@@ -408,17 +404,17 @@ public class ContextManagementPlugin
             switch (updateType.ToLower())
             {
                 case "adventure_summary":
-                    await _worldManagementService.UpdateAdventureSummary(value);
+                    await _worldManagementService.UpdateAdventureSummaryAsync(value);
                     break;
                     
                 case "recent_event":
-                    await _worldManagementService.AddRecentEvent(value);
+                    await _worldManagementService.AddRecentEventAsync(value);
                     break;
                     
                 case "time":
                     if (Enum.TryParse<TimeOfDay>(value, true, out var timeOfDay))
                     {
-                        await _worldManagementService.SetTimeOfDay(timeOfDay);
+                        await _worldManagementService.SetTimeOfDayAsync(timeOfDay);
                     }
                     else
                     {
@@ -429,7 +425,7 @@ public class ContextManagementPlugin
                 case "weather":
                     if (Enum.TryParse<Weather>(value, true, out var weather))
                     {
-                        await _worldManagementService.SetWeather(weather);
+                        await _worldManagementService.SetWeatherAsync(weather);
                     }
                     else
                     {
@@ -478,10 +474,10 @@ public class ContextManagementPlugin
                     switch (action.ToLower())
                     {
                         case "add":
-                            await _npcManagementService.MoveNpcToLocation(primaryEntityId, secondaryEntityId);
+                            await _npcManagementService.MoveNpcToLocationAsync(primaryEntityId, secondaryEntityId);
                             break;
                         case "remove":
-                            await _npcManagementService.RemoveNpcFromLocation(primaryEntityId);
+                            await _npcManagementService.RemoveNpcFromLocationAsync(primaryEntityId);
                             break;
                     }
                     break;
@@ -490,7 +486,7 @@ public class ContextManagementPlugin
                     switch (action.ToLower())
                     {
                         case "update":
-                            await _npcManagementService.UpdateNpcRelationshipWithPlayer(primaryEntityId, relationshipValue);
+                            await _npcManagementService.UpdateNpcRelationshipWithPlayerAsync(primaryEntityId, relationshipValue);
                             break;
                     }
                     break;
@@ -499,10 +495,10 @@ public class ContextManagementPlugin
                     switch (action.ToLower())
                     {
                         case "add":
-                            await _npcManagementService.AddNpcToFaction(primaryEntityId, secondaryEntityId);
+                            await _npcManagementService.AddNpcToFactionAsync(primaryEntityId, secondaryEntityId);
                             break;
                         case "remove":
-                            await _npcManagementService.RemoveNpcFromFaction(primaryEntityId, secondaryEntityId);
+                            await _npcManagementService.RemoveNpcFromFactionAsync(primaryEntityId, secondaryEntityId);
                             break;
                     }
                     break;

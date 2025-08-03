@@ -38,6 +38,8 @@ Facilitate immersive storytelling where relationships, criminal intrigue, legend
 - **Gym traditions** and local customs
 - **Path progression** toward the Pokémon League
 
+---
+
 ## Phase Responsibilities
 1. **Immersive storytelling** - Create vivid, emotional scenes
 2. **Relationship development** - Build bonds between player, Pokémon, and NPCs

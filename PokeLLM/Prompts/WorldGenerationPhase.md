@@ -77,14 +77,38 @@ Craft the specific opening scenario that will:
 
 The scenario should result in the player choosing 1 of 3 starter Pokémon, with the other 2 becoming part of other storylines (rival's starter, captured by villains, etc.).
 
-## Available Functions
-- `vector_lookups(queries)` - Check existing context and find IDs for updates
-- `vector_upserts(data)` - Store all generated contextual world data
-- `create_npc(npcId)` - Add NPCs from vector context to game state
-- `create_pokemon(pokemonId)` - Add Pokémon instances to world state
-- `update_npc(npcId, updates)` - Assign Pokémon to NPC teams
-- `dice_roll(sides, count)` - Add procedural randomness to generation
-- `finalize_world_creation(context)` - Save opening scenario context and transition to CharacterCreation
+## Available Functions - Strategic Usage
+
+### Content Research and Discovery
+- Use `search_existing_content` to check for existing world information before creating new content
+- Search multiple content types: 'entities', 'locations', 'lore', 'rules', 'narrative'
+- Always verify what already exists to maintain consistency and build upon established lore
+
+### World Data Storage
+- Use `vector_lookups` to find existing IDs for entities and locations when updating
+- Use `vector_upserts` to store all generated world knowledge in the vector database
+- Ensure comprehensive data storage for consistency across future phases
+
+### Game State Population
+- Use `create_npc` to add important NPCs from vector context to the active game state
+- Use `create_pokemon` to add Pokémon instances to the world state
+- Use `update_npc` to assign Pokémon teams to trainers and establish relationships
+
+### Procedural Elements
+- Use `dice_roll` to add randomness to generation while maintaining narrative coherence
+- Apply controlled randomness to encounter tables, NPC personalities, and plot elements
+
+### Phase Completion
+- Use `finalize_world_creation` with the opening scenario context to transition to CharacterCreation
+- Provide comprehensive summary of generated world and immediate scenario setup
+
+## Strategic Function Usage Patterns
+
+1. **Search First**: Always use `search_existing_content` before creating new elements
+2. **Store Everything**: Use `vector_upserts` to maintain all world knowledge for consistency
+3. **Populate Game State**: Use creation functions to add essential NPCs and Pokémon to active state
+4. **Add Randomness**: Use `dice_roll` for procedural elements while maintaining story coherence
+5. **Document and Transition**: Use `finalize_world_creation` with complete opening scenario
 
 ## Data Storage Requirements
 - **All world knowledge** must be stored in vector store for consistency
@@ -115,4 +139,4 @@ When generation is complete:
 3. **Transition to CharacterCreation** phase
 4. **The opening scenario** will be immediately deployed to start the narrative
 
-**Remember**: This is pure content creation. Build a rich, interconnected world that will support engaging gameplay throughout the entire adventure. Every element you create should serve the larger narrative and provide meaningful choices for the player.
+**Remember**: This is pure content creation. Build a rich, interconnected world that will support engaging gameplay throughout the entire adventure. Use the search and storage functions strategically to maintain consistency and create a living, breathing world that responds meaningfully to player choices.

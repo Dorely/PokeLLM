@@ -43,7 +43,7 @@ public class GameStateModel
 
     [JsonPropertyName("worldNpcs")]
     [Description("All generated NPCs, keyed by their unique Character ID.")]
-    public Dictionary<string, CharacterDetails> WorldNpcs { get; set; } = new();
+    public Dictionary<string, Npc> WorldNpcs { get; set; } = new();
 
     [JsonPropertyName("worldPokemon")]
     [Description("All generated pokemon (wild or otherwise not on the player's team), keyed by their unique Pokemon Instance ID.")]

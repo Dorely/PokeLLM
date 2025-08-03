@@ -53,6 +53,7 @@ public static class ServiceConfiguration
         services.AddTransient<IInformationManagementService, InformationManagementService>();
         services.AddTransient<INpcManagementService, NpcManagementService>();
         services.AddTransient<IPokemonManagementService, PokemonManagementService>();
+        services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
         services.AddTransient<IWorldManagementService, WorldManagementService>();
         
         // Register all plugins
