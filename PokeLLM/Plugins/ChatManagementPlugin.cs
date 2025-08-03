@@ -348,7 +348,7 @@ public class ChatManagementPlugin
             var memories = await _informationManagementService.FindMemoriesAsync(
                 sessionId: gameState.SessionId,
                 query: query,
-                involvedEntities: involvedEntities,
+                involvedEntities: involvedEntities ?? new(),
                 minRelevanceScore: minRelevanceScore
             );
             

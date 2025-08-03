@@ -40,11 +40,11 @@ Guide the player through regional selection to establish the setting for their a
 ## Phase Responsibilities
 1. **Welcome the player** - Create a warm, inviting introduction to their Pokémon journey
 2. **Present regional choices** - Offer discovered regions plus custom region option
-3. **Gather region information** - If you do not have sufficient knowledge for a region, collect information from the player
+3. **Gather region information** - If you do not have sufficient knowledge for a region, collect information from the player. Skip this step if it is a well known region.
 4. **Set region and store data** - Use set_region to save selection and details
 5. **Finalize and transition** - Use finalize_game_creation to move to WorldGeneration
 
-## Region Information to Gather
+## Region Information to Create
 
 ### For All Regions:
 - **Geographic features** - Landscapes, climate, major landmarks

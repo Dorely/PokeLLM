@@ -55,6 +55,12 @@ public class InformationManagementService : IInformationManagementService
 
     public async Task<string> UpsertEntityAsync(string entityId, string entityType, string name, string description, string propertiesJson, Guid? id = null)
     {
+        // Validate that description is not empty since it's used for embedding
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return "Description cannot be empty";
+        }
+
         Guid actualId;
         
         if (id.HasValue)
@@ -86,7 +92,7 @@ public class InformationManagementService : IInformationManagementService
             Name = name,
             Description = description,
             PropertiesJson = propertiesJson ?? "{}",
-            Embedding = description // Set embedding to the description text
+            Embedding = description.Trim('\r', '\n', ' ', '\t') // Strip newlines and whitespace from beginning and end
         };
 
         var vectorId = await _vectorStoreService.AddOrUpdateEntityAsync(entity);
@@ -121,6 +127,12 @@ public class InformationManagementService : IInformationManagementService
 
     public async Task<string> UpsertLocationAsync(string locationId, string name, string description, string region, List<string> tags = null, Guid? id = null)
     {
+        // Validate that description is not empty since it's used for embedding
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return "Description cannot be empty";
+        }
+
         Guid actualId;
         
         if (id.HasValue)
@@ -152,7 +164,7 @@ public class InformationManagementService : IInformationManagementService
             Description = description,
             Region = region,
             Tags = tags.ToArray() ?? Array.Empty<string>(),
-            Embedding = description // Set embedding to the description text
+            Embedding = description.Trim('\r', '\n', ' ', '\t') // Strip newlines and whitespace from beginning and end
         };
 
         var vectorId = await _vectorStoreService.AddOrUpdateLocationAsync(location);
@@ -170,6 +182,12 @@ public class InformationManagementService : IInformationManagementService
 
     public async Task<string> UpsertLoreAsync(string entryId, string entryType, string title, string content, List<string> tags = null, Guid? id = null)
     {
+        // Validate that content is not empty since it's used for embedding
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return "Content cannot be empty";
+        }
+
         Guid actualId;
         
         if (id.HasValue)
@@ -201,7 +219,7 @@ public class InformationManagementService : IInformationManagementService
             Title = title,
             Content = content,
             Tags = tags.ToArray() ?? Array.Empty<string>(),
-            Embedding = content // Set embedding to the content text
+            Embedding = content.Trim('\r', '\n', ' ', '\t') // Strip newlines and whitespace from beginning and end
         };
 
         var vectorId = await _vectorStoreService.AddOrUpdateLoreAsync(lore);
@@ -238,6 +256,12 @@ public class InformationManagementService : IInformationManagementService
 
     public async Task<string> UpsertGameRuleAsync(string entryId, string entryType, string title, string content, List<string> tags = null, Guid? id = null)
     {
+        // Validate that content is not empty since it's used for embedding
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return "Content cannot be empty";
+        }
+
         Guid actualId;
         
         if (id.HasValue)
@@ -269,7 +293,7 @@ public class InformationManagementService : IInformationManagementService
             Title = title,
             Content = content,
             Tags = tags.ToArray() ?? Array.Empty<string>(),
-            Embedding = content // Set embedding to the content text
+            Embedding = content.Trim('\r', '\n', ' ', '\t') // Strip newlines and whitespace from beginning and end
         };
 
         var vectorId = await _vectorStoreService.AddOrUpdateGameRuleAsync(rule);
@@ -306,6 +330,12 @@ public class InformationManagementService : IInformationManagementService
 
     public async Task<string> LogNarrativeEventAsync(string eventType, string eventSummary, string fullTranscript, List<string> involvedEntities, string locationId, Guid? id = null, int? turnNumber = null)
     {
+        // Validate that eventSummary is not empty since it's used for embedding
+        if (string.IsNullOrWhiteSpace(eventSummary))
+        {
+            return "Event Summary cannot be empty";
+        }
+
         // Load current game state to get sessionId and gameTurnNumber
         var gameState = await _gameStateRepository.LoadLatestStateAsync();
         var sessionId = gameState.SessionId;
@@ -344,7 +374,7 @@ public class InformationManagementService : IInformationManagementService
             FullTranscript = fullTranscript ?? string.Empty,
             InvolvedEntities = involvedEntities.ToArray() ?? Array.Empty<string>(),
             LocationId = locationId,
-            Embedding = eventSummary // Set embedding to the event summary text
+            Embedding = eventSummary.Trim('\r', '\n', ' ', '\t') // Strip newlines and whitespace from beginning and end
         };
 
         var vectorId = await _vectorStoreService.LogNarrativeEventAsync(narrativeLog);
