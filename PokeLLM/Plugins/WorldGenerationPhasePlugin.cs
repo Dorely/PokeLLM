@@ -57,9 +57,35 @@ public class WorldGenerationPhasePlugin
         
         try
         {
+            // Validate required parameters
+            if (queries == null || queries.Count == 0 || queries.All(string.IsNullOrWhiteSpace))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "At least one non-empty search query is required" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(contentType))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Content type cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            var validContentTypes = new[] { "entities", "locations", "lore", "rules", "narrative", "all" };
+            if (!validContentTypes.Contains(contentType.ToLower()))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = $"Invalid content type '{contentType}'. Valid types are: {string.Join(", ", validContentTypes)}" 
+                }, _jsonOptions);
+            }
+
             var results = new List<object>();
             
-            foreach (var query in queries)
+            foreach (var query in queries.Where(q => !string.IsNullOrWhiteSpace(q)))
             {
                 switch (contentType.ToLower())
                 {
@@ -113,7 +139,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in SearchExistingContent: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -126,10 +155,51 @@ public class WorldGenerationPhasePlugin
     public async Task<string> UpsertEntity(
         [Description("Complete entity record to store")] EntityVectorRecord entityData)
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertEntity called: {entityData.EntityId}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertEntity called: {entityData?.EntityId}");
         
         try
         {
+            // Validate required parameters
+            if (entityData == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entity data is required and cannot be null" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(entityData.EntityId))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entity ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(entityData.EntityType))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entity type is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(entityData.Name))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entity name is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(entityData.Description))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entity description is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
             var result = await _informationManagementService.UpsertEntityAsync(
                 entityData.EntityId,
                 entityData.EntityType,
@@ -150,7 +220,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in UpsertEntity: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -159,10 +232,43 @@ public class WorldGenerationPhasePlugin
     public async Task<string> UpsertLocation(
         [Description("Complete location record to store")] LocationVectorRecord locationData)
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLocation called: {locationData.LocationId}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLocation called: {locationData?.LocationId}");
         
         try
         {
+            // Validate required parameters
+            if (locationData == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Location data is required and cannot be null" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(locationData.LocationId))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Location ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(locationData.Name))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Location name is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(locationData.Description))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Location description is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
             var result = await _informationManagementService.UpsertLocationAsync(
                 locationData.LocationId,
                 locationData.Name,
@@ -183,7 +289,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in UpsertLocation: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -192,10 +301,51 @@ public class WorldGenerationPhasePlugin
     public async Task<string> UpsertLore(
         [Description("Complete lore record to store")] LoreVectorRecord loreData)
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLore called: {loreData.EntryId}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLore called: {loreData?.EntryId}");
         
         try
         {
+            // Validate required parameters
+            if (loreData == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Lore data is required and cannot be null" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(loreData.EntryId))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entry ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(loreData.EntryType))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entry type is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(loreData.Title))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Lore title is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(loreData.Content))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Lore content is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
             var result = await _informationManagementService.UpsertLoreAsync(
                 loreData.EntryId,
                 loreData.EntryType,
@@ -217,7 +367,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in UpsertLore: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -226,10 +379,51 @@ public class WorldGenerationPhasePlugin
     public async Task<string> UpsertGameRule(
         [Description("Complete game rule record to store")] GameRuleVectorRecord ruleData)
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertGameRule called: {ruleData.EntryId}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertGameRule called: {ruleData?.EntryId}");
         
         try
         {
+            // Validate required parameters
+            if (ruleData == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Game rule data is required and cannot be null" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(ruleData.EntryId))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entry ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(ruleData.EntryType))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Entry type is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(ruleData.Title))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Rule title is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(ruleData.Content))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Rule content is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
             var result = await _informationManagementService.UpsertGameRuleAsync(
                 ruleData.EntryId,
                 ruleData.EntryType,
@@ -251,7 +445,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in UpsertGameRule: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -265,10 +462,51 @@ public class WorldGenerationPhasePlugin
         [Description("Complete NPC object to create")] Npc npcData,
         [Description("Optional location ID to place the NPC")] string locationId = "")
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateNpc called: {npcData.Id}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateNpc called: {npcData?.Id}");
         
         try
         {
+            // Validate required parameters
+            if (npcData == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "NPC data is required and cannot be null" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(npcData.Id))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "NPC ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(npcData.Name))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "NPC name is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (npcData.Stats == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "NPC stats are required and cannot be null" 
+                }, _jsonOptions);
+            }
+
+            if (npcData.CharacterDetails == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "NPC character details are required and cannot be null" 
+                }, _jsonOptions);
+            }
+
             var result = await _npcManagementService.CreateNpcAsync(npcData, locationId);
             
             return JsonSerializer.Serialize(new 
@@ -283,7 +521,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in CreateNpc: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -293,10 +534,51 @@ public class WorldGenerationPhasePlugin
         [Description("Pokemon data to create")] Pokemon pokemonData,
         [Description("Optional location ID to place the Pokemon")] string locationId = "")
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreatePokemon called: {pokemonData.Id}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreatePokemon called: {pokemonData?.Id}");
         
         try
         {
+            // Validate required parameters
+            if (pokemonData == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Pokemon data is required and cannot be null" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(pokemonData.Id))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Pokemon ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(pokemonData.Species))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Pokemon species is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (pokemonData.Level <= 0)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Pokemon level must be greater than 0" 
+                }, _jsonOptions);
+            }
+
+            if (pokemonData.Stats == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Pokemon stats are required and cannot be null" 
+                }, _jsonOptions);
+            }
+
             var result = await _pokemonManagementService.CreatePokemonAsync(pokemonData, locationId);
             
             return JsonSerializer.Serialize(new 
@@ -311,7 +593,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in CreatePokemon: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -320,10 +605,35 @@ public class WorldGenerationPhasePlugin
     public async Task<string> CreateLocation(
         [Description("Location data to create")] Location locationData)
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateLocation called: {locationData.Id}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateLocation called: {locationData?.Id}");
         
         try
         {
+            // Validate required parameters
+            if (locationData == null)
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Location data is required and cannot be null" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(locationData.Id))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Location ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(locationData.Name))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Location name is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
             var result = await _worldManagementService.CreateLocationAsync(locationData);
             
             return JsonSerializer.Serialize(new 
@@ -337,7 +647,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in CreateLocation: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -351,6 +664,23 @@ public class WorldGenerationPhasePlugin
         
         try
         {
+            // Validate required parameters
+            if (string.IsNullOrWhiteSpace(npcId))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "NPC ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(pokemonId))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Pokemon ID is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
             var result = await _npcManagementService.AssignPokemonToNpcAsync(npcId, pokemonId);
             
             return JsonSerializer.Serialize(new 
@@ -364,7 +694,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in AssignNpcPokemon: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -386,22 +719,68 @@ public class WorldGenerationPhasePlugin
         
         try
         {
+            // Validate required parameters
+            if (string.IsNullOrWhiteSpace(generationType))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Generation type is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            var validTypes = new[] { "random_number", "random_choice", "dice_roll", "random_stats" };
+            if (!validTypes.Contains(generationType.ToLower()))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = $"Invalid generation type '{generationType}'. Valid types are: {string.Join(", ", validTypes)}" 
+                }, _jsonOptions);
+            }
+
             switch (generationType.ToLower())
             {
                 case "dice_roll":
+                    if (sides <= 0)
+                    {
+                        return JsonSerializer.Serialize(new { 
+                            success = false,
+                            error = "Number of sides must be greater than 0" 
+                        }, _jsonOptions);
+                    }
+
+                    if (count <= 0)
+                    {
+                        return JsonSerializer.Serialize(new { 
+                            success = false,
+                            error = "Number of dice to roll must be greater than 0" 
+                        }, _jsonOptions);
+                    }
+
                     var diceResult = await _gameLogicService.RollDiceAsync(sides, count);
                     return JsonSerializer.Serialize(diceResult, _jsonOptions);
                     
                 case "random_choice":
-                    if (choices == null || choices.Count == 0)
+                    if (choices == null || choices.Count == 0 || choices.All(string.IsNullOrWhiteSpace))
                     {
-                        return JsonSerializer.Serialize(new { error = "Choices list is required for random selection" }, _jsonOptions);
+                        return JsonSerializer.Serialize(new { 
+                            success = false,
+                            error = "Choices list is required for random selection and must contain at least one non-empty choice" 
+                        }, _jsonOptions);
                     }
                     
-                    var choiceResult = await _gameLogicService.MakeRandomDecisionFromOptionsAsync(choices);
+                    var validChoices = choices.Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+                    var choiceResult = await _gameLogicService.MakeRandomDecisionFromOptionsAsync(validChoices);
                     return JsonSerializer.Serialize(choiceResult, _jsonOptions);
                     
                 case "random_number":
+                    if (minValue >= maxValue)
+                    {
+                        return JsonSerializer.Serialize(new { 
+                            success = false,
+                            error = "Maximum value must be greater than minimum value" 
+                        }, _jsonOptions);
+                    }
+
                     var randomRoll = await _gameLogicService.RollDiceAsync(maxValue - minValue + 1, 1);
                     var randomValue = randomRoll.Total + minValue - 1;
                     
@@ -433,13 +812,19 @@ public class WorldGenerationPhasePlugin
                     }, _jsonOptions);
                     
                 default:
-                    return JsonSerializer.Serialize(new { error = $"Unknown generation type: {generationType}" }, _jsonOptions);
+                    return JsonSerializer.Serialize(new { 
+                        success = false,
+                        error = $"Unknown generation type: {generationType}" 
+                    }, _jsonOptions);
             }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in GenerateProceduralContent: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 
@@ -457,6 +842,23 @@ public class WorldGenerationPhasePlugin
         
         try
         {
+            // Validate required parameters
+            if (string.IsNullOrWhiteSpace(openingScenario))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "Opening scenario is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
+            if (string.IsNullOrWhiteSpace(worldSummary))
+            {
+                return JsonSerializer.Serialize(new { 
+                    success = false,
+                    error = "World summary is required and cannot be null or empty" 
+                }, _jsonOptions);
+            }
+
             var gameState = await _gameStateRepo.LoadLatestStateAsync();
             
             // Verify we have a region selected
@@ -528,7 +930,10 @@ public class WorldGenerationPhasePlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in FinalizeWorldGeneration: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
         }
     }
 

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using PokeLLM.Game.Configuration;
 using PokeLLM.Game.VectorStore;
@@ -30,9 +31,9 @@ public class QdrantVectorStoreServiceTests : IAsyncLifetime
     {
         // Setup mock embedding generator
         _mockEmbeddingGenerator = new Mock<IEmbeddingGenerator<string, Embedding<float>>>();
-        
-        // Create test embeddings (1536 dimensions for OpenAI compatibility)
-        var testEmbedding = new Embedding<float>(Enumerable.Range(0, 1536).Select(i => (float)Random.Shared.NextDouble()).ToArray());
+
+        // Create test embeddings (768 dimensions for hybrid Ollama embeddings)
+        var testEmbedding = new Embedding<float>(Enumerable.Range(0, 768).Select(i => (float)Random.Shared.NextDouble()).ToArray());
         
         // Mock the GenerateAsync method that returns multiple embeddings
         _mockEmbeddingGenerator
@@ -47,8 +48,30 @@ public class QdrantVectorStoreServiceTests : IAsyncLifetime
             UseHttps = false
         });
 
-        // Create the service
-        _service = new QdrantVectorStoreService(_mockEmbeddingGenerator.Object, _qdrantOptions);
+        // Create a mock service provider for hybrid config
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        
+        // Configure mock service provider to return hybrid config indicating Ollama embeddings
+        var hybridConfig = Options.Create(new HybridConfig
+        {
+            LLM = new LLMConfig
+            {
+                Provider = "OpenAI",
+                ModelId = "gpt-4o-mini"
+            },
+            Embedding = new EmbeddingConfig
+            {
+                Provider = "Ollama",
+                ModelId = "nomic-embed-text",
+                Dimensions = 768
+            }
+        });
+        
+        mockServiceProvider.Setup(sp => sp.GetService(typeof(IOptions<HybridConfig>))).Returns(hybridConfig);
+        mockServiceProvider.Setup(sp => sp.GetService(typeof(IOptions<ModelConfig>))).Returns((IOptions<ModelConfig>)null);
+
+        // Create the service with mock service provider
+        _service = new QdrantVectorStoreService(_mockEmbeddingGenerator.Object, _qdrantOptions, mockServiceProvider.Object);
 
         // Wait a moment for Qdrant to be ready
         //await Task.Delay(1000);

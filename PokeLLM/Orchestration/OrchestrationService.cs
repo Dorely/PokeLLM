@@ -311,6 +311,27 @@ Please validate and update:
         return response;
     }
 
+    private async Task<string> ExecuteSubroutinePromptAsync(ChatHistory history, Kernel kernel, CancellationToken cancellationToken = default)
+    {
+        var chatService = kernel.GetRequiredService<IChatCompletionService>();
+        
+        var executionSettings = _llmProvider.GetExecutionSettings(
+            maxTokens: 10000,
+            temperature: 0.7f,
+            enableFunctionCalling: true);
+
+        var result = await chatService.GetChatMessageContentAsync(
+            history,
+            executionSettings,
+            kernel,
+            cancellationToken
+        );
+        
+        var response = result.ToString();
+        
+        return response;
+    }
+
     private async IAsyncEnumerable<string> ExecutePromptStreamingAsync(ChatHistory history, Kernel kernel, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await Task.Yield();
@@ -353,7 +374,7 @@ Please validate and update:
         if (history.Count > maxMessages || totalCharacters > maxCharacters)
         {
             Debug.WriteLine($"[OrchestrationService] Chat history is large ({history.Count} messages, {totalCharacters} chars). Running management...");
-            await RunChatManagementHistory(history);
+            await RunChatHistoryManagement(history);
         }
     }
 
@@ -500,7 +521,7 @@ Use function calls to:
             contextManagementHistory.AddUserMessage(comprehensiveDirective);
             
             // Execute the context management subroutine with function calling enabled
-            var result = await ExecutePromptAsync(contextManagementHistory, contextManagementKernel, cancellationToken);
+            var result = await ExecuteSubroutinePromptAsync(contextManagementHistory, contextManagementKernel, cancellationToken);
             
             Debug.WriteLine($"[OrchestrationService] Context management completed. Result length: {result.Length}");
             
@@ -513,7 +534,7 @@ Use function calls to:
         }
     }
 
-    private async Task<ChatManagementResult> RunChatManagementHistory(ChatHistory history)
+    private async Task<string> RunChatHistoryManagement(ChatHistory history)
     {
         try
         {
@@ -537,75 +558,58 @@ CHAT HISTORY TO ANALYZE:
 {historyJson}
 
 INSTRUCTIONS:
-1. Create a concise but comprehensive summary following the format specified in your system prompt
+1. Create a concise but comprehensive summary following the format specified in your system prompt to significantly reduce length
 2. Identify any NPCs, Pokemon, locations, items, or story elements mentioned that should be verified/updated in the context management system
-3. Return your response as a JSON object with the following structure:
-{{
-  ""adventureSummary"": ""Your comprehensive summary here"",
-  ""contextManagementItems"": [""List of items that need context verification""]
-}}";
+3. Return your response in the following structure:
+
+ADVENTURE SUMMARY:
+  Your comprehensive summary here
+VERIFICATION NEEDED:
+  List of items that need context verification
+";
 
             chatManagementHistory.AddUserMessage(directive);
             
             // Execute the chat management subroutine
-            var result = await ExecutePromptAsync(chatManagementHistory, chatManagementKernel);
-            
-            // Parse the result into a ChatManagementResult
-            ChatManagementResult managementResult;
-            try
-            {
-                var resultJson = JsonSerializer.Deserialize<ChatManagementResult>(result);
-                managementResult = resultJson ?? new ChatManagementResult();
-            }
-            catch (JsonException ex)
-            {
-                Debug.WriteLine($"[OrchestrationService] Failed to parse chat management result as JSON: {ex.Message}");
-                // Fallback: create a basic result with the raw response as summary
-                managementResult = new ChatManagementResult
-                {
-                    AdventureSummary = result,
-                    ContextManagementItems = new List<string>()
-                };
-            }
+            var result = await ExecuteSubroutinePromptAsync(chatManagementHistory, chatManagementKernel);
             
             // Update the original history by replacing older messages with the summary
-            if (!string.IsNullOrEmpty(managementResult.AdventureSummary))
+            
+            // Keep the system message and recent messages, replace middle with summary
+            var systemMessages = history.Where(msg => msg.Role == AuthorRole.System).ToList();
+            var recentMessages = history.TakeLast(2).ToList(); // Keep last 2 messages
+                
+            history.Clear();
+                
+            // Re-add system messages
+            foreach (var sysMsg in systemMessages)
             {
-                // Keep the system message and recent messages, replace middle with summary
-                var systemMessages = history.Where(msg => msg.Role == AuthorRole.System).ToList();
-                var recentMessages = history.TakeLast(5).ToList(); // Keep last 5 messages
-                
-                history.Clear();
-                
-                // Re-add system messages
-                foreach (var sysMsg in systemMessages)
-                {
-                    history.Add(sysMsg);
-                }
-                
-                // Add summary as a system message
-                history.AddSystemMessage($"ADVENTURE SUMMARY: {managementResult.AdventureSummary}");
-                
-                // Re-add recent messages
-                foreach (var recentMsg in recentMessages)
-                {
-                    history.Add(recentMsg);
-                }
-                
-                Debug.WriteLine($"[OrchestrationService] Chat history compressed. Summary length: {managementResult.AdventureSummary.Length}");
+                history.Add(sysMsg);
             }
+                
+            // Add summary as a system message
+            history.AddSystemMessage($"CHAT REDUCTION SUMMARY: {result}");
+                
+            // Re-add recent messages
+            foreach (var recentMsg in recentMessages)
+            {
+                history.Add(recentMsg);
+            }
+                
+            Debug.WriteLine($"[OrchestrationService] Chat history compressed. Summary length: {result.Length}");
+            
             
             // Process context management items if any
-            if (managementResult.ContextManagementItems?.Any() == true)
+            if (result.Contains("VERIFICATION NEEDED"))
             {
-                Debug.WriteLine($"[OrchestrationService] Found {managementResult.ContextManagementItems.Count} items for context management");
+                Debug.WriteLine($"[OrchestrationService] Found VERIFICATION NEEDED in {result}");
                 
                 try
                 {
-                    var contextDirective = $@"History Management has just completed. 
-Please verify the following list of items to be properly managed within the game context:
-ADVENTURE SUMMARY: {managementResult.AdventureSummary}
-ITEMS TO MANAGE: {string.Join(", ", managementResult.ContextManagementItems)}
+                    var contextDirective = $@"History Reduction has just completed. 
+Analyze the summary and Verification needed list to make sure all items are properly managed within the game context:
+RESULT: 
+{result}
 ";
                     await RunContextManagement(contextDirective);
                 }
@@ -615,13 +619,13 @@ ITEMS TO MANAGE: {string.Join(", ", managementResult.ContextManagementItems)}
                 }
             }
             
-            return managementResult;
+            return result;
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[OrchestrationService] Error in ManageChatHistory: {ex.Message}");
             // Return empty result on error to prevent cascading failures
-            return new ChatManagementResult();
+            return "";
         }
     }
 
@@ -653,15 +657,4 @@ ITEMS TO MANAGE: {string.Join(", ", managementResult.ContextManagementItems)}
             throw;
         }
     }
-}
-
-public class ChatManagementResult
-{
-    [JsonPropertyName("adventureSummary")]
-    [Description("A comprehensive summary of the adventure that preserves narrative flow and important story elements")]
-    public string AdventureSummary { get; set; } = string.Empty;
-
-    [JsonPropertyName("contextManagementItems")]
-    [Description("List of NPCs, Pokemon, locations, items, or story elements that should be verified/updated in the context management system")]
-    public List<string> ContextManagementItems { get; set; } = new();
 }
