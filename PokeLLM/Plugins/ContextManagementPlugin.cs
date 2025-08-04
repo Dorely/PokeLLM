@@ -83,7 +83,7 @@ public class ContextManagementPlugin
         }
     }
 
-    [KernelFunction("create_npc")]
+    [KernelFunction("instantiate_npc")]
     [Description("Create an NPC in the game state with complete NPC data")]
     public async Task<string> CreateNpc(
         [Description("Complete NPC object to create")] Npc npcData,
@@ -93,6 +93,21 @@ public class ContextManagementPlugin
         
         try
         {
+            // Check if NPC already exists in game state
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            if (gameState.WorldNpcs.ContainsKey(npcData.Id))
+            {
+                return JsonSerializer.Serialize(new 
+                { 
+                    success = false,
+                    error = "NPC_ALREADY_EXISTS",
+                    message = $"NPC with ID '{npcData.Id}' already exists in the game state",
+                    npcId = npcData.Id,
+                    npcName = npcData.Name,
+                    existingNpc = gameState.WorldNpcs[npcData.Id]
+                }, _jsonOptions);
+            }
+
             var result = await _npcManagementService.CreateNpcAsync(npcData, locationId);
             
             return JsonSerializer.Serialize(new 
@@ -107,11 +122,16 @@ public class ContextManagementPlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[ContextManagementPlugin] Error in CreateNpc: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = "CREATION_FAILED",
+                message = ex.Message,
+                npcId = npcData?.Id
+            }, _jsonOptions);
         }
     }
 
-    [KernelFunction("create_pokemon")]
+    [KernelFunction("instantiate_pokemon")]
     [Description("Create a Pokemon instance in the game state")]
     public async Task<string> CreatePokemon(
         [Description("Pokemon data to create")] Pokemon pokemonData,
@@ -121,6 +141,21 @@ public class ContextManagementPlugin
         
         try
         {
+            // Check if Pokemon already exists in game state
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            if (gameState.WorldPokemon.ContainsKey(pokemonData.Id))
+            {
+                return JsonSerializer.Serialize(new 
+                { 
+                    success = false,
+                    error = "POKEMON_ALREADY_EXISTS",
+                    message = $"Pokemon with ID '{pokemonData.Id}' already exists in the game state",
+                    pokemonId = pokemonData.Id,
+                    species = pokemonData.Species,
+                    existingPokemon = gameState.WorldPokemon[pokemonData.Id]
+                }, _jsonOptions);
+            }
+
             var result = await _pokemonManagementService.CreatePokemonAsync(pokemonData, locationId);
             
             return JsonSerializer.Serialize(new 
@@ -135,11 +170,16 @@ public class ContextManagementPlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[ContextManagementPlugin] Error in CreatePokemon: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = "CREATION_FAILED",
+                message = ex.Message,
+                pokemonId = pokemonData?.Id
+            }, _jsonOptions);
         }
     }
 
-    [KernelFunction("create_location")]
+    [KernelFunction("instantiate_location")]
     [Description("Create a location in the game state")]
     public async Task<string> CreateLocation(
         [Description("Location data to create")] Location locationData)
@@ -148,6 +188,21 @@ public class ContextManagementPlugin
         
         try
         {
+            // Check if Location already exists in game state
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            if (gameState.WorldLocations.ContainsKey(locationData.Id))
+            {
+                return JsonSerializer.Serialize(new 
+                { 
+                    success = false,
+                    error = "LOCATION_ALREADY_EXISTS",
+                    message = $"Location with ID '{locationData.Id}' already exists in the game state",
+                    locationId = locationData.Id,
+                    name = locationData.Name,
+                    existingLocation = gameState.WorldLocations[locationData.Id]
+                }, _jsonOptions);
+            }
+
             var result = await _worldManagementService.CreateLocationAsync(locationData);
             
             return JsonSerializer.Serialize(new 
@@ -161,7 +216,12 @@ public class ContextManagementPlugin
         catch (Exception ex)
         {
             Debug.WriteLine($"[ContextManagementPlugin] Error in CreateLocation: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = "CREATION_FAILED",
+                message = ex.Message,
+                locationId = locationData?.Id
+            }, _jsonOptions);
         }
     }
 
@@ -390,7 +450,7 @@ public class ContextManagementPlugin
         }
     }
 
-    [KernelFunction("update_game_state")]
+    [KernelFunction("update_world_state")]
     [Description("Update various aspects of the game state")]
     public async Task<string> UpdateGameState(
         [Description("Type of update: 'adventure_summary', 'recent_event', 'time', 'weather'")] string updateType,
@@ -455,76 +515,91 @@ public class ContextManagementPlugin
         }
     }
 
-    [KernelFunction("manage_entity_relationships")]
-    [Description("Manage relationships between entities (NPC-Location, Player-NPC, etc.)")]
-    public async Task<string> ManageEntityRelationships(
-        [Description("Type of relationship: 'npc_location', 'player_npc', 'npc_faction'")] string relationshipType,
-        [Description("Action: 'add', 'remove', 'update', or 'get'")] string action,
-        [Description("Primary entity ID")] string primaryEntityId,
-        [Description("Secondary entity ID or value")] string secondaryEntityId = "",
-        [Description("Relationship value (for numeric relationships like affinity)")] int relationshipValue = 0)
+    [KernelFunction("check_entity_existence")]
+    [Description("Check if an entity exists in both game state and vector database without creating it")]
+    public async Task<string> CheckEntityExistence(
+        [Description("Entity ID to check")] string entityId,
+        [Description("Type of entity: 'npc', 'pokemon', 'location'")] string entityType)
     {
-        Debug.WriteLine($"[ContextManagementPlugin] ManageEntityRelationships called: {relationshipType} {action}");
+        Debug.WriteLine($"[ContextManagementPlugin] CheckEntityExistence called: {entityId}, type: {entityType}");
         
         try
         {
-            switch (relationshipType.ToLower())
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            bool existsInGameState = false;
+            object gameStateEntity = null;
+            
+            switch (entityType.ToLower())
             {
-                case "npc_location":
-                    switch (action.ToLower())
-                    {
-                        case "add":
-                            await _npcManagementService.MoveNpcToLocationAsync(primaryEntityId, secondaryEntityId);
-                            break;
-                        case "remove":
-                            await _npcManagementService.RemoveNpcFromLocationAsync(primaryEntityId);
-                            break;
-                    }
+                case "npc":
+                    existsInGameState = gameState.WorldNpcs.ContainsKey(entityId);
+                    if (existsInGameState) gameStateEntity = gameState.WorldNpcs[entityId];
                     break;
-                    
-                case "player_npc":
-                    switch (action.ToLower())
-                    {
-                        case "update":
-                            await _npcManagementService.UpdateNpcRelationshipWithPlayerAsync(primaryEntityId, relationshipValue);
-                            break;
-                    }
+                case "pokemon":
+                    existsInGameState = gameState.WorldPokemon.ContainsKey(entityId);
+                    if (existsInGameState) gameStateEntity = gameState.WorldPokemon[entityId];
                     break;
-                    
-                case "npc_faction":
-                    switch (action.ToLower())
-                    {
-                        case "add":
-                            await _npcManagementService.AddNpcToFactionAsync(primaryEntityId, secondaryEntityId);
-                            break;
-                        case "remove":
-                            await _npcManagementService.RemoveNpcFromFactionAsync(primaryEntityId, secondaryEntityId);
-                            break;
-                    }
+                case "location":
+                    existsInGameState = gameState.WorldLocations.ContainsKey(entityId);
+                    if (existsInGameState) gameStateEntity = gameState.WorldLocations[entityId];
                     break;
-                    
-                default:
-                    return JsonSerializer.Serialize(new { error = $"Unknown relationship type: {relationshipType}" }, _jsonOptions);
+            }
+            
+            // Check vector database
+            object vectorEntity = null;
+            bool existsInVectorDb = false;
+            
+            if (entityType.ToLower() == "location")
+            {
+                var locationEntity = await _informationManagementService.GetLocationAsync(entityId);
+                existsInVectorDb = locationEntity != null;
+                vectorEntity = locationEntity;
+            }
+            else
+            {
+                var entity = await _informationManagementService.GetEntityAsync(entityId);
+                existsInVectorDb = entity != null;
+                vectorEntity = entity;
             }
             
             var response = new
             {
-                success = true,
-                relationshipType = relationshipType,
-                action = action,
-                primaryEntityId = primaryEntityId,
-                secondaryEntityId = secondaryEntityId,
-                relationshipValue = relationshipValue,
-                message = $"Relationship {action} completed for {relationshipType}",
-                updatedAt = DateTime.UtcNow
+                entityId = entityId,
+                entityType = entityType,
+                existsInGameState = existsInGameState,
+                existsInVectorDb = existsInVectorDb,
+                isConsistent = existsInGameState == existsInVectorDb,
+                gameStateEntity = existsInGameState ? gameStateEntity : null,
+                vectorEntity = existsInVectorDb ? vectorEntity : null,
+                recommendations = GenerateExistenceRecommendations(existsInGameState, existsInVectorDb, entityId, entityType)
             };
             
             return JsonSerializer.Serialize(response, _jsonOptions);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ContextManagementPlugin] Error in ManageEntityRelationships: {ex.Message}");
+            Debug.WriteLine($"[ContextManagementPlugin] Error in CheckEntityExistence: {ex.Message}");
             return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    private string GenerateExistenceRecommendations(bool gameState, bool vectorDb, string entityId, string entityType)
+    {
+        if (gameState && vectorDb)
+        {
+            return "Entity exists in both systems - consistent state";
+        }
+        else if (gameState && !vectorDb)
+        {
+            return $"Entity exists in game state but not vector database - consider adding to vector store for search functionality";
+        }
+        else if (!gameState && vectorDb)
+        {
+            return $"Entity exists in vector database but not game state - may need to instantiate in game state or remove from vector database";
+        }
+        else
+        {
+            return $"Entity does not exist in either system - safe to create if needed";
         }
     }
 }

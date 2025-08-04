@@ -70,12 +70,13 @@ For each Pokémon:
 ### 7. Opening Scenario Design
 Craft the specific opening scenario that will:
 - **Drop player into immediate action** - small stakes conflict requiring intervention
-- **Lead to starter selection** - situation where player works with 3 potential starters
+- **Lead to starter selection** - situation where player works with 3 potential starters. These shouldn't always be the normal starters. Use Dice rolls to determine a set of random choices.
 - **Set up future plots** - introduce elements of main storylines
 - **Create emotional stakes** - something the player will care about resolving
 - **Require player intervention** - cannot be resolved without their help
 
 The scenario should result in the player choosing 1 of 3 starter Pokémon, with the other 2 becoming part of other storylines (rival's starter, captured by villains, etc.).
+This should be much more than just the player's trip to meet the professor at the lab. Be inventive and create an exciting opening that gets the player sucked into the narrative.
 
 ## Available Functions - Strategic Usage
 

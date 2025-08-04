@@ -372,7 +372,7 @@ public class InformationManagementService : IInformationManagementService
             EventType = eventType,
             EventSummary = eventSummary,
             FullTranscript = fullTranscript ?? string.Empty,
-            InvolvedEntities = involvedEntities.ToArray() ?? Array.Empty<string>(),
+            InvolvedEntities = involvedEntities?.ToArray() ?? Array.Empty<string>(),
             LocationId = locationId,
             Embedding = eventSummary.Trim('\r', '\n', ' ', '\t') // Strip newlines and whitespace from beginning and end
         };
@@ -388,7 +388,7 @@ public class InformationManagementService : IInformationManagementService
 
     public async Task<IEnumerable<NarrativeLogVectorRecord>> FindMemoriesAsync(string sessionId, string query, List<string> involvedEntities = null, double minRelevanceScore = 0.75)
     {
-        var searchResults = await _vectorStoreService.FindMemoriesAsync(sessionId, query, involvedEntities.ToArray(), minRelevanceScore);
+        var searchResults = await _vectorStoreService.FindMemoriesAsync(sessionId, query, involvedEntities?.ToArray() ?? Array.Empty<string>(), minRelevanceScore);
         return searchResults.Select(r => r.Record);
     }
 

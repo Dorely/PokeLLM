@@ -12,7 +12,6 @@ Start the narrative with the pre-generated opening scenario and establish the pl
 You should have received:
 - A detailed opening scenario from the WorldGeneration phase
 - Information about the urgent situation the player faces
-- Details about the three potential starter Pokémon they will encounter
 - The specific crisis they must help resolve
 
 ## Phase Responsibilities
@@ -24,6 +23,7 @@ You should have received:
 6. **Continue narrative** - Resume the story with the newly created character
 7. **Transition to Exploration** - Move to Exploration phase to complete the opening scenario
 
+This is NOT supposed to be when the player chooses or recieves a pokemon, just an intermission from the action to make sure the player character is setup.
 ## Available Functions - Strategic Usage
 
 ### Character Information Management

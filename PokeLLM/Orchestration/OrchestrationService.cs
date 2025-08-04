@@ -343,8 +343,12 @@ Please validate and update:
             enableFunctionCalling: true);
         
         var responseBuilder = new StringBuilder();
+        
+        // Pre-validate and clean the history if needed
+        var historyToUse = await ValidateAndCleanHistory(history, chatService, executionSettings, kernel, cancellationToken);
+        
         var result = chatService.GetStreamingChatMessageContentsAsync(
-            history,
+            historyToUse,
             executionSettings,
             kernel,
             cancellationToken
@@ -358,6 +362,121 @@ Please validate and update:
         }
         
         await AddResponseToHistory(responseBuilder.ToString(), history);
+    }
+
+    /// <summary>
+    /// Validates the chat history and cleans it if tool sequence errors are detected
+    /// </summary>
+    private async Task<ChatHistory> ValidateAndCleanHistory(ChatHistory history, IChatCompletionService chatService, PromptExecutionSettings executionSettings, Kernel kernel, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Test the history with a minimal non-streaming call to detect tool sequence issues
+            var testResult = await chatService.GetChatMessageContentAsync(
+                history,
+                executionSettings,
+                kernel,
+                cancellationToken
+            );
+            
+            // If we get here, the history is valid
+            return history;
+        }
+        catch (Exception ex) when (ex.Message.Contains("tool") && ex.Message.Contains("must be a response to a preceeding message"))
+        {
+            Debug.WriteLine($"[OrchestrationService] Tool call sequence error detected during validation: {ex.Message}");
+            Debug.WriteLine($"[OrchestrationService] Cleaning chat history...");
+            
+            var cleanedHistory = CleanChatHistoryToolSequences(history);
+            
+            try
+            {
+                // Test the cleaned history
+                var testCleanedResult = await chatService.GetChatMessageContentAsync(
+                    cleanedHistory,
+                    executionSettings,
+                    kernel,
+                    cancellationToken
+                );
+                
+                Debug.WriteLine($"[OrchestrationService] Cleaned history validation succeeded");
+                return cleanedHistory;
+            }
+            catch (Exception cleanEx)
+            {
+                Debug.WriteLine($"[OrchestrationService] Cleaned history validation failed: {cleanEx.Message}");
+                // Return the cleaned history anyway, as it's the best we can do
+                return cleanedHistory;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[OrchestrationService] Unexpected error during history validation: {ex.Message}");
+            // Return original history for other types of errors
+            return history;
+        }
+    }
+
+    /// <summary>
+    /// Cleans chat history by removing orphaned tool messages that don't have proper tool_calls predecessors
+    /// </summary>
+    private ChatHistory CleanChatHistoryToolSequences(ChatHistory originalHistory)
+    {
+        var cleanedHistory = new ChatHistory();
+        var messages = originalHistory.ToList();
+        
+        for (int i = 0; i < messages.Count; i++)
+        {
+            var message = messages[i];
+            
+            // Always include system and user messages
+            if (message.Role == AuthorRole.System || message.Role == AuthorRole.User)
+            {
+                cleanedHistory.Add(message);
+                continue;
+            }
+            
+            // For tool messages, check if they have a proper predecessor
+            if (message.Role == AuthorRole.Tool)
+            {
+                // Look backwards for an assistant message that might contain tool calls
+                bool hasProperPredecessor = false;
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    var prevMessage = messages[j];
+                    if (prevMessage.Role == AuthorRole.Assistant)
+                    {
+                        // Assume this is the predecessor and include both
+                        hasProperPredecessor = true;
+                        break;
+                    }
+                    else if (prevMessage.Role == AuthorRole.User || prevMessage.Role == AuthorRole.System)
+                    {
+                        // Hit a non-assistant message, so no proper predecessor
+                        break;
+                    }
+                }
+                
+                if (hasProperPredecessor)
+                {
+                    cleanedHistory.Add(message);
+                }
+                else
+                {
+                    var contentLength = message.Content?.Length ?? 0;
+                    var contentPreview = contentLength > 100 ? message.Content?.Substring(0, 100) : message.Content ?? "";
+                    Debug.WriteLine($"[OrchestrationService] Removing orphaned tool message: {contentPreview}...");
+                }
+            }
+            else
+            {
+                // Assistant and other messages
+                cleanedHistory.Add(message);
+            }
+        }
+        
+        Debug.WriteLine($"[OrchestrationService] Cleaned history: {originalHistory.Count} -> {cleanedHistory.Count} messages");
+        return cleanedHistory;
     }
 
     private async Task AddResponseToHistory(string response, ChatHistory history)
@@ -574,10 +693,13 @@ VERIFICATION NEEDED:
             var result = await ExecuteSubroutinePromptAsync(chatManagementHistory, chatManagementKernel);
             
             // Update the original history by replacing older messages with the summary
+            // IMPORTANT: We need to preserve tool call sequences to avoid API errors
             
-            // Keep the system message and recent messages, replace middle with summary
+            // Keep the system messages
             var systemMessages = history.Where(msg => msg.Role == AuthorRole.System).ToList();
-            var recentMessages = history.TakeLast(2).ToList(); // Keep last 2 messages
+            
+            // Find the last complete conversation block (preserve tool call sequences)
+            var recentMessages = GetRecentMessagesWithCompleteToolSequences(history, 4); // Get more messages to ensure we have complete sequences
                 
             history.Clear();
                 
@@ -590,7 +712,7 @@ VERIFICATION NEEDED:
             // Add summary as a system message
             history.AddSystemMessage($"CHAT REDUCTION SUMMARY: {result}");
                 
-            // Re-add recent messages
+            // Re-add recent messages (which now include complete tool sequences)
             foreach (var recentMsg in recentMessages)
             {
                 history.Add(recentMsg);
@@ -629,6 +751,86 @@ RESULT:
         }
     }
 
+    /// <summary>
+    /// Gets recent messages while ensuring tool call sequences are complete.
+    /// This prevents API errors when tool messages are separated from their tool_calls.
+    /// </summary>
+    private List<ChatMessageContent> GetRecentMessagesWithCompleteToolSequences(ChatHistory history, int targetCount)
+    {
+        if (history.Count == 0)
+            return new List<ChatMessageContent>();
+            
+        var messages = history.ToList();
+        var result = new List<ChatMessageContent>();
+        
+        // Start from the end and work backwards
+        for (int i = messages.Count - 1; i >= 0 && result.Count < targetCount; i--)
+        {
+            var message = messages[i];
+            
+            // Always include system messages (they don't participate in tool sequences)
+            if (message.Role == AuthorRole.System)
+            {
+                result.Insert(0, message);
+                continue;
+            }
+            
+            // For non-system messages, check for tool sequences
+            if (message.Role == AuthorRole.Tool)
+            {
+                // If we encounter a tool message, we need to include its preceding assistant message with tool_calls
+                result.Insert(0, message);
+                
+                // Look backwards for the assistant message with tool_calls
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    var prevMessage = messages[j];
+                    result.Insert(0, prevMessage);
+                    
+                    // Stop when we find the assistant message that should contain tool_calls
+                    if (prevMessage.Role == AuthorRole.Assistant)
+                    {
+                        break;
+                    }
+                }
+            }
+            else if (message.Role == AuthorRole.Assistant)
+            {
+                // Check if this assistant message has tool calls by examining the content
+                // In Semantic Kernel, function calls are typically indicated by specific content patterns
+                var hasToolCalls = message.Content?.Contains("\"tool_calls\"") == true || 
+                                   message.Items?.Any() == true; // Check if there are any items which might be function calls
+                
+                result.Insert(0, message);
+                
+                if (hasToolCalls)
+                {
+                    // Include any subsequent tool messages
+                    for (int j = i + 1; j < messages.Count; j++)
+                    {
+                        var nextMessage = messages[j];
+                        if (nextMessage.Role == AuthorRole.Tool)
+                        {
+                            result.Add(nextMessage);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // User messages and other types
+                result.Insert(0, message);
+            }
+        }
+        
+        // Remove duplicates while preserving order
+        var seen = new HashSet<ChatMessageContent>();
+        return result.Where(msg => seen.Add(msg)).ToList();
+    }
 
     public async Task<string> LoadSystemPromptAsync(string phaseToLoad)
     {
