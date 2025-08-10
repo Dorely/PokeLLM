@@ -5,7 +5,7 @@ using PokeLLM.Game.LLM;
 using PokeLLM.Game.Plugins;
 using System.Runtime.CompilerServices;
 
-namespace PokeLLM.Game.GameLogic;
+namespace PokeLLM.Game.Orchestration;
 
 public interface IUnifiedContextService
 {

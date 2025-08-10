@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PokeLLM is a C# console application that creates a structured Pokemon role-playing game powered by Large Language Models (LLM). The application supports multiple LLM providers (OpenAI, Ollama, or Hybrid mode) and uses a sophisticated orchestration system with game phases, context management, and vector storage.
+PokeLLM is a C# console application that creates a structured Pokemon role-playing game powered by Large Language Models (LLM). The application supports multiple LLM providers (OpenAI, Ollama, Gemini) with flexible provider configuration and uses a layered architecture with game controllers, specialized services, and vector storage.
 
 ## Essential Commands
 
@@ -29,15 +29,26 @@ dotnet build --no-restore
 
 ### Core Components
 
+**Game Controller System** (`GameLogic/GameController.cs`):
+- Main entry point that routes player input based on game status
+- Coordinates between setup, world generation, and gameplay phases
+- Handles automatic phase transitions
+- Implements streaming responses with cancellation support
+
+**Game Logic Services** (`GameLogic/`):
+- `GameSetupService`: Handles initial game configuration
+- `WorldGenerationService`: Manages world creation process
+- `UnifiedContextService`: Centralized context management
+- Specialized management services for characters, NPCs, Pokemon, and world state
+
 **Orchestration System** (`Orchestration/OrchestrationService.cs`):
-- Central game loop that manages phase transitions
+- Focused on gameplay phase management during exploration/combat
 - Handles context gathering and management subroutines
 - Maintains separate Semantic Kernel instances for each game phase
 - Implements streaming responses with error handling
 
 **Game Phases**:
-- GameCreation: Initial setup
-- CharacterCreation: Player character setup
+- GameSetup: Initial setup (replaces GameCreation/CharacterCreation)
 - WorldGeneration: World building
 - Exploration: Main gameplay phase
 - Combat: Battle encounters
@@ -47,11 +58,19 @@ dotnet build --no-restore
 - `ILLMProvider` interface with three implementations:
   - `OpenAiLLMProvider`: OpenAI GPT models
   - `OllamaLLMProvider`: Local Ollama models
-  - `HybridLLMProvider`: OpenAI for chat + Ollama for embeddings
-- Provider selection configured in `ServiceConfiguration.cs` via `LLM_PROVIDER` constant
+  - `GeminiLLMProvider`: Google Gemini models
+- Flexible provider system with separate main LLM and embedding providers
+- Provider selection configured in `ServiceConfiguration.cs` via `MAIN_LLM_PROVIDER` and `EMBEDDING_PROVIDER` constants
+- Supports mixing providers (e.g., Gemini for chat, Ollama for embeddings)
 
 **Plugin System** (`Plugins/`):
 - Each game phase has a dedicated plugin with specific functions
+- `GameSetupPhasePlugin`: Initial game configuration
+- `WorldGenerationPhasePlugin`: World creation functions
+- `ExplorationPhasePlugin`: Main gameplay interactions
+- `CombatPhasePlugin`: Battle mechanics
+- `LevelUpPhasePlugin`: Character progression
+- `UnifiedContextPlugin`: Centralized context management
 - `ContextGatheringPlugin`: Lightweight context assembly
 - `ContextManagementPlugin`: Comprehensive context validation
 - `ChatManagementPlugin`: Chat history compression
@@ -69,23 +88,25 @@ dotnet build --no-restore
 ### Configuration System
 
 **Service Configuration** (`Configuration/ServiceConfiguration.cs`):
-- Change `LLM_PROVIDER` constant to switch between providers
-- Supports "OpenAI", "Ollama", or "Hybrid" modes
-- Auto-configures embedding dimensions and default models
+- Change `MAIN_LLM_PROVIDER` constant to switch between "OpenAI", "Ollama", or "Gemini"
+- Change `EMBEDDING_PROVIDER` constant to switch between "OpenAI" or "Ollama" for embeddings
+- Uses `FlexibleProviderConfig` for independent LLM and embedding provider configuration
+- Auto-configures embedding dimensions and default models based on provider selection
 
 **Settings Files**:
 - `appsettings.json`: Main configuration
 - User secrets for API keys (project has UserSecrets enabled)
-- Configuration sections: OpenAI, Ollama, Hybrid, Qdrant
+- Configuration sections: OpenAI, Ollama, Gemini, Qdrant
 
 ### Context Management Flow
 
-The application uses a sophisticated context management system:
+The application uses a layered architecture with centralized context management:
 
-1. **Context Gathering**: Lightweight pre-processing to identify relevant context
-2. **Game Phase Processing**: Main LLM interaction with full plugin access  
-3. **Context Management**: Post-processing for consistency and state updates
-4. **Chat History Management**: Automatic compression when history gets large
+1. **Game Controller Layer**: Routes input based on game status (setup, world generation, gameplay)
+2. **Service Layer**: Specialized services handle specific game logic areas
+3. **Unified Context Service**: Centralized context management across all phases
+4. **Orchestration Layer**: Manages complex gameplay interactions during exploration/combat
+5. **Plugin Layer**: Provides LLM-accessible functions for each game phase
 
 ### Key Patterns
 
@@ -95,7 +116,7 @@ The application uses a sophisticated context management system:
 
 **Tool Call Sequences**: Special handling for Semantic Kernel function calling to prevent API errors
 
-**Phase Transitions**: Automatic detection and recursive orchestration when game phases change
+**Game Status Management**: Controller-based routing with automatic phase transitions based on game completion status
 
 ## Development Notes
 
@@ -122,8 +143,9 @@ The application uses a sophisticated context management system:
 
 ### LLM Provider Configuration
 - Ensure API keys are properly set in user secrets or appsettings.json
-- For Hybrid mode, verify both OpenAI and Ollama configurations
-- Check that Ollama server is running if using Ollama provider
+- For mixed providers, verify configurations for both main LLM and embedding providers
+- Check that Ollama server is running if using Ollama for either main LLM or embeddings
+- Verify Gemini API key if using Gemini provider
 
 ### Vector Store Connection
 - Verify Qdrant configuration in appsettings.json

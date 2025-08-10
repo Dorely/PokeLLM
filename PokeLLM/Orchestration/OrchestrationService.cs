@@ -7,7 +7,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using PokeLLM.Game.GameLogic;
 using PokeLLM.Game.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 

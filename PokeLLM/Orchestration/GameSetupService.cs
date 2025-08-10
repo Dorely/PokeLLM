@@ -6,7 +6,7 @@ using PokeLLM.Game.Plugins;
 using PokeLLM.GameState.Models;
 using System.Runtime.CompilerServices;
 
-namespace PokeLLM.Game.GameLogic;
+namespace PokeLLM.Game.Orchestration;
 
 public interface IGameSetupService
 {
