@@ -51,15 +51,15 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("search_existing_content")]
     [Description("Search vector store for existing world content before generation")]
     public async Task<string> SearchExistingContent(
-        [Description("Search queries to find existing content")] List<string> queries,
+        [Description("Search queries to find existing content")] SearchQueriesDto queries,
         [Description("Content type: 'entities', 'locations', 'lore', 'rules', 'narrative'")] string contentType = "all")
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] SearchExistingContent called: {string.Join(", ", queries)}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] SearchExistingContent called: {string.Join(", ", queries.Queries)}");
         
         try
         {
             // Validate required parameters
-            if (queries == null || queries.Count == 0 || queries.All(string.IsNullOrWhiteSpace))
+            if (queries == null || queries.Queries == null || queries.Queries.Count == 0 || queries.Queries.All(string.IsNullOrWhiteSpace))
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
@@ -86,7 +86,7 @@ public class WorldGenerationPhasePlugin
 
             var results = new List<object>();
             
-            foreach (var query in queries.Where(q => !string.IsNullOrWhiteSpace(q)))
+            foreach (var query in queries.Queries.Where(q => !string.IsNullOrWhiteSpace(q)))
             {
                 switch (contentType.ToLower())
                 {
@@ -131,7 +131,7 @@ public class WorldGenerationPhasePlugin
             return JsonSerializer.Serialize(new 
             { 
                 success = true,
-                queries = queries,
+                queries = queries.Queries,
                 contentType = contentType,
                 resultsCount = results.Count,
                 results = results
@@ -719,7 +719,7 @@ public class WorldGenerationPhasePlugin
         [Description("Generation type: 'random_number', 'random_choice', 'dice_roll', 'random_stats'")] string generationType,
         [Description("Number of sides for dice (if applicable)")] int sides = 20,
         [Description("Number of dice to roll")] int count = 1,
-        [Description("List of choices for random selection")] List<string> choices = null,
+        [Description("List of choices for random selection")] ChoicesDto choices = null,
         [Description("Minimum value (for ranges)")] int minValue = 1,
         [Description("Maximum value (for ranges)")] int maxValue = 100)
     {
@@ -768,7 +768,7 @@ public class WorldGenerationPhasePlugin
                     return JsonSerializer.Serialize(diceResult, _jsonOptions);
                     
                 case "random_choice":
-                    if (choices == null || choices.Count == 0 || choices.All(string.IsNullOrWhiteSpace))
+                    if (choices == null || choices.Choices == null || choices.Choices.Count == 0 || choices.Choices.All(string.IsNullOrWhiteSpace))
                     {
                         return JsonSerializer.Serialize(new { 
                             success = false,
@@ -776,7 +776,7 @@ public class WorldGenerationPhasePlugin
                         }, _jsonOptions);
                     }
                     
-                    var validChoices = choices.Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+                    var validChoices = choices.Choices.Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
                     var choiceResult = await _gameLogicService.MakeRandomDecisionFromOptionsAsync(validChoices);
                     return JsonSerializer.Serialize(choiceResult, _jsonOptions);
                     
@@ -841,10 +841,9 @@ public class WorldGenerationPhasePlugin
     #region Phase Management
 
     [KernelFunction("finalize_world_generation")]
-    [Description("Complete world generation and transition to character creation with opening scenario")]
+    [Description("Complete world generation")]
     public async Task<string> FinalizeWorldGeneration(
-        [Description("Opening scenario context that will start the adventure")] string openingScenario,
-        [Description("Summary of the generated world content")] string worldSummary)
+        [Description("Opening scenario context that will start the adventure")] string openingScenario)
     {
         Debug.WriteLine($"[WorldGenerationPhasePlugin] FinalizeWorldGeneration called");
         
@@ -859,13 +858,6 @@ public class WorldGenerationPhasePlugin
                 }, _jsonOptions);
             }
 
-            if (string.IsNullOrWhiteSpace(worldSummary))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "World summary is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
 
             var gameState = await _gameStateRepo.LoadLatestStateAsync();
             
@@ -880,21 +872,12 @@ public class WorldGenerationPhasePlugin
                 }, _jsonOptions);
             }
             
-            // Set the phase to CharacterCreation
-            gameState.CurrentPhase = GamePhase.CharacterCreation;
-            
-            // Set the phase change summary with opening scenario
-            var fullContext = $"World generation completed for {gameState.Region}. {worldSummary} Opening Scenario: {openingScenario}";
-            gameState.PhaseChangeSummary = fullContext;
-            
-            // Update adventure summary with world details
-            gameState.AdventureSummary = $"The {gameState.Region} region has been prepared for adventure. {worldSummary}";
             
             // Add to recent events
             gameState.RecentEvents.Add(new EventLog 
             { 
                 TurnNumber = gameState.GameTurnNumber, 
-                EventDescription = $"World Generation Completed: {worldSummary}" 
+                EventDescription = $"World Generation Completed: {openingScenario}" 
             });
             
             // Update save time
@@ -903,16 +886,6 @@ public class WorldGenerationPhasePlugin
             // Save the state
             await _gameStateRepo.SaveStateAsync(gameState);
             
-            // Log the completion and opening scenario
-            await _informationManagementService.LogNarrativeEventAsync(
-                "world_generation_completed",
-                $"World generation completed for {gameState.Region}",
-                fullContext,
-                new List<string>(),
-                "",
-                null,
-                gameState.GameTurnNumber
-            );
             
             // Store the opening scenario for immediate use
             await _informationManagementService.UpsertLoreAsync(
@@ -930,7 +903,6 @@ public class WorldGenerationPhasePlugin
                 region = gameState.Region,
                 nextPhase = "CharacterCreation",
                 openingScenario = openingScenario,
-                worldSummary = worldSummary,
                 sessionId = gameState.SessionId,
                 phaseTransitionCompleted = true
             }, _jsonOptions);

@@ -181,9 +181,8 @@ public class GameCreationPhasePlugin
     }
 
     [KernelFunction("finalize_game_creation")]
-    [Description("Complete the game creation phase and transition to world generation")]
-    public async Task<string> FinalizeGameCreation(
-        [Description("Summary of the game creation process")] string creationSummary)
+    [Description("Complete the game creation phase")]
+    public async Task<string> FinalizeGameCreation()
     {
         Debug.WriteLine($"[GameCreationPhasePlugin] FinalizeGameCreation called");
         
@@ -202,15 +201,13 @@ public class GameCreationPhasePlugin
                 }, _jsonOptions);
             }
             
-            // Set the phase to WorldGeneration
-            gameState.CurrentPhase = GamePhase.WorldGeneration;
             
             // Set the phase change summary
-            var fullSummary = $"Game creation completed. Region selected: {gameState.Region}. {creationSummary}";
+            var fullSummary = $"Game creation completed. Region selected: {gameState.Region}. Ready to begin world generation.";
             gameState.PhaseChangeSummary = fullSummary;
             
             // Update adventure summary
-            gameState.AdventureSummary = $"A new Pokemon adventure begins in the {gameState.Region} region. {creationSummary}";
+            gameState.AdventureSummary = $"A new Pokemon adventure begins in the {gameState.Region} region.";
             
             // Add to recent events
             gameState.RecentEvents.Add(new EventLog 

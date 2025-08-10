@@ -113,16 +113,13 @@ public static class ServiceConfiguration
         services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
         services.AddTransient<IWorldManagementService, WorldManagementService>();
 
-        // Register all plugins
-        services.AddTransient<GameCreationPhasePlugin>();
-        services.AddTransient<CharacterCreationPhasePlugin>();
-        services.AddTransient<WorldGenerationPhasePlugin>();
+        // Register plugins (updated for new architecture)
         services.AddTransient<ExplorationPhasePlugin>();
         services.AddTransient<CombatPhasePlugin>();
         services.AddTransient<LevelUpPhasePlugin>();
-        services.AddTransient<ContextGatheringPlugin>();
-        services.AddTransient<ContextManagementPlugin>();
-        services.AddTransient<ChatManagementPlugin>();
+        services.AddTransient<UnifiedContextPlugin>();
+        services.AddTransient<GameSetupPhasePlugin>();
+        services.AddTransient<WorldGenerationPhasePlugin>();
 
         // Register all LLM providers
         services.AddTransient<OpenAiLLMProvider>();
@@ -145,8 +142,14 @@ public static class ServiceConfiguration
                 throw new InvalidOperationException($"Unknown main LLM provider: {MAIN_LLM_PROVIDER}");
         }
 
-        // Register the scene-based orchestration service
-        services.AddTransient<IOrchestrationService, OrchestrationService>();
+        // Register new service architecture
+        services.AddScoped<IUnifiedContextService, UnifiedContextService>();
+        services.AddScoped<IGameSetupService, GameSetupService>();
+        services.AddScoped<IWorldGenerationService, WorldGenerationService>();
+        services.AddScoped<IGameController, GameController>();
+        
+        // Register the orchestration service (now only handles gameplay)
+        services.AddScoped<IOrchestrationService, OrchestrationService>();
 
         return services;
     }

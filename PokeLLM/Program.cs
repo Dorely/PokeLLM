@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using PokeLLM.Game.Configuration;
-using PokeLLM.Game.Orchestration;
+using PokeLLM.Game.GameLogic;
 using PokeLLM.GameState;
 
 namespace PokeLLM.Game;
@@ -23,25 +23,17 @@ public class Program
     private static async Task Main(string[] args)
     {
         var provider = BuildServiceProvider();
-        var orchestrator = provider.GetRequiredService<IOrchestrationService>();
+        var gameController = provider.GetRequiredService<IGameController>();
         var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
 
-        // Ensure game state is initialized and set to GameCreation phase
         if (!await gameStateRepository.HasGameStateAsync())
         {
-            // Create new game state if none exists (defaults to GameCreation phase)
             await gameStateRepository.CreateNewGameStateAsync();
-            Console.WriteLine("New game state created. Starting in Game Creation phase.");
-        }
-        else
-        {
-            // Load existing state and ensure it's set to GameCreation phase
-            var gameState = await gameStateRepository.LoadLatestStateAsync();
+            Console.WriteLine("New game created.");
         }
 
-        // Get initial welcome message through the new game loop
-        Console.WriteLine($"LLM: ");
-        await foreach (var chunk in orchestrator.OrchestrateAsync("Game is done loading. Introduce yourself to the player"))
+        Console.WriteLine($"PokeLLM: ");
+        await foreach (var chunk in gameController.ProcessInputAsync("Game is done loading. Introduce yourself to the player"))
         {
             Console.Write(chunk);
         }
@@ -63,9 +55,9 @@ public class Program
             if (string.IsNullOrWhiteSpace(input) || input.Trim().ToLower() == "exit")
                 break;
 
-            // Process player input through the new game loop architecture
-            Console.WriteLine($"LLM: ");
-            await foreach (var chunk in orchestrator.OrchestrateAsync(input))
+            // Process player input through the new game controller
+            Console.WriteLine($"PokeLLM: ");
+            await foreach (var chunk in gameController.ProcessInputAsync(input))
             {
                 Console.Write(chunk);
             }

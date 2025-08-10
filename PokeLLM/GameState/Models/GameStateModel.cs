@@ -58,7 +58,7 @@ public class GameStateModel
     public List<EventLog> RecentEvents { get; set; } = new();
 
     [JsonPropertyName("currentPhase")]
-    public GamePhase CurrentPhase { get; set; } = GamePhase.GameCreation;
+    public GamePhase CurrentPhase { get; set; } = GamePhase.Exploration;
 
     [JsonPropertyName("phaseChangeSummary")]
     [Description("A details report of what has occurred and why the phase is changing. To be passed to the next chat handler.")]
@@ -67,6 +67,10 @@ public class GameStateModel
     [JsonPropertyName("combatState")]
     [Description("The state of the current combat encounter. This is null when not in combat.")]
     public CombatState CombatState { get; set; }
+
+    [JsonPropertyName("currentContext")]
+    [Description("Rich contextual description of the current scene, environment, and situation for storytelling continuity.")]
+    public string CurrentContext { get; set; } = "";
 }
 
 public class EventLog
@@ -98,6 +102,10 @@ public class PlayerState
     [JsonPropertyName("stats")]
     public Stats Stats { get; set; } = new();
 
+    [JsonPropertyName("trainerClassData")]
+    [Description("Reference to trainer class data with modifiers and abilities.")]
+    public TrainerClass TrainerClassData { get; set; } = new();
+
     [JsonPropertyName("conditions")]
     public List<string> Conditions { get; set; } = new();
 
@@ -119,6 +127,27 @@ public class PlayerState
 
     [JsonPropertyName("gymBadges")]
     public List<string> GymBadges { get; set; } = new();
+
+    /// <summary>
+    /// Calculated effective stats with class modifiers applied
+    /// </summary>
+    [JsonIgnore]
+    public Stats EffectiveStats => CalculateEffectiveStats();
+    
+    private Stats CalculateEffectiveStats()
+    {
+        return new Stats
+        {
+            Strength = Stats.Strength + (TrainerClassData.StatModifiers?.GetValueOrDefault("Strength", 0) ?? 0),
+            Dexterity = Stats.Dexterity + (TrainerClassData.StatModifiers?.GetValueOrDefault("Dexterity", 0) ?? 0),
+            Constitution = Stats.Constitution + (TrainerClassData.StatModifiers?.GetValueOrDefault("Constitution", 0) ?? 0),
+            Intelligence = Stats.Intelligence + (TrainerClassData.StatModifiers?.GetValueOrDefault("Intelligence", 0) ?? 0),
+            Wisdom = Stats.Wisdom + (TrainerClassData.StatModifiers?.GetValueOrDefault("Wisdom", 0) ?? 0),
+            Charisma = Stats.Charisma + (TrainerClassData.StatModifiers?.GetValueOrDefault("Charisma", 0) ?? 0),
+            CurrentVigor = Stats.CurrentVigor,
+            MaxVigor = Stats.MaxVigor + (TrainerClassData.StatModifiers?.GetValueOrDefault("Vigor", 0) ?? 0)
+        };
+    }
 }
 
 public class Npc
@@ -379,19 +408,43 @@ public class PokemonSpeciesData
 /// <summary>
 /// Blueprint data for trainer classes, defining their progression and abilities.
 /// </summary>
-public class TrainerClassData
+public class TrainerClass
 {
-    [JsonPropertyName("className")]
-    [Description("The name of the trainer class, e.g., 'Researcher', 'Athlete', 'Coordinator'.")]
-    public string ClassName { get; set; } = string.Empty;
+    [JsonPropertyName("id")]
+    [Description("Unique identifier for the trainer class, e.g., 'class_researcher', 'class_athlete'.")]
+    public string Id { get; set; } = string.Empty;
 
-    [JsonPropertyName("levelUpTable")]
-    [Description("Features gained at each level for this class.")]
-    public Dictionary<int, string> LevelUpTable { get; set; } = new();
+    [JsonPropertyName("name")]
+    [Description("The name of the trainer class, e.g., 'Researcher', 'Athlete', 'Coordinator'.")]
+    public string Name { get; set; } = string.Empty;
 
     [JsonPropertyName("description")]
     [Description("Description of the trainer class and its role.")]
     public string Description { get; set; } = string.Empty;
+
+    [JsonPropertyName("statModifiers")]
+    [Description("Stat modifiers applied when this class is selected. Keys are stat names, values are modifiers.")]
+    public Dictionary<string, int> StatModifiers { get; set; } = new();
+
+    [JsonPropertyName("startingAbilities")]
+    [Description("List of abilities granted to characters of this class.")]
+    public List<string> StartingAbilities { get; set; } = new();
+
+    [JsonPropertyName("startingMoney")]
+    [Description("Additional starting money for this class.")]
+    public int StartingMoney { get; set; } = 1000;
+
+    [JsonPropertyName("startingItems")]
+    [Description("List of items granted to characters of this class.")]
+    public List<string> StartingItems { get; set; } = new();
+
+    [JsonPropertyName("tags")]
+    [Description("Tags for searching and categorizing this class.")]
+    public List<string> Tags { get; set; } = new();
+
+    [JsonPropertyName("levelUpTable")]
+    [Description("Features gained at each level for this class.")]
+    public Dictionary<int, string> LevelUpTable { get; set; } = new();
 }
 
 /// <summary>
@@ -481,4 +534,4 @@ public enum TimeOfDay { Dawn, Morning, Day, Afternoon, Dusk, Night }
 public enum Weather { Clear, Cloudy, Rain, Storm, Thunderstorm, Snow, Fog, Sandstorm, Sunny, Overcast }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum GamePhase { GameCreation, CharacterCreation, WorldGeneration, Exploration, Combat, LevelUp }
+public enum GamePhase { Exploration, Combat, LevelUp }

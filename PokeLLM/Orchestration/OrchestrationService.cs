@@ -15,7 +15,6 @@ namespace PokeLLM.Game.Orchestration;
 public interface IOrchestrationService
 {
     public IAsyncEnumerable<string> OrchestrateAsync(string inputMessage, CancellationToken cancellationToken = default);
-    public Task<string> RunContextManagement(string directive, CancellationToken cancellationToken = default);
 }
 
 public class OrchestrationService : IOrchestrationService
@@ -23,6 +22,7 @@ public class OrchestrationService : IOrchestrationService
     private readonly ILLMProvider _llmProvider;
     private readonly IGameStateRepository _gameStateRepository;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IUnifiedContextService _unifiedContextService;
     private Dictionary<string, Kernel> _kernels;
     private Dictionary<string, ChatHistory> _histories;
     
@@ -31,11 +31,13 @@ public class OrchestrationService : IOrchestrationService
     public OrchestrationService(
         ILLMProvider llmProvider,
         IGameStateRepository gameStateRepository,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IUnifiedContextService unifiedContextService)
     {
         _llmProvider = llmProvider;
         _gameStateRepository = gameStateRepository;
         _serviceProvider = serviceProvider;
+        _unifiedContextService = unifiedContextService;
         _kernels = new Dictionary<string, Kernel>();
         _histories = new Dictionary<string, ChatHistory>();
         SetupPromptsAndPlugins();
@@ -43,22 +45,10 @@ public class OrchestrationService : IOrchestrationService
 
     private void SetupPromptsAndPlugins()
     {
-        // Initialize kernels and chat histories for each game phase using DI
-        SetupGamePhaseKernel<GameCreationPhasePlugin>("GameCreation");
-        SetupGamePhaseKernel<CharacterCreationPhasePlugin>("CharacterCreation");
-        SetupGamePhaseKernel<WorldGenerationPhasePlugin>("WorldGeneration");
+        // Initialize kernels and chat histories for gameplay phases only
         SetupGamePhaseKernel<ExplorationPhasePlugin>("Exploration");
         SetupGamePhaseKernel<CombatPhasePlugin>("Combat");
         SetupGamePhaseKernel<LevelUpPhasePlugin>("LevelUp");
-        
-        // Setup context gathering subroutine kernel for lightweight context assembly
-        SetupGamePhaseKernel<ContextGatheringPlugin>("ContextGathering");
-        
-        // Setup context management subroutine kernel for comprehensive context management
-        SetupGamePhaseKernel<ContextManagementPlugin>("ContextManagement");
-        
-        // Setup chat management kernel for general chat functions
-        SetupGamePhaseKernel<ChatManagementPlugin>("ChatManagement");
     }
 
     private void SetupGamePhaseKernel<T>(string phaseName) where T : class
@@ -84,7 +74,7 @@ public class OrchestrationService : IOrchestrationService
     public async IAsyncEnumerable<string> OrchestrateAsync(string inputMessage, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         GameStateModel gameState = null;
-        GamePhase initialPhase = GamePhase.GameCreation; // Initialize with default
+        GamePhase initialPhase = GamePhase.Exploration; // Initialize with default
         Kernel kernel = null;
         ChatHistory history = null;
         string contextResult = null;
@@ -114,27 +104,7 @@ public class OrchestrationService : IOrchestrationService
             
             Debug.WriteLine($"[OrchestrationService] Processing input for phase: {_currentPhase}");
             
-            // Run context gathering if NOT in GameCreation or WorldGeneration phases
-            if (_currentPhase != GamePhase.GameCreation && _currentPhase != GamePhase.WorldGeneration)
-            {
-                Debug.WriteLine($"[OrchestrationService] Running context gathering for phase: {_currentPhase}");
-                contextResult = await RunContextGathering(history, cancellationToken);
-                
-                // Add the gathered context as a system message if successful
-                if (!string.IsNullOrEmpty(contextResult) && !contextResult.Contains("Context gathering failed"))
-                {
-                    history.AddSystemMessage($"TURN NUMBER: {gameState.GameTurnNumber}; GATHERED CONTEXT: {contextResult}");
-                    Debug.WriteLine($"[OrchestrationService] Added context: {contextResult.Length} characters");
-                }
-                else if (!string.IsNullOrEmpty(contextResult))
-                {
-                    Debug.WriteLine($"[OrchestrationService] Context gathering failed: {contextResult}");
-                }
-            }
-            else
-            {
-                Debug.WriteLine($"[OrchestrationService] Skipping context gathering for phase: {_currentPhase}");
-            }
+            Debug.WriteLine($"[OrchestrationService] Processing gameplay phase: {_currentPhase}");
             
             // Add the user's input message to the history
             history.AddUserMessage(inputMessage);
@@ -185,27 +155,18 @@ public class OrchestrationService : IOrchestrationService
                 // Update our current phase tracker
                 _currentPhase = finalPhase;
                 
-                // Run Context Management subroutine for the phase transition
-                var contextManagementDirective = $@"Phase transition completed from {initialPhase} to {finalPhase}.
-Please ensure all game state is consistent and properly managed for the new phase.
-Review the recent conversation and game state changes to maintain continuity.
+                // Run Unified Context Management for the phase transition
+                var contextDirective = $@"Phase transition from {initialPhase} to {finalPhase} completed.
 
-Recent Response: {fullResponse}
+Turn: {updatedGameState.GameTurnNumber}
+Input: {inputMessage}
+Response: {fullResponse}
 
-Please validate and update:
-1. Entity consistency across systems
-2. Game state integrity for the new phase
-3. Context synchronization between vector DB and game state
-4. Any narrative events that should be logged";
+Execute all context management functions to update CurrentContext field and maintain consistency.";
                 
-                var contextManagementResult = await RunContextManagement(contextManagementDirective, cancellationToken);
+                await _unifiedContextService.RunContextManagementAsync(contextDirective, cancellationToken);
                 
-                // Add the context management result to the new phase's history
-                var newPhaseKernelName = GetPhaseKernelName(finalPhase);
-                var newPhaseHistory = _histories[newPhaseKernelName];
-                newPhaseHistory.AddSystemMessage($"PHASE TRANSITION CONTEXT: {contextManagementResult}");
-                
-                Debug.WriteLine($"[OrchestrationService] Context management completed for phase transition to {finalPhase}");
+                Debug.WriteLine($"[OrchestrationService] Unified context management completed for phase transition to {finalPhase}");
                 
                 // Prepare for recursive call
                 phaseTransitionMessage = CreatePhaseTransitionMessage(initialPhase, finalPhase, updatedGameState.PhaseChangeSummary);
@@ -220,6 +181,20 @@ Please validate and update:
             
             // Save the final game state
             await _gameStateRepository.SaveStateAsync(updatedGameState);
+            
+            // NEW: Post-processing with Unified Context Management
+            if (!hasPhaseTransition) // Only run if not handling phase transition
+            {
+                var contextDirective = $@"Post-turn context update for {_currentPhase} phase.
+
+Turn: {updatedGameState.GameTurnNumber}
+Input: {inputMessage}
+Response: {fullResponse}
+
+Execute all context management functions to update CurrentContext field and maintain consistency.";
+
+                await _unifiedContextService.RunContextManagementAsync(contextDirective, cancellationToken);
+            }
             
             Debug.WriteLine($"[OrchestrationService] Orchestration completed. Response length: {fullResponse.Length}");
         }
@@ -259,17 +234,11 @@ Please validate and update:
 
         return toPhase switch
         {
-            GamePhase.CharacterCreation => $"{baseMessage} Please continue by helping the player create their character and choose their starting abilities.",
-            
-            GamePhase.WorldGeneration => $"{baseMessage} Please continue by generating the world and setting up the initial adventure location.",
-            
             GamePhase.Exploration => $"{baseMessage} Please continue the adventure in exploration mode. The player can now explore the world, interact with NPCs, and discover new locations.",
             
             GamePhase.Combat => $"{baseMessage} Please continue managing the combat encounter that has just begun. Describe the battle situation and guide the player through their combat options.",
             
             GamePhase.LevelUp => $"{baseMessage} Please guide the player through the level up process, allowing them to improve their abilities and grow stronger.",
-            
-            GamePhase.GameCreation => $"{baseMessage} Please help set up a new game session.",
             
             _ => $"{baseMessage} Please continue the adventure in the new {toPhase} phase."
         };
@@ -279,13 +248,10 @@ Please validate and update:
     {
         return phase switch
         {
-            GamePhase.GameCreation => "GameCreation",
-            GamePhase.CharacterCreation => "CharacterCreation",
-            GamePhase.WorldGeneration => "WorldGeneration",
             GamePhase.Exploration => "Exploration",
             GamePhase.Combat => "Combat",
             GamePhase.LevelUp => "LevelUp",
-            _ => "GameCreation" // Default fallback
+            _ => "Exploration" // Default fallback
         };
     }
 
@@ -490,347 +456,10 @@ Please validate and update:
         
         var totalCharacters = history.Sum(message => message.Content?.Length ?? 0);
         
-        if (history.Count > maxMessages || totalCharacters > maxCharacters)
-        {
-            Debug.WriteLine($"[OrchestrationService] Chat history is large ({history.Count} messages, {totalCharacters} chars). Running management...");
-            await RunChatHistoryManagement(history);
-        }
+        // Note: Chat history management now handled by UnifiedContextService
     }
 
-    public async Task<string> RunContextGathering(ChatHistory history, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            // Get the ContextGathering kernel and create a new history for this lightweight subroutine
-            var contextGatheringKernel = _kernels["ContextGathering"];
-            var contextGatheringHistory = new ChatHistory();
-            
-            // Load the system prompt for context gathering
-            var systemPrompt = await LoadSystemPromptAsync("ContextGathering");
-            contextGatheringHistory.AddSystemMessage(systemPrompt);
-            
-            // Get current game state to provide context
-            var gameState = await _gameStateRepository.LoadLatestStateAsync();
-            
-            // Extract the most recent user message from the chat history to understand what context is needed
-            var recentMessages = history.TakeLast(3).ToList(); // Get last 3 messages for context
-            var recentMessagesJson = JsonSerializer.Serialize(
-                recentMessages.Select(msg => new { Role = msg.Role.ToString(), Content = msg.Content }).ToList(),
-                new JsonSerializerOptions { WriteIndented = true });
-            
-            // Extract key context information from game state
-            var contextSummary = new
-            {
-                CurrentLocation = gameState.CurrentLocationId,
-                PlayerLocation = gameState.WorldLocations.ContainsKey(gameState.CurrentLocationId) 
-                    ? gameState.WorldLocations[gameState.CurrentLocationId].Name 
-                    : "Unknown",
-                PresentNpcs = gameState.WorldLocations.ContainsKey(gameState.CurrentLocationId) 
-                    ? gameState.WorldLocations[gameState.CurrentLocationId].PresentNpcIds 
-                    : new List<string>(),
-                RecentEvents = gameState.RecentEvents,
-                AdventureSummary = gameState.AdventureSummary
-            };
-            
-            var contextSummaryJson = JsonSerializer.Serialize(contextSummary, new JsonSerializerOptions { WriteIndented = true });
-            
-            // Create lightweight directive for the context gathering subroutine
-            var contextGatheringDirective = $@"CONTEXT GATHERING REQUEST:
-You need to gather relevant contextual information to help the Game Master respond appropriately to the recent conversation.
 
-RECENT CONVERSATION:
-{recentMessagesJson}
-
-CURRENT GAME STATE SUMMARY:
-{contextSummaryJson}
-
-INSTRUCTIONS:
-1. Analyze the recent conversation to identify what contextual information would be helpful
-2. Use the available functions to search for relevant entities, locations, lore, or narrative history
-3. Focus on information that directly relates to the recent conversation
-4. Keep responses concise and focused - this is a lightweight pre-processing step
-5. Return a structured context summary that will be added as a system message
-
-Use function calls to search for:
-- Entities (NPCs, Pokemon, objects) mentioned or implied in the conversation
-- Location details relevant to the current or discussed locations
-- Lore or rules that might apply to the current situation
-- Past narrative events that provide relevant context
-
-Provide a focused context summary in the specified format.";
-
-            contextGatheringHistory.AddUserMessage(contextGatheringDirective);
-            
-            // Execute the context gathering subroutine with reduced token limit for efficiency
-            var chatService = contextGatheringKernel.GetRequiredService<IChatCompletionService>();
-            
-            var executionSettings = _llmProvider.GetExecutionSettings(
-                maxTokens: 3000, // Reduced token limit for lightweight operation
-                temperature: 0.3f, // Lower temperature for more focused responses
-                enableFunctionCalling: true);
-
-            var result = await chatService.GetChatMessageContentAsync(
-                contextGatheringHistory,
-                executionSettings,
-                contextGatheringKernel,
-                cancellationToken
-            );
-            
-            var contextResult = result.ToString();
-            
-            Debug.WriteLine($"[OrchestrationService] Context gathering completed. Result length: {contextResult.Length}");
-            
-            return contextResult;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[OrchestrationService] Error in RunContextGathering: {ex.Message}");
-            return $"Context gathering failed: {ex.Message}. Proceeding with available context.";
-        }
-    }
-
-    public async Task<string> RunContextManagement(string directive, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            // Get the ContextManagement kernel and create a new history for this subroutine
-            var contextManagementKernel = _kernels["ContextManagement"];
-            var contextManagementHistory = new ChatHistory();
-            
-            // Load the system prompt for context management
-            var systemPrompt = await LoadSystemPromptAsync("ContextManagement");
-            contextManagementHistory.AddSystemMessage(systemPrompt);
-            
-            // Get current game state to provide context
-            var gameState = await _gameStateRepository.LoadLatestStateAsync();
-            var gameStateJson = JsonSerializer.Serialize(gameState, new JsonSerializerOptions { WriteIndented = true });
-            
-            // Serialize current chat histories to provide context
-            var allHistoriesJson = JsonSerializer.Serialize(
-                _histories.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value.Select(msg => new { Role = msg.Role.ToString(), Content = msg.Content }).ToList()
-                ),
-                new JsonSerializerOptions { WriteIndented = true });
-            
-            // Create comprehensive directive for the context management subroutine
-            var comprehensiveDirective = $@"CONTEXT MANAGEMENT REQUEST:
-{directive}
-
-CURRENT GAME STATE:
-{gameStateJson}
-
-CURRENT CHAT HISTORIES:
-{allHistoriesJson}
-
-INSTRUCTIONS:
-1. Analyze the provided directive, game state, and chat histories
-2. Use the available functions to search, verify, and update context as needed
-3. Ensure consistency between vector database, game state, and chat histories
-4. Only create new entities if they were authoritively mentioned in chat histories
-5. Provide guidance on whether requested entities can exist in the current context
-6. Return a structured report of actions taken and recommendations
-
-Use function calls to:
-- Search for existing entities, locations, and lore in the vector database
-- Query current game state for entity existence and details
-- Update or create entities in both game state and vector database as needed
-- Log narrative events for future reference";
-
-            contextManagementHistory.AddUserMessage(comprehensiveDirective);
-            
-            // Execute the context management subroutine with function calling enabled
-            var result = await ExecuteSubroutinePromptAsync(contextManagementHistory, contextManagementKernel, cancellationToken);
-            
-            Debug.WriteLine($"[OrchestrationService] Context management completed. Result length: {result.Length}");
-            
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[OrchestrationService] Error in RunContextManagement: {ex.Message}");
-            return $"Context management failed: {ex.Message}";
-        }
-    }
-
-    private async Task<string> RunChatHistoryManagement(ChatHistory history)
-    {
-        try
-        {
-            // Get the ChatManagement kernel and its dedicated history
-            var chatManagementKernel = _kernels["ChatManagement"];
-            var chatManagementHistory = new ChatHistory();
-            
-            // Load the system prompt for chat management
-            var systemPrompt = await LoadSystemPromptAsync("ChatManagement");
-            chatManagementHistory.AddSystemMessage(systemPrompt);
-            
-            // Serialize the current chat history to provide context
-            var historyJson = System.Text.Json.JsonSerializer.Serialize(
-                history.Select(msg => new { Role = msg.Role.ToString(), Content = msg.Content }).ToList(),
-                new JsonSerializerOptions { WriteIndented = true });
-            
-            // Create the directive for the chat management subroutine
-            var directive = $@"Please analyze the following chat history and create a comprehensive summary while identifying items that need context management.
-
-CHAT HISTORY TO ANALYZE:
-{historyJson}
-
-INSTRUCTIONS:
-1. Create a concise but comprehensive summary following the format specified in your system prompt to significantly reduce length
-2. Identify any NPCs, Pokemon, locations, items, or story elements mentioned that should be verified/updated in the context management system
-3. Return your response in the following structure:
-
-ADVENTURE SUMMARY:
-  Your comprehensive summary here
-VERIFICATION NEEDED:
-  List of items that need context verification
-";
-
-            chatManagementHistory.AddUserMessage(directive);
-            
-            // Execute the chat management subroutine
-            var result = await ExecuteSubroutinePromptAsync(chatManagementHistory, chatManagementKernel);
-            
-            // Update the original history by replacing older messages with the summary
-            // IMPORTANT: We need to preserve tool call sequences to avoid API errors
-            
-            // Keep the system messages
-            var systemMessages = history.Where(msg => msg.Role == AuthorRole.System).ToList();
-            
-            // Find the last complete conversation block (preserve tool call sequences)
-            var recentMessages = GetRecentMessagesWithCompleteToolSequences(history, 4); // Get more messages to ensure we have complete sequences
-                
-            history.Clear();
-                
-            // Re-add system messages
-            foreach (var sysMsg in systemMessages)
-            {
-                history.Add(sysMsg);
-            }
-                
-            // Add summary as a system message
-            history.AddSystemMessage($"CHAT REDUCTION SUMMARY: {result}");
-                
-            // Re-add recent messages (which now include complete tool sequences)
-            foreach (var recentMsg in recentMessages)
-            {
-                history.Add(recentMsg);
-            }
-                
-            Debug.WriteLine($"[OrchestrationService] Chat history compressed. Summary length: {result.Length}");
-            
-            
-            // Process context management items if any
-            if (result.Contains("VERIFICATION NEEDED"))
-            {
-                Debug.WriteLine($"[OrchestrationService] Found VERIFICATION NEEDED in {result}");
-                
-                try
-                {
-                    var contextDirective = $@"History Reduction has just completed. 
-Analyze the summary and Verification needed list to make sure all items are properly managed within the game context:
-RESULT: 
-{result}
-";
-                    await RunContextManagement(contextDirective);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[OrchestrationService] Error running context management for items: {ex.Message}");
-                }
-            }
-            
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[OrchestrationService] Error in ManageChatHistory: {ex.Message}");
-            // Return empty result on error to prevent cascading failures
-            return "";
-        }
-    }
-
-    /// <summary>
-    /// Gets recent messages while ensuring tool call sequences are complete.
-    /// This prevents API errors when tool messages are separated from their tool_calls.
-    /// </summary>
-    private List<ChatMessageContent> GetRecentMessagesWithCompleteToolSequences(ChatHistory history, int targetCount)
-    {
-        if (history.Count == 0)
-            return new List<ChatMessageContent>();
-            
-        var messages = history.ToList();
-        var result = new List<ChatMessageContent>();
-        
-        // Start from the end and work backwards
-        for (int i = messages.Count - 1; i >= 0 && result.Count < targetCount; i--)
-        {
-            var message = messages[i];
-            
-            // Always include system messages (they don't participate in tool sequences)
-            if (message.Role == AuthorRole.System)
-            {
-                result.Insert(0, message);
-                continue;
-            }
-            
-            // For non-system messages, check for tool sequences
-            if (message.Role == AuthorRole.Tool)
-            {
-                // If we encounter a tool message, we need to include its preceding assistant message with tool_calls
-                result.Insert(0, message);
-                
-                // Look backwards for the assistant message with tool_calls
-                for (int j = i - 1; j >= 0; j--)
-                {
-                    var prevMessage = messages[j];
-                    result.Insert(0, prevMessage);
-                    
-                    // Stop when we find the assistant message that should contain tool_calls
-                    if (prevMessage.Role == AuthorRole.Assistant)
-                    {
-                        break;
-                    }
-                }
-            }
-            else if (message.Role == AuthorRole.Assistant)
-            {
-                // Check if this assistant message has tool calls by examining the content
-                // In Semantic Kernel, function calls are typically indicated by specific content patterns
-                var hasToolCalls = message.Content?.Contains("\"tool_calls\"") == true || 
-                                   message.Items?.Any() == true; // Check if there are any items which might be function calls
-                
-                result.Insert(0, message);
-                
-                if (hasToolCalls)
-                {
-                    // Include any subsequent tool messages
-                    for (int j = i + 1; j < messages.Count; j++)
-                    {
-                        var nextMessage = messages[j];
-                        if (nextMessage.Role == AuthorRole.Tool)
-                        {
-                            result.Add(nextMessage);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // User messages and other types
-                result.Insert(0, message);
-            }
-        }
-        
-        // Remove duplicates while preserving order
-        var seen = new HashSet<ChatMessageContent>();
-        return result.Where(msg => seen.Add(msg)).ToList();
-    }
 
     public async Task<string> LoadSystemPromptAsync(string phaseToLoad)
     {
@@ -838,19 +467,23 @@ RESULT:
         {
             var promptPath = phaseToLoad switch
             {
-                "GameCreation" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "GameCreationPhase.md"),
-                "CharacterCreation" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "CharacterCreationPhase.md"),
-                "WorldGeneration" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "WorldGenerationPhase.md"),
                 "Exploration" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "ExplorationPhase.md"),
                 "Combat" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "CombatPhase.md"),
                 "LevelUp" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "LevelUpPhase.md"),
-                "ChatManagement" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "ChatManagementSubroutine.md"),
-                "ContextGathering" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "ContextGatheringSubroutine.md"),
-                "ContextManagement" => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "ContextManagementSubroutine.md"),
-                _ => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "GameCreationPhase.md")
+                _ => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "ExplorationPhase.md")
             };
 
             var systemPrompt = await File.ReadAllTextAsync(promptPath);
+            
+            // INJECT: CurrentContext into prompt using {{context}} variable
+            var gameState = await _gameStateRepository.LoadLatestStateAsync();
+            var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ? 
+                gameState.CurrentContext : "No context available.";
+            
+            // Replace {{context}} placeholder with actual context
+            //TODO - change this to the proper semantic kernel syntax
+            systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
+            
             return systemPrompt;
         }
         catch (Exception ex)

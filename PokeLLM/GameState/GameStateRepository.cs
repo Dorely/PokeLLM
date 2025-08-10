@@ -41,6 +41,7 @@ public class GameStateRepository : IGameStateRepository
     {
         var state = new GameStateModel();
         state.AdventureSummary = $"New Game - The Region has not been selected. Character Creation is not complete. The Adventure has not yet begun";
+        state.CurrentContext = "Beginning of a new Pokemon adventure. The trainer has not yet chosen a region or created their character.";
 
         await SaveStateAsync(state);
 
@@ -58,6 +59,11 @@ public class GameStateRepository : IGameStateRepository
 
     public async Task<GameStateModel> LoadLatestStateAsync()
     {
+        if(!File.Exists(_currentStateFile))
+        {
+            await CreateNewGameStateAsync();
+        }
+
         var json = await File.ReadAllTextAsync(_currentStateFile);
         var gameState = JsonSerializer.Deserialize<GameStateModel>(json, _jsonOptions);
         return gameState;
