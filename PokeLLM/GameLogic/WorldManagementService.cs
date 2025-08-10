@@ -280,7 +280,7 @@ public class WorldManagementService : IWorldManagementService
     public async Task<string> AdvanceTimeOfDayAsync()
     {
         var gameState = await _gameStateRepository.LoadLatestStateAsync();
-        var currentTime = gameState.TimeOfDay ?? TimeOfDay.Morning;
+        var currentTime = gameState.TimeOfDay;
         
         var nextTime = currentTime switch
         {

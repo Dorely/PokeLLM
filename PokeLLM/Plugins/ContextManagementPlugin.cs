@@ -1,7 +1,8 @@
 using Microsoft.SemanticKernel;
 using PokeLLM.Game.GameLogic;
-using PokeLLM.GameState.Models;
+using PokeLLM.Game.Plugins.Models;
 using PokeLLM.Game.VectorStore.Models;
+using PokeLLM.GameState.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
@@ -86,7 +87,7 @@ public class ContextManagementPlugin
     [KernelFunction("instantiate_npc")]
     [Description("Create an NPC in the game state with complete NPC data")]
     public async Task<string> CreateNpc(
-        [Description("Complete NPC object to create")] Npc npcData,
+        [Description("Complete NPC object to create")] NpcDto npcData,
         [Description("Optional location ID to place the NPC")] string locationId = "")
     {
         Debug.WriteLine($"[ContextManagementPlugin] CreateNpc called: {npcData.Id}");
@@ -108,7 +109,7 @@ public class ContextManagementPlugin
                 }, _jsonOptions);
             }
 
-            var result = await _npcManagementService.CreateNpcAsync(npcData, locationId);
+            var result = await _npcManagementService.CreateNpcAsync(npcData.ToGameStateModel(), locationId);
             
             return JsonSerializer.Serialize(new 
             { 
@@ -134,7 +135,7 @@ public class ContextManagementPlugin
     [KernelFunction("instantiate_pokemon")]
     [Description("Create a Pokemon instance in the game state")]
     public async Task<string> CreatePokemon(
-        [Description("Pokemon data to create")] Pokemon pokemonData,
+        [Description("Pokemon data to create")] PokemonDto pokemonData,
         [Description("Optional location ID to place the Pokemon")] string locationId = "")
     {
         Debug.WriteLine($"[ContextManagementPlugin] CreatePokemon called: {pokemonData.Id}");
@@ -156,7 +157,7 @@ public class ContextManagementPlugin
                 }, _jsonOptions);
             }
 
-            var result = await _pokemonManagementService.CreatePokemonAsync(pokemonData, locationId);
+            var result = await _pokemonManagementService.CreatePokemonAsync(pokemonData.ToGameStateModel(), locationId);
             
             return JsonSerializer.Serialize(new 
             { 

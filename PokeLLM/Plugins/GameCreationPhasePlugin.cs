@@ -2,6 +2,7 @@ using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
 using PokeLLM.Game.GameLogic;
 using PokeLLM.GameState.Models;
+using PokeLLM.Game.Plugins.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
@@ -40,7 +41,7 @@ public class GameCreationPhasePlugin
     [Description("Sets the Region chosen by the player")]
     public async Task<string> ManageRegionalSelection(
         [Description("Region name to set")] string regionName,
-        [Description("Full Details to be stored in the vector database")] LoreVectorRecord regionRecord)
+        [Description("Full Details to be stored in the vector database")] LoreVectorRecordDto regionRecord)
     {
         Debug.WriteLine($"[GameCreationPhasePlugin] ManageRegionalSelection called with region: {regionName}");
         
@@ -68,14 +69,14 @@ public class GameCreationPhasePlugin
             // Set the region in the game state using WorldManagementService
             var setRegionResult = await _worldManagementService.SetRegionAsync(regionName);
             
-            // Store the region details in the vector database using InformationManagementService
+            // Convert DTO to VectorRecord and store the region details in the vector database
             var upsertResult = await _informationManagementService.UpsertLoreAsync(
                 regionRecord.EntryId, 
                 regionRecord.EntryType, 
                 regionRecord.Title, 
                 regionRecord.Content, 
                 regionRecord.Tags?.ToList(),
-                regionRecord.Id == Guid.Empty ? null : regionRecord.Id
+                null // Let the service generate a new ID
             );
 
             // Get current game state to include in response

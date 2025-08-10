@@ -86,7 +86,7 @@ public class PokemonManagementService : IPokemonManagementService
             Factions = new List<string>(),
             HeldItem = "",
             Type1 = PokemonType.Normal,
-            Type2 = null
+            Type2 = PokemonType.None
         };
         
         await CreatePokemonAsync(pokemon, locationId);

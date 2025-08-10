@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using PokeLLM.Game.Configuration;
 using PokeLLM.Game.Orchestration;
+using PokeLLM.GameState;
 
 namespace PokeLLM.Game;
 

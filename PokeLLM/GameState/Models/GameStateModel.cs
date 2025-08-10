@@ -36,10 +36,10 @@ public class GameStateModel
     public string Region { get; set; } = string.Empty;
 
     [JsonPropertyName("timeOfDay")]
-    public TimeOfDay? TimeOfDay { get; set; }
+    public TimeOfDay TimeOfDay { get; set; } = TimeOfDay.Morning;
 
     [JsonPropertyName("weather")]
-    public Weather? Weather { get; set; }
+    public Weather Weather { get; set; } = Weather.Clear;
 
     [JsonPropertyName("worldNpcs")]
     [Description("All generated NPCs, keyed by their unique Character ID.")]
@@ -199,7 +199,7 @@ public class Pokemon
     public PokemonType Type1 { get; set; } = PokemonType.Normal;
 
     [JsonPropertyName("type2")]
-    public PokemonType? Type2 { get; set; }
+    public PokemonType Type2 { get; set; } = PokemonType.None;
 
     [JsonPropertyName("abilities")]
     public List<string> Abilities { get; set; } = new();
@@ -369,7 +369,7 @@ public class PokemonSpeciesData
 
     [JsonPropertyName("type2")]
     [Description("Secondary type of this Pokemon species, if any.")]
-    public PokemonType? Type2 { get; set; }
+    public PokemonType Type2 { get; set; } = PokemonType.None;
 
     [JsonPropertyName("baseVigor")]
     [Description("Base vigor (health/energy) for this species.")]
@@ -472,7 +472,7 @@ public enum MoveCategory
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum PokemonType { Normal, Fire, Water, Grass, Electric, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Steel, Dark, Fairy }
+public enum PokemonType {None, Normal, Fire, Water, Grass, Electric, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Steel, Dark, Fairy }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum TimeOfDay { Dawn, Morning, Day, Afternoon, Dusk, Night }

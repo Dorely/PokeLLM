@@ -455,7 +455,7 @@ public class CombatLogicService : ICombatLogicService
         int baseDamage = 0;
 
         // Apply type effectiveness for advantage/disadvantage on dice rolls only
-        var typeEffectiveness = CalculateDualTypeEffectiveness(moveType, defender.Type1.ToString(), defender.Type2?.ToString() ?? "");
+        var typeEffectiveness = CalculateDualTypeEffectiveness(moveType, defender.Type1.ToString(), defender.Type2.ToString());
 
         // Roll damage dice with advantage/disadvantage based on type effectiveness
         if (typeEffectiveness > 1.0)

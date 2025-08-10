@@ -1,11 +1,12 @@
 using Microsoft.SemanticKernel;
+using PokeLLM.Game.GameLogic;
+using PokeLLM.Game.Plugins.Models;
+using PokeLLM.Game.VectorStore.Models;
+using PokeLLM.GameState.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PokeLLM.Game.GameLogic;
-using PokeLLM.GameState.Models;
-using PokeLLM.Game.VectorStore.Models;
 
 namespace PokeLLM.Game.Plugins;
 
@@ -153,8 +154,9 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("upsert_entity")]
     [Description("Store entity data (NPCs, Pokemon species, items) in the vector database")]
     public async Task<string> UpsertEntity(
-        [Description("Complete entity record to store")] EntityVectorRecord entityData)
+        [Description("Complete entity record to store")] EntityVectorRecordDto entityDataDto)
     {
+        var entityData = entityDataDto.ToVectorRecord();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertEntity called: {entityData?.EntityId}");
         
         try
@@ -230,8 +232,9 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("upsert_location")]
     [Description("Store location data in the vector database")]
     public async Task<string> UpsertLocation(
-        [Description("Complete location record to store")] LocationVectorRecord locationData)
+        [Description("Complete location record to store")] LocationVectorRecordDto locationDataDto)
     {
+        var locationData = locationDataDto.ToVectorRecord();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLocation called: {locationData?.LocationId}");
         
         try
@@ -299,8 +302,9 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("upsert_lore")]
     [Description("Store lore, quest, and story data in the vector database")]
     public async Task<string> UpsertLore(
-        [Description("Complete lore record to store")] LoreVectorRecord loreData)
+        [Description("Complete lore record to store")] LoreVectorRecordDto loreDataDto)
     {
+        var loreData = loreDataDto.ToVectorRecord();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLore called: {loreData?.EntryId}");
         
         try
@@ -377,8 +381,9 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("upsert_game_rule")]
     [Description("Store game rules, mechanics, and class data in the vector database")]
     public async Task<string> UpsertGameRule(
-        [Description("Complete game rule record to store")] GameRuleVectorRecord ruleData)
+        [Description("Complete game rule record to store")] GameRuleVectorRecordDto ruleDataDto)
     {
+        var ruleData = ruleDataDto.ToVectorRecord();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertGameRule called: {ruleData?.EntryId}");
         
         try
@@ -459,9 +464,10 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("create_npc")]
     [Description("Create an NPC in the game state with complete NPC data")]
     public async Task<string> CreateNpc(
-        [Description("Complete NPC object to create")] Npc npcData,
+        [Description("Complete NPC object to create")] NpcDto npcDataDto,
         [Description("Optional location ID to place the NPC")] string locationId = "")
     {
+        var npcData = npcDataDto.ToGameStateModel();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateNpc called: {npcData?.Id}");
         
         try
@@ -531,9 +537,10 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("create_pokemon")]
     [Description("Create a Pokemon instance in the game state")]
     public async Task<string> CreatePokemon(
-        [Description("Pokemon data to create")] Pokemon pokemonData,
+        [Description("Pokemon data to create")] PokemonDto pokemonDataDto,
         [Description("Optional location ID to place the Pokemon")] string locationId = "")
     {
+        var pokemonData = pokemonDataDto.ToGameStateModel();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] CreatePokemon called: {pokemonData?.Id}");
         
         try
@@ -603,8 +610,9 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("create_location")]
     [Description("Create a location in the game state")]
     public async Task<string> CreateLocation(
-        [Description("Location data to create")] Location locationData)
+        [Description("Location data to create")] LocationDto locationDataDto)
     {
+        var locationData = locationDataDto.ToGameStateModel();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateLocation called: {locationData?.Id}");
         
         try

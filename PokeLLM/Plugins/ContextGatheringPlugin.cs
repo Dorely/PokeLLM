@@ -336,7 +336,7 @@ public class ContextGatheringPlugin
                             species = pokemon.Species,
                             level = pokemon.Level,
                             type1 = pokemon.Type1.ToString(),
-                            type2 = pokemon.Type2?.ToString()
+                            type2 = pokemon.Type2.ToString()
                         });
                     }
                 }
@@ -372,8 +372,8 @@ public class ContextGatheringPlugin
                 } : null,
                 presentNpcs = presentNpcs,
                 presentPokemon = presentPokemon,
-                timeOfDay = gameState.TimeOfDay?.ToString(),
-                weather = gameState.Weather?.ToString()
+                timeOfDay = gameState.TimeOfDay.ToString(),
+                weather = gameState.Weather.ToString()
             };
             
             Debug.WriteLine($"[ContextGatheringPlugin] Retrieved current location context: {gameState.CurrentLocationId}");
@@ -418,7 +418,7 @@ public class ContextGatheringPlugin
                         species = tp.Pokemon.Species,
                         level = tp.Pokemon.Level,
                         type1 = tp.Pokemon.Type1.ToString(),
-                        type2 = tp.Pokemon.Type2?.ToString(),
+                        type2 = tp.Pokemon.Type2.ToString(),
                         stats = tp.Pokemon.Stats,
                         knownMoves = tp.Pokemon.KnownMoves,
                         statusEffects = tp.Pokemon.StatusEffects

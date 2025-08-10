@@ -1,6 +1,7 @@
 ﻿using Microsoft.SemanticKernel;
 using PokeLLM.Game.GameLogic;
 using PokeLLM.GameState.Models;
+using PokeLLM.Game.Plugins.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
@@ -63,7 +64,7 @@ public class CharacterCreationPhasePlugin
     [KernelFunction("vector_game_rule_upsert")]
     [Description("Store new trainer class data to the vector store for future use")]
     public async Task<string> VectorUpsert(
-        [Description("An object defining the class or other rule data to be inserted/updated")] GameRuleVectorRecord data)
+        [Description("An object defining the class or other rule data to be inserted/updated")] GameRuleVectorRecordDto data)
     {
         Debug.WriteLine($"[CharacterCreationPhasePlugin] VectorUpserts called with data length: {data.ToString()}");
         
@@ -76,7 +77,7 @@ public class CharacterCreationPhasePlugin
                     data.Title, 
                     data.Content, 
                     data.Tags?.ToList(), 
-                    data.Id
+                    null // Let the service generate a new ID
                 );
             
             Debug.WriteLine($"[CharacterCreationPhasePlugin] Successfully processed upsert. {result}");

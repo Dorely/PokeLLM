@@ -389,8 +389,8 @@ public class ExplorationPhasePlugin
                     var gameState = await _gameStateRepo.LoadLatestStateAsync();
                     return JsonSerializer.Serialize(new 
                     { 
-                        timeOfDay = gameState.TimeOfDay?.ToString(),
-                        weather = gameState.Weather?.ToString(),
+                        timeOfDay = gameState.TimeOfDay.ToString(),
+                        weather = gameState.Weather.ToString(),
                         region = gameState.Region,
                         currentLocation = gameState.CurrentLocationId,
                         action = action
