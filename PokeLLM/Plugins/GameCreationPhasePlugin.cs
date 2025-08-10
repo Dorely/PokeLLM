@@ -1,10 +1,11 @@
+using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
+using PokeLLM.Game.GameLogic;
+using PokeLLM.GameState.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PokeLLM.Game.GameLogic;
-using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Game.Plugins;
 

@@ -15,92 +15,89 @@ namespace PokeLLM.Game.Configuration;
 
 public static class ServiceConfiguration
 {
-    // Configuration: Change this to switch between providers
-    // Valid values: "OpenAI", "Ollama", "Hybrid"
-    private const string LLM_PROVIDER = "Hybrid"; // Use hybrid mode for OpenAI + Ollama embeddings
+    // Configuration: Change these to switch between providers
+    private const string MAIN_LLM_PROVIDER = "Gemini"; // "OpenAI", "Ollama", "Gemini"
+    private const string EMBEDDING_PROVIDER = "Ollama"; // "OpenAI", "Ollama" (default)
 
     public static IServiceCollection ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         // Add configuration
         services.AddSingleton(configuration);
         
-        // Configure based on the selected provider mode
-        switch (LLM_PROVIDER)
+        // Configure flexible provider system
+        services.Configure<FlexibleProviderConfig>(config =>
         {
-            case "OpenAI":
-                services.Configure<ModelConfig>(config =>
-                {
+            // Configure main LLM provider
+            config.LLM.Provider = MAIN_LLM_PROVIDER;
+            config.Embedding.Provider = EMBEDDING_PROVIDER;
+            
+            // Set default models and dimensions based on providers
+            switch (MAIN_LLM_PROVIDER.ToLower())
+            {
+                case "openai":
+                    configuration.GetSection("OpenAi").Bind(config.LLM);
+                    config.LLM.ModelId = config.LLM.ModelId ?? "gpt-4o-mini";
+                    break;
+                case "ollama":
+                    configuration.GetSection("Ollama").Bind(config.LLM);
+                    config.LLM.ModelId = config.LLM.ModelId ?? "llama3.1";
+                    config.LLM.Endpoint = config.LLM.Endpoint ?? "http://localhost:11434";
+                    break;
+                case "gemini":
+                    configuration.GetSection("Gemini").Bind(config.LLM);
+                    config.LLM.ModelId = config.LLM.ModelId ?? "gemini-1.5-flash";
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown main LLM provider: {MAIN_LLM_PROVIDER}");
+            }
+            
+            // Configure embedding provider (always separate)
+            switch (EMBEDDING_PROVIDER.ToLower())
+            {
+                case "openai":
+                    var openAiSection = configuration.GetSection("OpenAi");
+                    config.Embedding.ApiKey = openAiSection["ApiKey"];
+                    config.Embedding.ModelId = config.Embedding.ModelId ?? "text-embedding-3-small";
+                    config.Embedding.Dimensions = config.Embedding.Dimensions > 0 ? config.Embedding.Dimensions : 1536;
+                    break;
+                case "ollama":
+                    var ollamaSection = configuration.GetSection("Ollama");
+                    config.Embedding.Endpoint = ollamaSection["Endpoint"] ?? "http://localhost:11434";
+                    config.Embedding.ModelId = config.Embedding.ModelId ?? "nomic-embed-text";
+                    config.Embedding.Dimensions = config.Embedding.Dimensions > 0 ? config.Embedding.Dimensions : 768;
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown embedding provider: {EMBEDDING_PROVIDER}");
+            }
+        });
+        
+        // Also configure individual ModelConfig for backward compatibility
+        services.Configure<ModelConfig>(config =>
+        {
+            switch (MAIN_LLM_PROVIDER.ToLower())
+            {
+                case "openai":
                     configuration.GetSection("OpenAi").Bind(config);
-                    // Set default embedding dimensions for OpenAI if not specified
-                    if (config.EmbeddingDimensions <= 0)
-                        config.EmbeddingDimensions = 1536; // Default for text-embedding-3-small
-                });
-                break;
-            case "Ollama":
-                services.Configure<ModelConfig>(config =>
-                {
+                    config.EmbeddingDimensions = EMBEDDING_PROVIDER.ToLower() == "openai" ? 1536 : 768;
+                    break;
+                case "ollama":
                     configuration.GetSection("Ollama").Bind(config);
-                    // Set default embedding dimensions for Ollama if not specified
-                    if (config.EmbeddingDimensions <= 0)
-                        config.EmbeddingDimensions = 768; // Default for nomic-embed-text
-                });
-                break;
-            case "Hybrid":
-                // Configure hybrid settings
-                services.Configure<HybridConfig>(config =>
-                {
-                    configuration.GetSection("Hybrid").Bind(config);
-                    
-                    // Set defaults if not specified
-                    if (string.IsNullOrEmpty(config.LLM.Provider))
-                        config.LLM.Provider = "OpenAI";
-                    if (string.IsNullOrEmpty(config.Embedding.Provider))
-                        config.Embedding.Provider = "Ollama";
-                    
-                    // Set default embedding dimensions based on provider
-                    if (config.Embedding.Dimensions <= 0)
-                    {
-                        config.Embedding.Dimensions = config.Embedding.Provider.ToLower() == "openai" ? 1536 : 768;
-                    }
-                    
-                    // Set default models
-                    if (string.IsNullOrEmpty(config.LLM.ModelId))
-                        config.LLM.ModelId = config.LLM.Provider.ToLower() == "openai" ? "gpt-4o-mini" : "llama3.1";
-                    if (string.IsNullOrEmpty(config.Embedding.ModelId))
-                        config.Embedding.ModelId = config.Embedding.Provider.ToLower() == "openai" ? "text-embedding-3-small" : "nomic-embed-text";
-                    
-                    // Copy API keys from respective sections if not provided
-                    if (string.IsNullOrEmpty(config.LLM.ApiKey) && config.LLM.Provider.ToLower() == "openai")
-                        config.LLM.ApiKey = configuration.GetValue<string>("OpenAi:ApiKey");
-                    if (string.IsNullOrEmpty(config.Embedding.ApiKey) && config.Embedding.Provider.ToLower() == "openai")
-                        config.Embedding.ApiKey = configuration.GetValue<string>("OpenAi:ApiKey");
-                    if (string.IsNullOrEmpty(config.Embedding.Endpoint) && config.Embedding.Provider.ToLower() == "ollama")
-                        config.Embedding.Endpoint = configuration.GetValue<string>("Ollama:ApiKey") ?? "http://localhost:11434";
-                });
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown LLM provider: {LLM_PROVIDER}");
-        }
+                    config.EmbeddingDimensions = EMBEDDING_PROVIDER.ToLower() == "openai" ? 1536 : 768;
+                    break;
+                case "gemini":
+                    configuration.GetSection("Gemini").Bind(config);
+                    config.EmbeddingDimensions = EMBEDDING_PROVIDER.ToLower() == "openai" ? 1536 : 768;
+                    break;
+            }
+        });
         
         services.Configure<QdrantConfig>(configuration.GetSection("Qdrant"));
 
-        // Register IEmbeddingGenerator separately to break circular dependency
+        // Register IEmbeddingGenerator based on embedding provider
         services.AddTransient<IEmbeddingGenerator<string, Embedding<float>>>(serviceProvider => 
         {
-            switch (LLM_PROVIDER)
-            {
-                case "OpenAI":
-                    var openAiOptions = serviceProvider.GetRequiredService<IOptions<ModelConfig>>();
-                    return CreateOpenAIEmbeddingGenerator(openAiOptions);
-                case "Ollama":
-                    var ollamaOptions = serviceProvider.GetRequiredService<IOptions<ModelConfig>>();
-                    return CreateOllamaEmbeddingGenerator(ollamaOptions);
-                case "Hybrid":
-                    var hybridOptions = serviceProvider.GetRequiredService<IOptions<HybridConfig>>();
-                    return CreateHybridEmbeddingGenerator(hybridOptions);
-                default:
-                    throw new InvalidOperationException($"Unknown LLM provider: {LLM_PROVIDER}");
-            }
+            var flexConfig = serviceProvider.GetRequiredService<IOptions<FlexibleProviderConfig>>();
+            return CreateEmbeddingGenerator(flexConfig);
         });
 
         // Add core services (order matters to avoid circular dependencies)
@@ -115,7 +112,7 @@ public static class ServiceConfiguration
         services.AddTransient<IPokemonManagementService, PokemonManagementService>();
         services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
         services.AddTransient<IWorldManagementService, WorldManagementService>();
-        
+
         // Register all plugins
         services.AddTransient<GameCreationPhasePlugin>();
         services.AddTransient<CharacterCreationPhasePlugin>();
@@ -126,29 +123,29 @@ public static class ServiceConfiguration
         services.AddTransient<ContextGatheringPlugin>();
         services.AddTransient<ContextManagementPlugin>();
         services.AddTransient<ChatManagementPlugin>();
-        
-        // Register LLM providers
+
+        // Register all LLM providers
         services.AddTransient<OpenAiLLMProvider>();
         services.AddTransient<OllamaLLMProvider>();
-        services.AddTransient<HybridLLMProvider>();
+        services.AddTransient<GeminiLLMProvider>();
         
-        // Register ILLMProvider based on configuration
-        switch (LLM_PROVIDER)
+        // Register ILLMProvider based on main LLM provider configuration
+        switch (MAIN_LLM_PROVIDER.ToLower())
         {
-            case "OpenAI":
+            case "openai":
                 services.AddTransient<ILLMProvider, OpenAiLLMProvider>();
                 break;
-            case "Ollama":
+            case "ollama":
                 services.AddTransient<ILLMProvider, OllamaLLMProvider>();
                 break;
-            case "Hybrid":
-                services.AddTransient<ILLMProvider, HybridLLMProvider>();
+            case "gemini":
+                services.AddTransient<ILLMProvider, GeminiLLMProvider>();
                 break;
             default:
-                throw new InvalidOperationException($"Unknown LLM provider: {LLM_PROVIDER}");
+                throw new InvalidOperationException($"Unknown main LLM provider: {MAIN_LLM_PROVIDER}");
         }
-        
-        // Register the main orchestration service
+
+        // Register the scene-based orchestration service
         services.AddTransient<IOrchestrationService, OrchestrationService>();
 
         return services;
@@ -192,7 +189,7 @@ public static class ServiceConfiguration
         return kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
     }
 
-    private static IEmbeddingGenerator<string, Embedding<float>> CreateHybridEmbeddingGenerator(IOptions<HybridConfig> options)
+    private static IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator(IOptions<FlexibleProviderConfig> options)
     {
         var config = options.Value;
         var kernelBuilder = Kernel.CreateBuilder();

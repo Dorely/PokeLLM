@@ -16,7 +16,7 @@ public class HybridConfig
 
 public class LLMConfig
 {
-    public string Provider { get; set; } = "OpenAI"; // "OpenAI" or "Ollama"
+    public string Provider { get; set; } = "OpenAI"; // "OpenAI", "Ollama", or "Gemini"
     public string ApiKey { get; set; }
     public string ModelId { get; set; }
     public string Endpoint { get; set; } // For Ollama
@@ -29,4 +29,13 @@ public class EmbeddingConfig
     public string ModelId { get; set; }
     public string Endpoint { get; set; } // For Ollama
     public int Dimensions { get; set; }
+}
+
+/// <summary>
+/// Configuration for the new flexible LLM and embedding provider system
+/// </summary>
+public class FlexibleProviderConfig
+{
+    public LLMConfig LLM { get; set; } = new();
+    public EmbeddingConfig Embedding { get; set; } = new();
 }

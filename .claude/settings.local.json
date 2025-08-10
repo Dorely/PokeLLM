@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(dotnet test:*)",
+      "WebFetch(domain:learn.microsoft.com)"
+    ],
+    "deny": []
+  }
+}
