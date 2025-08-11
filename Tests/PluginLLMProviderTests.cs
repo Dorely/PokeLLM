@@ -55,20 +55,6 @@ public class PluginLLMProviderTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GameCreationPhasePlugin_ShouldNotThrow400Error()
-    {
-        await TestSinglePlugin<GameCreationPhasePlugin>("GameCreation", 
-            "Please search for existing region knowledge about 'test' using available functions.");
-    }
-
-    [Fact]
-    public async Task CharacterCreationPhasePlugin_ShouldNotThrow400Error()
-    {
-        await TestSinglePlugin<CharacterCreationPhasePlugin>("CharacterCreation", 
-            "Please search for trainer class data using available lookup functions.");
-    }
-
-    [Fact]
     public async Task WorldGenerationPhasePlugin_ShouldNotThrow400Error()
     {
         await TestSinglePlugin<WorldGenerationPhasePlugin>("WorldGeneration", 
@@ -108,20 +94,6 @@ public class PluginLLMProviderTests : IAsyncLifetime
     {
         await TestSinglePlugin<GameSetupPhasePlugin>("GameSetup", 
             "Please help with game setup using available functions.");
-    }
-
-    [Fact]
-    public async Task MinimalUnifiedContextPlugin_ShouldNotThrow400Error()
-    {
-        await TestSinglePlugin<MinimalUnifiedContextPlugin>("MinimalUnifiedContext", 
-            "Please call the test simple function.");
-    }
-
-    [Fact]
-    public async Task SimpleUnifiedContextPlugin_ShouldNotThrow400Error()
-    {
-        await TestSinglePlugin<SimpleUnifiedContextPlugin>("SimpleUnifiedContext", 
-            "Please gather basic context using available functions.");
     }
 
     /// <summary>

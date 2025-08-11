@@ -1,29 +1,29 @@
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.Extensions.DependencyInjection;
-using PokeLLM.Game.LLM;
-using PokeLLM.Game.Plugins;
-using System.Runtime.CompilerServices;
+using PokeLLM.GameState;
 
 namespace PokeLLM.Game.Orchestration;
 
 public interface IUnifiedContextService
 {
-    Task<string> RunContextManagementAsync(string directive, CancellationToken cancellationToken = default);
+    Task<string> RunContextManagementAsync(ChatHistory history, string directive, CancellationToken cancellationToken = default);
 }
 
 public class UnifiedContextService : IUnifiedContextService
 {
     private readonly ILLMProvider _llmProvider;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IGameStateRepository _gameStateRepository;
     private Kernel _contextKernel;
 
     public UnifiedContextService(
         ILLMProvider llmProvider,
+        IGameStateRepository gameStateRepository,
         IServiceProvider serviceProvider)
     {
         _llmProvider = llmProvider;
         _serviceProvider = serviceProvider;
+        _gameStateRepository = gameStateRepository;
         InitializeKernel();
     }
 
@@ -33,10 +33,23 @@ public class UnifiedContextService : IUnifiedContextService
         _contextKernel.Plugins.AddFromType<UnifiedContextPlugin>("UnifiedContext", _serviceProvider);
     }
 
-    public async Task<string> RunContextManagementAsync(string directive, CancellationToken cancellationToken = default)
+    public async Task<string> RunContextManagementAsync(ChatHistory history, string directive, CancellationToken cancellationToken = default)
     {
         var contextHistory = new ChatHistory();
         var systemPrompt = await LoadSystemPromptAsync("UnifiedContextSubroutine");
+
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        var historyString = string.Join("\n\n", history.Select(msg => $"[{msg.Role}]\n{msg.Content}"));
+
+        var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ?
+            gameState.CurrentContext : "World generation beginning - creating initial world content.";
+
+        //Replace {{context}} placeholder with actual context
+        //TODO replace this using correct semantic kernel syntax
+        systemPrompt = systemPrompt.Replace("{{history}}", historyString);
+        systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
+
         contextHistory.AddSystemMessage(systemPrompt);
         contextHistory.AddUserMessage(directive);
 

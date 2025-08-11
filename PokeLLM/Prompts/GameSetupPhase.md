@@ -1,11 +1,12 @@
 # Game Setup Phase - Region Selection and Mechanical Character Creation
 
-{{context}}
-
 ## Phase Objective
 Guide the player through streamlined setup:
 1. Region selection 
 2. Mechanical character creation (stats and class only - no storytelling)
+
+## Current Gamestate Context
+{{context}}
 
 ## Process Flow
 

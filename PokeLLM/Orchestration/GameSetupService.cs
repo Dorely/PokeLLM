@@ -81,7 +81,7 @@ public class GameSetupService : IGameSetupService
         await _gameStateRepository.SaveStateAsync(gameState);
 
         // Run Unified Context Management after turn
-        await _unifiedContextService.RunContextManagementAsync(
+        await _unifiedContextService.RunContextManagementAsync(_chatHistory,
             $"GameSetup phase interaction completed. Update CurrentContext with setup progress and current scene.",
             cancellationToken);
     }

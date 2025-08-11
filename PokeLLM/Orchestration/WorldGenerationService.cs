@@ -5,9 +5,8 @@ using PokeLLM.Game.LLM;
 using PokeLLM.Game.Plugins;
 using PokeLLM.GameState.Models;
 using System.Runtime.CompilerServices;
-using PokeLLM.Game.Orchestration;
 
-namespace PokeLLM.Game.GameLogic;
+namespace PokeLLM.Game.Orchestration;
 
 public interface IWorldGenerationService
 {
@@ -82,7 +81,7 @@ public class WorldGenerationService : IWorldGenerationService
         await _gameStateRepository.SaveStateAsync(gameState);
 
         // Run Unified Context Management after turn
-        await _unifiedContextService.RunContextManagementAsync(
+        await _unifiedContextService.RunContextManagementAsync(_chatHistory,
             $"WorldGeneration phase interaction completed. Update CurrentContext with world generation progress and current scene.",
             cancellationToken);
     }
@@ -104,12 +103,13 @@ public class WorldGenerationService : IWorldGenerationService
             
             // Inject CurrentContext into prompt using {{context}} variable
             var gameState = await _gameStateRepository.LoadLatestStateAsync();
-            var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ? 
-                gameState.CurrentContext : "World generation beginning - creating initial world content.";
-            
-            // Replace {{context}} placeholder with actual context
+
+            var region = !string.IsNullOrEmpty(gameState.Region) ?
+                gameState.CurrentContext : "Selected Region is missing. Please Return an error message.";
+
+            //Replace {{context}} placeholder with actual context
             //TODO replace this using correct semantic kernel syntax
-            systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
+            systemPrompt = systemPrompt.Replace("{{region}}", region);
             
             return systemPrompt;
         }

@@ -163,7 +163,7 @@ Response: {fullResponse}
 
 Execute all context management functions to update CurrentContext field and maintain consistency.";
                 
-                await _unifiedContextService.RunContextManagementAsync(contextDirective, cancellationToken);
+                await _unifiedContextService.RunContextManagementAsync(history, contextDirective, cancellationToken);
                 
                 Debug.WriteLine($"[OrchestrationService] Unified context management completed for phase transition to {finalPhase}");
                 
@@ -192,7 +192,7 @@ Response: {fullResponse}
 
 Execute all context management functions to update CurrentContext field and maintain consistency.";
 
-                await _unifiedContextService.RunContextManagementAsync(contextDirective, cancellationToken);
+                await _unifiedContextService.RunContextManagementAsync(history, contextDirective, cancellationToken);
             }
             
             Debug.WriteLine($"[OrchestrationService] Orchestration completed. Response length: {fullResponse.Length}");
