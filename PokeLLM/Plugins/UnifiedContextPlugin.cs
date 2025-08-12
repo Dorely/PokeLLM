@@ -130,20 +130,4 @@ public class UnifiedContextPlugin
         return $"Context updated successfully. Length: {contextDescription.Length}";
     }
 
-    [KernelFunction("validate_entity_consistency")]
-    [Description("Validate consistency between game state and vector database entities")]
-    public async Task<string> ValidateEntityConsistency()
-    {
-        // Implementation for entity validation
-        return "Consistency validated successfully";
-    }
-
-    [KernelFunction("compress_chat_history")]
-    [Description("Compress chat history while preserving important context")]
-    public async Task<string> CompressChatHistory(
-        [Description("Chat history summary to preserve")] string historySummary)
-    {
-        // Implementation for chat compression  
-        return $"History compressed successfully. Length: {historySummary?.Length ?? 0}";
-    }
 }

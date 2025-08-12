@@ -58,8 +58,6 @@ public class OrchestrationService : IOrchestrationService
             kernel.Plugins.AddFromType<T>(phaseName, _serviceProvider);
             _kernels[phaseName] = kernel;
             _histories[phaseName] = new ChatHistory();
-            var systemprompt = LoadSystemPromptAsync(phaseName).GetAwaiter().GetResult();
-            _histories[phaseName].AddSystemMessage(systemprompt);
 
             Debug.WriteLine($"[OrchestrationService] Setup completed for phase: {phaseName}");
         }
@@ -76,7 +74,6 @@ public class OrchestrationService : IOrchestrationService
         GamePhase initialPhase = GamePhase.Exploration; // Initialize with default
         Kernel kernel = null;
         ChatHistory history = null;
-        string contextResult = null;
         StringBuilder responseBuilder = null;
         bool setupSuccessful = false;
         string errorMessage = null;
@@ -99,7 +96,25 @@ public class OrchestrationService : IOrchestrationService
             // Get the correct kernel and history for the current phase
             var phaseKernelName = GetPhaseKernelName(_currentPhase);
             kernel = _kernels[phaseKernelName];
-            history = _histories[phaseKernelName];
+            var oldHistory = _histories[phaseKernelName];
+            
+            // Create fresh ChatHistory with updated system prompt
+            history = new ChatHistory();
+            var systemPrompt = await LoadSystemPromptAsync(phaseKernelName);
+
+            // INJECT: CurrentContext into prompt using {{context}} variable
+            var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ?
+                gameState.CurrentContext : "No context available.";
+            systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
+
+            history.AddSystemMessage(systemPrompt);
+            
+            // Transfer existing conversation history (skip old system message if exists)
+            var messagesToTransfer = oldHistory.Where(msg => msg.Role != AuthorRole.System);
+            foreach (var message in messagesToTransfer)
+            {
+                history.Add(message);
+            }
             
             Debug.WriteLine($"[OrchestrationService] Processing input for phase: {_currentPhase}");
             
@@ -107,6 +122,9 @@ public class OrchestrationService : IOrchestrationService
             
             // Add the user's input message to the history
             history.AddUserMessage(inputMessage);
+            
+            // Update the stored history
+            _histories[phaseKernelName] = history;
             
             // Prepare for streaming response
             responseBuilder = new StringBuilder();
@@ -154,18 +172,7 @@ public class OrchestrationService : IOrchestrationService
                 // Update our current phase tracker
                 _currentPhase = finalPhase;
                 
-                // Run Unified Context Management for the phase transition
-                var contextDirective = $@"Phase transition from {initialPhase} to {finalPhase} completed.
-
-Turn: {updatedGameState.GameTurnNumber}
-Input: {inputMessage}
-Response: {fullResponse}
-
-Execute all context management functions to update CurrentContext field and maintain consistency.";
-                
-                await _unifiedContextService.RunContextManagementAsync(history, contextDirective, cancellationToken);
-                
-                Debug.WriteLine($"[OrchestrationService] Unified context management completed for phase transition to {finalPhase}");
+                Debug.WriteLine($"[OrchestrationService] Phase transition detected, context management will be handled by recursive call");
                 
                 // Prepare for recursive call
                 phaseTransitionMessage = CreatePhaseTransitionMessage(initialPhase, finalPhase, updatedGameState.PhaseChangeSummary);
@@ -192,7 +199,36 @@ Response: {fullResponse}
 
 Execute all context management functions to update CurrentContext field and maintain consistency.";
 
-                await _unifiedContextService.RunContextManagementAsync(history, contextDirective, cancellationToken);
+                var contextResult = await _unifiedContextService.RunContextManagementAsync(history, contextDirective, cancellationToken);
+                
+                // If history was compressed, update the stored history with the compressed version
+                if (contextResult.HistoryWasCompressed && contextResult.CompressedHistory.Count > 0)
+                {
+                    var phaseKernelName = GetPhaseKernelName(_currentPhase);
+                    
+                    // Create fresh ChatHistory with updated system prompt for compressed history
+                    var compressedHistory = new ChatHistory();
+                    var systemPrompt = await LoadSystemPromptAsync(phaseKernelName);
+                    
+                    // INJECT: CurrentContext into prompt using {{context}} variable
+                    var currentContext = !string.IsNullOrEmpty(updatedGameState.CurrentContext) ?
+                        updatedGameState.CurrentContext : "No context available.";
+                    systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
+                    
+                    compressedHistory.AddSystemMessage(systemPrompt);
+                    
+                    // Add compressed conversation history (skip system message from compressed version)
+                    var messagesToAdd = contextResult.CompressedHistory.Where(msg => msg.Role != AuthorRole.System);
+                    foreach (var message in messagesToAdd)
+                    {
+                        compressedHistory.Add(message);
+                    }
+                    
+                    // Store the compressed history
+                    _histories[phaseKernelName] = compressedHistory;
+                    
+                    Debug.WriteLine($"[OrchestrationService] Chat history compressed: {history.Count} -> {compressedHistory.Count} messages");
+                }
             }
             
             Debug.WriteLine($"[OrchestrationService] Orchestration completed. Response length: {fullResponse.Length}");
@@ -252,49 +288,6 @@ Execute all context management functions to update CurrentContext field and main
             GamePhase.LevelUp => "LevelUp",
             _ => "Exploration" // Default fallback
         };
-    }
-
-    private async Task<string> ExecutePromptAsync(ChatHistory history, Kernel kernel, CancellationToken cancellationToken = default)
-    {
-        var chatService = kernel.GetRequiredService<IChatCompletionService>();
-        
-        var executionSettings = _llmProvider.GetExecutionSettings(
-            maxTokens: 10000,
-            temperature: 0.7f,
-            enableFunctionCalling: true);
-
-        var result = await chatService.GetChatMessageContentAsync(
-            history,
-            executionSettings,
-            kernel,
-            cancellationToken
-        );
-        
-        var response = result.ToString();
-        await AddResponseToHistory(response, history);
-        
-        return response;
-    }
-
-    private async Task<string> ExecuteSubroutinePromptAsync(ChatHistory history, Kernel kernel, CancellationToken cancellationToken = default)
-    {
-        var chatService = kernel.GetRequiredService<IChatCompletionService>();
-        
-        var executionSettings = _llmProvider.GetExecutionSettings(
-            maxTokens: 10000,
-            temperature: 0.7f,
-            enableFunctionCalling: true);
-
-        var result = await chatService.GetChatMessageContentAsync(
-            history,
-            executionSettings,
-            kernel,
-            cancellationToken
-        );
-        
-        var response = result.ToString();
-        
-        return response;
     }
 
     private async IAsyncEnumerable<string> ExecutePromptStreamingAsync(ChatHistory history, Kernel kernel, [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -448,12 +441,6 @@ Execute all context management functions to update CurrentContext field and main
     {
         await Task.Yield();
         history.AddAssistantMessage(response);
-
-        // Check if history is getting large (rough estimate: 20+ messages or total character count exceeds threshold)
-        const int maxMessages = 20;
-        const int maxCharacters = 50000; // Approximate token limit consideration
-        
-        var totalCharacters = history.Sum(message => message.Content?.Length ?? 0);
         
         // Note: Chat history management now handled by UnifiedContextService
     }
@@ -473,15 +460,6 @@ Execute all context management functions to update CurrentContext field and main
             };
 
             var systemPrompt = await File.ReadAllTextAsync(promptPath);
-            
-            // INJECT: CurrentContext into prompt using {{context}} variable
-            var gameState = await _gameStateRepository.LoadLatestStateAsync();
-            var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ? 
-                gameState.CurrentContext : "No context available.";
-            
-            // Replace {{context}} placeholder with actual context
-            //TODO - change this to the proper semantic kernel syntax
-            systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
             
             return systemPrompt;
         }

@@ -46,15 +46,33 @@ public class WorldGenerationService : IWorldGenerationService
 
     public async IAsyncEnumerable<string> RunWorldGenerationAsync(string inputMessage, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Load system prompt if chat history is empty
-        if (_chatHistory.Count == 0)
-        {
-            var systemPrompt = await LoadSystemPromptAsync("WorldGenerationPhase");
-            _chatHistory.AddSystemMessage(systemPrompt);
-        }
+        // Create fresh ChatHistory with updated system prompt
+        var freshHistory = new ChatHistory();
+        var systemPrompt = await LoadSystemPromptAsync("WorldGenerationPhase");
 
-        // Add user message
-        _chatHistory.AddUserMessage(inputMessage);
+        // Inject CurrentContext into prompt using {{context}} variable
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        var region = !string.IsNullOrEmpty(gameState.Region) ?
+            gameState.Region : "Selected Region is missing. Please Return an error message.";
+
+        //Replace {{region}} placeholder with actual region
+        systemPrompt = systemPrompt.Replace("{{region}}", region);
+
+        freshHistory.AddSystemMessage(systemPrompt);
+        
+        // Transfer existing conversation history (skip old system message if exists)
+        var messagesToTransfer = _chatHistory.Where(msg => msg.Role != AuthorRole.System);
+        foreach (var message in messagesToTransfer)
+        {
+            freshHistory.Add(message);
+        }
+        
+        // Add new user message
+        freshHistory.AddUserMessage(inputMessage);
+        
+        // Update the stored history
+        _chatHistory = freshHistory;
 
         var chatService = _worldGenerationKernel.GetRequiredService<IChatCompletionService>();
         var executionSettings = _llmProvider.GetExecutionSettings(
@@ -76,7 +94,7 @@ public class WorldGenerationService : IWorldGenerationService
         _chatHistory.AddAssistantMessage(fullResponse);
 
         // Increment turn number
-        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+        gameState = await _gameStateRepository.LoadLatestStateAsync();
         gameState.GameTurnNumber++;
         await _gameStateRepository.SaveStateAsync(gameState);
 
@@ -100,16 +118,6 @@ public class WorldGenerationService : IWorldGenerationService
         if (File.Exists(promptPath))
         {
             var systemPrompt = await File.ReadAllTextAsync(promptPath);
-            
-            // Inject CurrentContext into prompt using {{context}} variable
-            var gameState = await _gameStateRepository.LoadLatestStateAsync();
-
-            var region = !string.IsNullOrEmpty(gameState.Region) ?
-                gameState.CurrentContext : "Selected Region is missing. Please Return an error message.";
-
-            //Replace {{context}} placeholder with actual context
-            //TODO replace this using correct semantic kernel syntax
-            systemPrompt = systemPrompt.Replace("{{region}}", region);
             
             return systemPrompt;
         }

@@ -46,15 +46,32 @@ public class GameSetupService : IGameSetupService
 
     public async IAsyncEnumerable<string> RunGameSetupAsync(string inputMessage, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Load system prompt if chat history is empty
-        if (_chatHistory.Count == 0)
-        {
-            var systemPrompt = await LoadSystemPromptAsync("GameSetupPhase");
-            _chatHistory.AddSystemMessage(systemPrompt);
-        }
+        // Create fresh ChatHistory with updated system prompt
+        var freshHistory = new ChatHistory();
+        var systemPrompt = await LoadSystemPromptAsync("GameSetupPhase");
 
-        // Add user message
-        _chatHistory.AddUserMessage(inputMessage);
+        // Inject CurrentContext into prompt using {{context}} variable
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+        var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ?
+            gameState.CurrentContext : "No context available - beginning of new game setup.";
+
+        // Replace {{context}} placeholder with actual context
+        systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
+
+        freshHistory.AddSystemMessage(systemPrompt);
+        
+        // Transfer existing conversation history (skip old system message if exists)
+        var messagesToTransfer = _chatHistory.Where(msg => msg.Role != AuthorRole.System);
+        foreach (var message in messagesToTransfer)
+        {
+            freshHistory.Add(message);
+        }
+        
+        // Add new user message
+        freshHistory.AddUserMessage(inputMessage);
+        
+        // Update the stored history
+        _chatHistory = freshHistory;
 
         var chatService = _gameSetupKernel.GetRequiredService<IChatCompletionService>();
         var executionSettings = _llmProvider.GetExecutionSettings(
@@ -76,7 +93,7 @@ public class GameSetupService : IGameSetupService
         _chatHistory.AddAssistantMessage(fullResponse);
 
         // Increment turn number
-        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+        gameState = await _gameStateRepository.LoadLatestStateAsync();
         gameState.GameTurnNumber++;
         await _gameStateRepository.SaveStateAsync(gameState);
 
@@ -100,14 +117,6 @@ public class GameSetupService : IGameSetupService
         if (File.Exists(promptPath))
         {
             var systemPrompt = await File.ReadAllTextAsync(promptPath);
-            
-            // Inject CurrentContext into prompt using {{context}} variable
-            var gameState = await _gameStateRepository.LoadLatestStateAsync();
-            var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ? 
-                gameState.CurrentContext : "No context available - beginning of new game setup.";
-            
-            // Replace {{context}} placeholder with actual context
-            systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
             
             return systemPrompt;
         }
