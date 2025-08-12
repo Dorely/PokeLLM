@@ -6,7 +6,7 @@ using PokeLLM.Game.LLM.Interfaces;
 using PokeLLM.Game.Plugins;
 using System.Diagnostics;
 
-namespace Tests;
+namespace PokeLLM.Tests;
 
 /// <summary>
 /// Tests to verify that each plugin works correctly with the Gemini LLM provider.

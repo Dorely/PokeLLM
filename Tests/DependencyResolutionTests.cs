@@ -4,7 +4,7 @@ using PokeLLM.Game.GameLogic;
 using PokeLLM.Game.Orchestration;
 using PokeLLM.GameState;
 
-namespace Tests;
+namespace PokeLLM.Tests;
 
 public class DependencyResolutionTests
 {

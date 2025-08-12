@@ -100,27 +100,34 @@ public class UnifiedContextPlugin
     public async Task<string> SearchNarrativeContext(
         [Description("Comma-separated scene elements to search for context")] string sceneElements)
     {
-        var gameState = await _gameStateRepo.LoadLatestStateAsync();
-        var narrativeContext = new List<string>();
-        
-        // Parse comma-separated elements
-        var elementList = string.IsNullOrWhiteSpace(sceneElements) 
-            ? new List<string>() 
-            : sceneElements.Split(',').Select(e => e.Trim()).Where(e => !string.IsNullOrWhiteSpace(e)).ToList();
-        
-        // Search for relevant narrative memories
-        foreach (var element in elementList)
+        try
         {
-            var memories = await _informationManagementService.FindMemoriesAsync(
-                gameState.SessionId, element, null, 0.7);
-            narrativeContext.AddRange(memories.Select(m => $"Memory: {m.EventSummary} (Turn {m.GameTurnNumber})"));
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            var narrativeContext = new List<string>();
+            
+            // Parse comma-separated elements
+            var elementList = string.IsNullOrWhiteSpace(sceneElements) 
+                ? new List<string>() 
+                : sceneElements.Split(',').Select(e => e.Trim()).Where(e => !string.IsNullOrWhiteSpace(e)).ToList();
+            
+            // Search for relevant narrative memories
+            foreach (var element in elementList)
+            {
+                var memories = await _informationManagementService.FindMemoriesAsync(
+                    gameState.SessionId, element, null, 0.7);
+                narrativeContext.AddRange(memories.Select(m => $"Memory: {m.EventSummary} (Turn {m.GameTurnNumber})"));
+            }
+            
+            // Search for world lore
+            var loreResults = await _informationManagementService.SearchLoreAsync(elementList);
+            narrativeContext.AddRange(loreResults.Select(l => $"Lore: {l.Title} - {l.Content}"));
+            
+            return string.Join("\n", narrativeContext);
         }
-        
-        // Search for world lore
-        var loreResults = await _informationManagementService.SearchLoreAsync(elementList);
-        narrativeContext.AddRange(loreResults.Select(l => $"Lore: {l.Title} - {l.Content}"));
-        
-        return string.Join("\n", narrativeContext);
+        catch (Exception ex)
+        {
+            return $"An error occurred while searching narrative context: {ex.Message}";
+        }
     }
 
     [KernelFunction("update_current_context")]
@@ -128,13 +135,20 @@ public class UnifiedContextPlugin
     public async Task<string> UpdateCurrentContext(
         [Description("Detailed scene description including all present entities, environment, and narrative context")] string contextDescription)
     {
-        var gameState = await _gameStateRepo.LoadLatestStateAsync();
-        
-        // Update the CurrentContext as a simple string
-        gameState.CurrentContext = contextDescription;
-        await _gameStateRepo.SaveStateAsync(gameState);
-        
-        return $"Context updated successfully. Length: {contextDescription.Length}";
+        try
+        {
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            
+            // Update the CurrentContext as a simple string
+            gameState.CurrentContext = contextDescription;
+            await _gameStateRepo.SaveStateAsync(gameState);
+            
+            return $"Context updated successfully. Length: {contextDescription.Length}";
+        }
+        catch (Exception ex)
+        {
+            return $"An error occurred while updating context: {ex.Message}";
+        }
     }
 
 }

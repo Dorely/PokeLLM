@@ -77,19 +77,27 @@ public class CombatPhasePlugin
         [Description("Whether the check has disadvantage (roll twice, take lower)")] bool disadvantage = false,
         [Description("Additional modifier to add to the roll")] int modifier = 0)
     {
-        Debug.WriteLine($"[ExplorationPhasePlugin] MakeSkillCheck called: stat={statName}, DC={difficultyClass}, adv={advantage}, dis={disadvantage}");
+        Debug.WriteLine($"[CombatPhasePlugin] MakeSkillCheck called: stat={statName}, DC={difficultyClass}, adv={advantage}, dis={disadvantage}");
 
-        var result = await _gameLogicService.MakeSkillCheckAsync(statName, difficultyClass, advantage, disadvantage, modifier);
-
-        if (!string.IsNullOrEmpty(result.Error))
+        try
         {
-            Debug.WriteLine($"[ExplorationPhasePlugin] Skill check error: {result.Error}");
-            return JsonSerializer.Serialize(new { error = result.Error }, _jsonOptions);
+            var result = await _gameLogicService.MakeSkillCheckAsync(statName, difficultyClass, advantage, disadvantage, modifier);
+
+            if (!string.IsNullOrEmpty(result.Error))
+            {
+                Debug.WriteLine($"[CombatPhasePlugin] Skill check error: {result.Error}");
+                return JsonSerializer.Serialize(new { error = result.Error }, _jsonOptions);
+            }
+
+            var formattedResult = $"{result.Outcome} {result.StatName} check: {result.TotalRoll} vs DC {result.DifficultyClass} ({result.Margin:+#;-#;0})";
+
+            Debug.WriteLine($"[CombatPhasePlugin] Skill check: {result.StatName} {result.TotalRoll} vs DC {result.DifficultyClass} = {(result.Success ? "SUCCESS" : "FAILURE")}");
+            return formattedResult;
         }
-
-        var formattedResult = $"{result.Outcome} {result.StatName} check: {result.TotalRoll} vs DC {result.DifficultyClass} ({result.Margin:+#;-#;0})";
-
-        Debug.WriteLine($"[ExplorationPhasePlugin] Skill check: {result.StatName} {result.TotalRoll} vs DC {result.DifficultyClass} = {(result.Success ? "SUCCESS" : "FAILURE")}");
-        return formattedResult;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[CombatPhasePlugin] Error in MakeSkillCheck: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
     }
 }

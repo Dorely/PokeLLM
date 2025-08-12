@@ -9,7 +9,7 @@
 //using Qdrant.Client;
 //using System.Diagnostics;
 
-//namespace Tests;
+//namespace PokeLLM.Tests;
 
 ///// <summary>
 ///// Integration tests for QdrantVectorStoreService that require a locally running Qdrant instance.
@@ -34,7 +34,7 @@
 
 //        // Create test embeddings (768 dimensions for hybrid Ollama embeddings)
 //        var testEmbedding = new Embedding<float>(Enumerable.Range(0, 768).Select(i => (float)Random.Shared.NextDouble()).ToArray());
-        
+
 //        // Mock the GenerateAsync method that returns multiple embeddings
 //        _mockEmbeddingGenerator
 //            .Setup(x => x.GenerateAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<EmbeddingGenerationOptions?>(), It.IsAny<CancellationToken>()))
@@ -50,7 +50,7 @@
 
 //        // Create a mock service provider for hybrid config
 //        var mockServiceProvider = new Mock<IServiceProvider>();
-        
+
 //        // Configure mock service provider to return hybrid config indicating Ollama embeddings
 //        var hybridConfig = Options.Create(new HybridConfig
 //        {
@@ -66,7 +66,7 @@
 //                Dimensions = 768
 //            }
 //        });
-        
+
 //        mockServiceProvider.Setup(sp => sp.GetService(typeof(IOptions<HybridConfig>))).Returns(hybridConfig);
 //        mockServiceProvider.Setup(sp => sp.GetService(typeof(IOptions<ModelConfig>))).Returns((IOptions<ModelConfig>)null);
 
@@ -83,7 +83,7 @@
 //        try
 //        {
 //            var client = new QdrantClient(_qdrantOptions!.Value.Host, _qdrantOptions.Value.Port);
-            
+
 //            // Try to delete test collections (ignore errors if they don't exist)
 //            try { await client.DeleteCollectionAsync("entities"); } catch { }
 //            try { await client.DeleteCollectionAsync("locations"); } catch { }
@@ -268,7 +268,7 @@
 //        Assert.NotNull(results);
 //        var resultList = results.ToList();
 //        Assert.NotEmpty(resultList);
-        
+
 //        // Should find at least the fire type rule
 //        var fireRule = resultList.FirstOrDefault(r => r.Record.Title.Contains("Fire"));
 //        Assert.NotNull(fireRule);
@@ -411,7 +411,7 @@
 //        Assert.NotNull(results);
 //        var resultList = results.ToList();
 //        Assert.NotEmpty(resultList);
-        
+
 //        // Should find at least the sea legend
 //        var seaLegend = resultList.FirstOrDefault(r => r.Record.Title.Contains("Sea"));
 //        Assert.NotNull(seaLegend);
@@ -479,7 +479,7 @@
 //    {
 //        // Arrange
 //        var sessionId = Guid.NewGuid().ToString();
-        
+
 //        var event1 = new NarrativeLogVectorRecord
 //        {
 //            SessionId = sessionId,
@@ -523,10 +523,10 @@
 //        Assert.NotNull(results);
 //        var resultList = results.ToList();
 //        Assert.NotEmpty(resultList);
-        
+
 //        // All results should be from the correct session
 //        Assert.All(resultList, r => Assert.Equal(sessionId, r.Record.SessionId));
-        
+
 //        // Should find both events from this session
 //        Assert.True(resultList.Count >= 2);
 //    }
@@ -536,7 +536,7 @@
 //    {
 //        // Arrange
 //        var sessionId = Guid.NewGuid().ToString();
-        
+
 //        var eventWithPikachu = new NarrativeLogVectorRecord
 //        {
 //            SessionId = sessionId,
@@ -568,7 +568,7 @@
 //        Assert.NotNull(results);
 //        var resultList = results.ToList();
 //        Assert.NotEmpty(resultList);
-        
+
 //        // All results should contain pikachu in involved entities
 //        Assert.All(resultList, r => Assert.Contains("pikachu", r.Record.InvolvedEntities));
 //    }
@@ -698,7 +698,7 @@
 //        var shinyResults = shinyMemories.ToList();
 //        Assert.NotEmpty(shinyResults);
 //        Assert.True(shinyResults.Count >= 3); // Should find all three events
-        
+
 //        // Results should be ordered by relevance (descending)
 //        for (int i = 0; i < shinyResults.Count - 1; i++)
 //        {
