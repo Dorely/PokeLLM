@@ -5,7 +5,10 @@
       "Bash(find:*)",
       "Bash(rm:*)",
       "Bash(dotnet test:*)",
-      "WebFetch(domain:learn.microsoft.com)"
+      "WebFetch(domain:learn.microsoft.com)",
+      "Bash(verbosity=detailed)",
+      "Bash(verbosity=quiet)",
+      "Bash(dotnet run:*)"
     ],
     "deny": []
   }

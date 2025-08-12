@@ -39,53 +39,60 @@ public class UnifiedContextPlugin
         };
     }
 
-    [KernelFunction("gather_scene_context")]
-    [Description("Gather comprehensive context about the current scene and environment")]
-    public async Task<string> GatherSceneContext(string input)
+    [KernelFunction("retrieve_state_context")]
+    [Description("Returns a formatted version of the context from game state")]
+    public async Task<string> RetrieveStateContext()
     {
-        var gameState = await _gameStateRepo.LoadLatestStateAsync();
-        
-        // Get current location details
-        var currentLocation = gameState.WorldLocations.GetValueOrDefault(gameState.CurrentLocationId);
-        var vectorLocation = await _informationManagementService.GetLocationAsync(gameState.CurrentLocationId);
-        
-        // Get present NPCs with details
-        var presentNpcs = new List<string>();
-        if (currentLocation != null)
+        try
         {
-            foreach (var npcId in currentLocation.PresentNpcIds)
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+
+            // Get current location details
+            var currentLocation = gameState.WorldLocations.GetValueOrDefault(gameState.CurrentLocationId);
+            var vectorLocation = await _informationManagementService.GetLocationAsync(gameState.CurrentLocationId);
+
+            // Get present NPCs with details
+            var presentNpcs = new List<string>();
+            if (currentLocation != null)
             {
-                var npcDetails = await _npcManagementService.GetNpcDetails(npcId);
-                if (npcDetails != null)
+                foreach (var npcId in currentLocation.PresentNpcIds)
                 {
-                    presentNpcs.Add($"{npcDetails.Name} ({npcDetails.CharacterDetails.Class})");
+                    var npcDetails = await _npcManagementService.GetNpcDetails(npcId);
+                    if (npcDetails != null)
+                    {
+                        presentNpcs.Add($"{npcDetails.Name} ({npcDetails.CharacterDetails.Class})");
+                    }
                 }
             }
-        }
-        
-        // Get present Pokemon
-        var presentPokemon = new List<string>();
-        if (currentLocation != null)
-        {
-            foreach (var pokemonId in currentLocation.PresentPokemonIds)
+
+            // Get present Pokemon
+            var presentPokemon = new List<string>();
+            if (currentLocation != null)
             {
-                var pokemon = gameState.WorldPokemon.GetValueOrDefault(pokemonId);
-                if (pokemon != null)
+                foreach (var pokemonId in currentLocation.PresentPokemonIds)
                 {
-                    presentPokemon.Add($"{pokemon.Species} (Level {pokemon.Level})");
+                    var pokemon = gameState.WorldPokemon.GetValueOrDefault(pokemonId);
+                    if (pokemon != null)
+                    {
+                        presentPokemon.Add($"{pokemon.Species} (Level {pokemon.Level})");
+                    }
                 }
             }
+
+            // Build simple string response to avoid complex object serialization issues with Gemini
+            var locationName = currentLocation?.Name ?? "Unknown Location";
+            var description = vectorLocation?.Description ?? currentLocation?.Name ?? "";
+            var exitsText = currentLocation?.Exits?.Keys != null ? string.Join(", ", currentLocation.Exits.Keys) : "";
+            var npcText = string.Join(", ", presentNpcs);
+            var pokemonText = string.Join(", ", presentPokemon);
+            var eventsText = string.Join("; ", gameState.RecentEvents.TakeLast(3).Select(e => e.EventDescription));
+
+            return $"Location: {locationName}\nDescription: {description}\nExits: {exitsText}\nNPCs: {npcText}\nPokemon: {pokemonText}\nTime: {gameState.TimeOfDay}\nWeather: {gameState.Weather}\nRegion: {gameState.Region}\nRecent Events: {eventsText}";
         }
-        
-        // Build simple string response to avoid complex object serialization issues with Gemini
-        var locationName = currentLocation?.Name ?? "Unknown Location";
-        var description = vectorLocation?.Description ?? currentLocation?.Name ?? "";
-        var exitsText = currentLocation?.Exits?.Keys != null ? string.Join(", ", currentLocation.Exits.Keys) : "";
-        var npcText = string.Join(", ", presentNpcs);
-        var pokemonText = string.Join(", ", presentPokemon);
-        var eventsText = string.Join("; ", gameState.RecentEvents.TakeLast(3).Select(e => e.EventDescription));
-        
-        return $"Location: {locationName}\nDescription: {description}\nExits: {exitsText}\nNPCs: {npcText}\nPokemon: {pokemonText}\nTime: {gameState.TimeOfDay}\nWeather: {gameState.Weather}\nRegion: {gameState.Region}\nRecent Events: {eventsText}";
+        catch (Exception ex)
+        {
+            return $"An error occurred while gathering context {ex.Message}";
+        }
     }
 
     [KernelFunction("search_narrative_context")]
@@ -117,7 +124,7 @@ public class UnifiedContextPlugin
     }
 
     [KernelFunction("update_current_context")]
-    [Description("Update the game state's current context field with comprehensive scene information as a string")]
+    [Description("Update the game states current context field with comprehensive scene information as a string")]
     public async Task<string> UpdateCurrentContext(
         [Description("Detailed scene description including all present entities, environment, and narrative context")] string contextDescription)
     {

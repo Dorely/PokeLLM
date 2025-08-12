@@ -103,7 +103,7 @@ public class PluginLLMProviderTests : IAsyncLifetime
     /// </summary>
     private async Task TestSinglePlugin<T>(string pluginName, string promptFileName, string testPrompt) where T : class
     {
-        var executionSettings = _llmProvider!.GetExecutionSettings(maxTokens: 100, temperature: 0.1f, enableFunctionCalling: true);
+        var executionSettings = _llmProvider!.GetExecutionSettings(maxTokens: 10000, temperature: 0.7f, enableFunctionCalling: true);
         
         try
         {

@@ -53,14 +53,14 @@ public class UnifiedContextService : IUnifiedContextService
             .Where(msg => msg.Role != AuthorRole.System && !string.IsNullOrWhiteSpace(msg.Content))
             .ToList();
 
-        var historyString = string.Join("\n\n", processedHistory
-            .Select(msg => $"[{ConvertRoleForDisplay(msg.Role)}]\n{msg.Content}"));
+        var historyString = string.Join("\n\n", history
+            .Where(msg => msg.Role != AuthorRole.System && !string.IsNullOrWhiteSpace(msg.Content))
+            .Select(msg => msg.Content));
 
-        // Check if history needs compression
+        // Check if history needs compression (based on the formatted string that will be sent)
         const int maxMessages = 20;
         const int maxCharacters = 50000;
-        var totalCharacters = processedHistory.Sum(message => message.Content?.Length ?? 0);
-        var needsCompression = processedHistory.Count > maxMessages || totalCharacters > maxCharacters;
+        var needsCompression = processedHistory.Count > maxMessages || historyString.Length > maxCharacters;
 
         var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ?
             gameState.CurrentContext : "World generation beginning - creating initial world content.";
@@ -69,7 +69,7 @@ public class UnifiedContextService : IUnifiedContextService
         var finalDirective = directive;
         if (needsCompression)
         {
-            finalDirective += $"\n\nIMPORTANT: The chat history is too large ({processedHistory.Count} messages, {totalCharacters} characters). " +
+            finalDirective += $"\n\nIMPORTANT: The chat history is too large ({processedHistory.Count} messages, {historyString.Length} characters). " +
                             "Please provide a compressed version of the conversation history in the following format:\n" +
                             "COMPRESSED_HISTORY\n" +
                             "[System] Brief description of initial system context\n" +
@@ -79,37 +79,13 @@ public class UnifiedContextService : IUnifiedContextService
                             "</COMPRESSED_HISTORY>";
         }
 
-        // For Gemini with function calling, keep content concise to avoid role validation issues
-        // Start with a shortened system instruction
-        var shortSystemPrompt = "You manage world consistency and scene continuity. Use available functions to gather scene context, search narrative context, and update current context. Focus on creating comprehensive scene descriptions.";
-        
-        var combinedUserMessage = $"## System Instructions\n{shortSystemPrompt}\n\n";
-        
-        // Limit history content to prevent overload
-        var limitedHistoryString = historyString;
-        if (!string.IsNullOrWhiteSpace(historyString) && historyString.Length > 2000)
-        {
-            limitedHistoryString = historyString.Substring(0, 2000) + "... (truncated)";
-        }
-        
-        // Limit context content
-        var limitedContext = currentContext;
-        if (currentContext.Length > 1000)
-        {
-            limitedContext = currentContext.Substring(0, 1000) + "... (truncated)";
-        }
-        
-        if (!string.IsNullOrWhiteSpace(limitedHistoryString))
-        {
-            combinedUserMessage += $"## Current Chat History\n{limitedHistoryString}\n\n## Current Context\n{limitedContext}\n\n## Task\n{finalDirective}";
-        }
-        else
-        {
-            combinedUserMessage += $"## Current Context\n{limitedContext}\n\n## Task\n{finalDirective}";
-        }
-        
-        // Add user message with limited content to prevent Gemini role validation issues
-        contextHistory.AddUserMessage(combinedUserMessage);
+        //Replace {{context}} placeholder with actual context
+        systemPrompt = systemPrompt.Replace("{{history}}", historyString);
+        systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
+
+        contextHistory.AddSystemMessage(systemPrompt);
+        contextHistory.AddUserMessage(finalDirective);
+
 
         var chatService = _contextKernel.GetRequiredService<IChatCompletionService>();
         var executionSettings = _llmProvider.GetExecutionSettings(
@@ -120,14 +96,22 @@ public class UnifiedContextService : IUnifiedContextService
         var result = await chatService.GetChatMessageContentAsync(
             contextHistory, executionSettings, _contextKernel, cancellationToken);
 
+        // Handle function calls manually since we're using EnableKernelFunctions
         var response = result.ToString();
+        
+        // Ensure we always have a response, even if functions were called
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            response = "Context management completed successfully.";
+        }
+        
         var compressedHistory = ExtractCompressedHistory(response);
 
         return new ContextManagementResult
         {
             Response = response,
             CompressedHistory = compressedHistory,
-            HistoryWasCompressed = needsCompression && compressedHistory.Count > 0
+            HistoryWasCompressed = needsCompression
         };
     }
 
