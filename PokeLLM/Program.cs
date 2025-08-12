@@ -40,7 +40,7 @@ public class Program
 
         while (true)
         {
-            Console.WriteLine("\nYou (multi-line, end with blank line):");
+            Console.WriteLine("\nYou (multi-line, end with 'blank line'):");
             var lines = new List<string>();
             while (true)
             {
@@ -57,9 +57,16 @@ public class Program
 
             // Process player input through the new game controller
             Console.WriteLine($"PokeLLM: ");
-            await foreach (var chunk in gameController.ProcessInputAsync(input))
+            try
             {
-                Console.Write(chunk);
+                await foreach (var chunk in gameController.ProcessInputAsync(input))
+                {
+                    Console.Write(chunk);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
         }
     }

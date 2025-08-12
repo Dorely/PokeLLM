@@ -232,7 +232,7 @@ public class WorldGenerationPhasePlugin
     [KernelFunction("upsert_location")]
     [Description("Store location data in the vector database")]
     public async Task<string> UpsertLocation(
-        [Description("Complete location record to store")] LocationVectorRecordDto locationDataDto)
+        [Description("Complete location record to store. Id is required for inserting or updating. Example IDs: loc_mt_ember, loc_route_1")] LocationVectorRecordDto locationDataDto)
     {
         var locationData = locationDataDto.ToVectorRecord();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLocation called: {locationData?.LocationId}");
@@ -901,7 +901,7 @@ public class WorldGenerationPhasePlugin
                 success = true,
                 message = "World generation completed successfully",
                 region = gameState.Region,
-                nextPhase = "CharacterCreation",
+                nextPhase = "Exploration",
                 openingScenario = openingScenario,
                 sessionId = gameState.SessionId,
                 phaseTransitionCompleted = true

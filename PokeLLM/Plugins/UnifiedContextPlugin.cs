@@ -49,7 +49,11 @@ public class UnifiedContextPlugin
 
             // Get current location details
             var currentLocation = gameState.WorldLocations.GetValueOrDefault(gameState.CurrentLocationId);
-            var vectorLocation = await _informationManagementService.GetLocationAsync(gameState.CurrentLocationId);
+            LocationVectorRecord vectorLocation = null;
+            if (!string.IsNullOrEmpty(gameState.CurrentLocationId))
+            {
+                vectorLocation = await _informationManagementService.GetLocationAsync(gameState.CurrentLocationId);
+            }
 
             // Get present NPCs with details
             var presentNpcs = new List<string>();
