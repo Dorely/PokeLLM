@@ -13,10 +13,10 @@ public class DependencyResolutionTests
     {
         var provider = Program.BuildServiceProvider();
 
-        var orchestrator = provider.GetRequiredService<IOrchestrationService>();
+        var gameController = provider.GetRequiredService<IGameController>();
         var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
 
-        Assert.NotNull(orchestrator);
+        Assert.NotNull(gameController);
     }
 
     [Fact]

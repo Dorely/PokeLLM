@@ -390,7 +390,7 @@ public class GameSetupPhasePlugin
     }
 
     [KernelFunction("finalize_game_setup")]
-    [Description("Complete game setup - does NOT transition phases (handled by service)")]
+    [Description("Complete game setup - and signal for transition to World Generation phase")]
     public async Task<string> FinalizeGameSetup([Description("Summary of setup choices made")] string setupSummary)
     {
         try
@@ -409,8 +409,10 @@ public class GameSetupPhasePlugin
                 }, _jsonOptions);
             }
             
-            // Update adventure summary (but DO NOT change phase)
+            // Update adventure summary and transition to WorldGeneration phase
             gameState.AdventureSummary = $"A new Pokemon adventure begins with {player.Name}, a {player.CharacterDetails.Class} trainer in the {gameState.Region} region. {setupSummary}";
+            gameState.CurrentPhase = GamePhase.WorldGeneration;
+            gameState.PhaseChangeSummary = $"Game setup completed successfully. {setupSummary}";
             await _gameStateRepo.SaveStateAsync(gameState);
             
             return JsonSerializer.Serialize(new 

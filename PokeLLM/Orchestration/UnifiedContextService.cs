@@ -50,25 +50,29 @@ public class UnifiedContextService : IUnifiedContextService
 
             var gameState = await _gameStateRepository.LoadLatestStateAsync();
 
-            // Process history to ensure role compatibility with Gemini
-            var processedHistory = history
-                .Where(msg => msg.Role != AuthorRole.System && !string.IsNullOrWhiteSpace(msg.Content))
+            // Process history to ensure role compatibility with Gemini - handle nulls
+            var processedHistory = (history ?? new ChatHistory())
+                .Where(msg => msg != null && 
+                             msg.Role != AuthorRole.System && 
+                             !string.IsNullOrWhiteSpace(msg.Content))
                 .ToList();
 
-            var historyString = string.Join("\n\n", history
-                .Where(msg => msg.Role != AuthorRole.System && !string.IsNullOrWhiteSpace(msg.Content))
-                .Select(msg => msg.Content));
+            var historyString = string.Join("\n\n", (history ?? new ChatHistory())
+                .Where(msg => msg != null && 
+                             msg.Role != AuthorRole.System && 
+                             !string.IsNullOrWhiteSpace(msg.Content))
+                .Select(msg => msg.Content ?? string.Empty));
 
             // Check if history needs compression (based on the formatted string that will be sent)
             const int maxMessages = 20;
             const int maxCharacters = 50000;
             var needsCompression = processedHistory.Count > maxMessages || historyString.Length > maxCharacters;
 
-            var currentContext = !string.IsNullOrEmpty(gameState.CurrentContext) ?
+            var currentContext = !string.IsNullOrEmpty(gameState?.CurrentContext) ?
                 gameState.CurrentContext : "World generation beginning - creating initial world content.";
 
             // Add compression directive if needed
-            var finalDirective = directive;
+            var finalDirective = directive ?? string.Empty;
             if (needsCompression)
             {
                 finalDirective += $"\n\nIMPORTANT: The chat history is too large ({processedHistory.Count} messages, {historyString.Length} characters). " +
@@ -99,7 +103,7 @@ public class UnifiedContextService : IUnifiedContextService
                 contextHistory, executionSettings, _contextKernel, cancellationToken);
 
             // Handle function calls manually since we're using EnableKernelFunctions
-            var response = result.ToString();
+            var response = result?.ToString() ?? string.Empty;
 
             // Ensure we always have a response, even if functions were called
             if (string.IsNullOrWhiteSpace(response))
@@ -125,6 +129,12 @@ public class UnifiedContextService : IUnifiedContextService
 
     private ChatHistory ExtractCompressedHistory(string response)
     {
+        // Handle null or empty response
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            return new ChatHistory();
+        }
+
         // Look for the compressed history section
         var match = Regex.Match(response, @"<COMPRESSED_HISTORY>(.*?)</COMPRESSED_HISTORY>", RegexOptions.Singleline | RegexOptions.IgnoreCase);
         if (!match.Success)
@@ -132,22 +142,30 @@ public class UnifiedContextService : IUnifiedContextService
             return new ChatHistory();
         }
 
-        var compressedContent = match.Groups[1].Value.Trim();
+        var compressedContent = match.Groups[1].Value?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(compressedContent))
+        {
+            return new ChatHistory();
+        }
+
         var lines = compressedContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         
         var compressedHistory = new ChatHistory();
         
         foreach (var line in lines)
         {
-            var trimmedLine = line.Trim();
+            var trimmedLine = line?.Trim() ?? string.Empty;
             if (string.IsNullOrEmpty(trimmedLine)) continue;
 
             // Parse role-based format: [Role] Content
             var roleMatch = Regex.Match(trimmedLine, @"^\[(\w+)\]\s*(.*)$");
             if (roleMatch.Success)
             {
-                var role = roleMatch.Groups[1].Value.ToLowerInvariant();
-                var content = roleMatch.Groups[2].Value;
+                var role = roleMatch.Groups[1].Value?.ToLowerInvariant() ?? string.Empty;
+                var content = roleMatch.Groups[2].Value ?? string.Empty;
+
+                if (string.IsNullOrEmpty(role) || string.IsNullOrEmpty(content))
+                    continue;
 
                 switch (role)
                 {

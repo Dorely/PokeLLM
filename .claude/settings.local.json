@@ -8,7 +8,9 @@
       "WebFetch(domain:learn.microsoft.com)",
       "Bash(verbosity=detailed)",
       "Bash(verbosity=quiet)",
-      "Bash(dotnet run:*)"
+      "Bash(dotnet run:*)",
+      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Orchestration\\IPhaseService.cs\")",
+      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Orchestration\\GameSetupService.cs\")"
     ],
     "deny": []
   }

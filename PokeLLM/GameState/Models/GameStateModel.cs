@@ -58,7 +58,7 @@ public class GameStateModel
     public List<EventLog> RecentEvents { get; set; } = new();
 
     [JsonPropertyName("currentPhase")]
-    public GamePhase CurrentPhase { get; set; } = GamePhase.Exploration;
+    public GamePhase CurrentPhase { get; set; } = GamePhase.GameSetup;
 
     [JsonPropertyName("phaseChangeSummary")]
     [Description("A details report of what has occurred and why the phase is changing. To be passed to the next chat handler.")]
@@ -72,9 +72,6 @@ public class GameStateModel
     [Description("Rich contextual description of the current scene, environment, and situation for storytelling continuity.")]
     public string CurrentContext { get; set; } = "";
 
-    [JsonPropertyName("worldGenerationComplete")]
-    [Description("Flag indicating whether world generation has been completed in the background.")]
-    public bool WorldGenerationComplete { get; set; } = false;
 }
 
 public class EventLog
@@ -538,4 +535,11 @@ public enum TimeOfDay { Dawn, Morning, Day, Afternoon, Dusk, Night }
 public enum Weather { Clear, Cloudy, Rain, Storm, Thunderstorm, Snow, Fog, Sandstorm, Sunny, Overcast }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum GamePhase { Exploration, Combat, LevelUp }
+public enum GamePhase 
+{ 
+    GameSetup, 
+    WorldGeneration, 
+    Exploration, 
+    Combat, 
+    LevelUp 
+}

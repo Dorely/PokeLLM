@@ -145,12 +145,11 @@ public static class ServiceConfiguration
 
         // Register new service architecture
         services.AddScoped<IUnifiedContextService, UnifiedContextService>();
-        services.AddScoped<IGameSetupService, GameSetupService>();
-        services.AddScoped<IWorldGenerationService, WorldGenerationService>();
-        services.AddScoped<IGameController, GameController>();
         
-        // Register the orchestration service (now only handles gameplay)
-        services.AddScoped<IOrchestrationService, OrchestrationService>();
+        // Register phase service provider
+        services.AddScoped<IPhaseServiceProvider, PhaseServiceProvider>();
+        
+        services.AddScoped<IGameController, GameController>();
 
         return services;
     }
