@@ -108,8 +108,8 @@ public class WorldGenerationService : IWorldGenerationService
     {
         var gameState = await _gameStateRepository.LoadLatestStateAsync();
         
-        // World generation is complete if we have at least one location with a current location set
-        return gameState.WorldLocations.Any() && !string.IsNullOrEmpty(gameState.CurrentLocationId);
+        // World generation is complete when the completion flag is set by the finalize function
+        return gameState.WorldGenerationComplete;
     }
 
     private async Task<string> LoadSystemPromptAsync(string promptName)

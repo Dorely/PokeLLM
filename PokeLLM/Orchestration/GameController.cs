@@ -43,28 +43,38 @@ public class GameController : IGameController
                 if (await _gameSetupService.IsSetupCompleteAsync())
                 {
                     yield return "\n\n--- Setup Complete! Starting World Generation ---\n\n";
-                    await foreach (var chunk in _worldGenerationService.RunWorldGenerationAsync(
-                        "Begin world generation based on setup.", cancellationToken))
-                        yield return chunk;
                 }
                 break;
                 
             case GameStatus.WorldGenerationNeeded:
-                await foreach (var chunk in _worldGenerationService.RunWorldGenerationAsync(input, cancellationToken))
-                    yield return chunk;
+                // Run world generation in a continuous loop until completion
+                string currentInput = input == "Begin world generation based on setup." || string.IsNullOrEmpty(input) ? 
+                    "Begin comprehensive world generation based on the completed setup. Create a rich, detailed world with multiple locations, NPCs, wild Pokemon, and lore. Provide engaging updates about your progress." : 
+                    input;
+                
+                while (!await _worldGenerationService.IsWorldGenerationCompleteAsync())
+                {
+                    await foreach (var chunk in _worldGenerationService.RunWorldGenerationAsync(currentInput, cancellationToken))
+                        yield return chunk;
+                    
+                    // If still not complete, continue with next iteration
+                    if (!await _worldGenerationService.IsWorldGenerationCompleteAsync())
+                    {
+                        yield return "\n\n";
+                        currentInput = "Continue with world generation. Create more content or finalize when you have created a complete world ready for adventure.";
+                    }
+                }
+                
+                yield return "\n\n--- World Generation Complete! Adventure Begins ---\n\n";
                 
                 // Auto-transition to gameplay if world generation complete
-                if (await _worldGenerationService.IsWorldGenerationCompleteAsync())
-                {
-                    var gameState = await _gameStateRepository.LoadLatestStateAsync();
-                    gameState.CurrentPhase = GamePhase.Exploration;
-                    await _gameStateRepository.SaveStateAsync(gameState);
-                    
-                    yield return "\n\n--- World Complete! Adventure Begins ---\n\n";
-                    await foreach (var chunk in _orchestrationService.OrchestrateAsync(
-                        "Describe the opening scene.", cancellationToken))
-                        yield return chunk;
-                }
+                var gameState = await _gameStateRepository.LoadLatestStateAsync();
+                gameState.CurrentPhase = GamePhase.Exploration;
+                await _gameStateRepository.SaveStateAsync(gameState);
+                
+                await foreach (var chunk in _orchestrationService.OrchestrateAsync(
+                    "Describe the opening scene and begin the adventure.", cancellationToken))
+                    yield return chunk;
                 break;
                 
             case GameStatus.GameplayActive:

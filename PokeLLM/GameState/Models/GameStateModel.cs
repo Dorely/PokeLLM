@@ -71,6 +71,10 @@ public class GameStateModel
     [JsonPropertyName("currentContext")]
     [Description("Rich contextual description of the current scene, environment, and situation for storytelling continuity.")]
     public string CurrentContext { get; set; } = "";
+
+    [JsonPropertyName("worldGenerationComplete")]
+    [Description("Flag indicating whether world generation has been completed in the background.")]
+    public bool WorldGenerationComplete { get; set; } = false;
 }
 
 public class EventLog

@@ -16,7 +16,8 @@ namespace PokeLLM.Game.Configuration;
 public static class ServiceConfiguration
 {
     // Configuration: Change these to switch between providers
-    private const string MAIN_LLM_PROVIDER = "Gemini"; // "OpenAI", "Ollama", "Gemini"
+    //private const string MAIN_LLM_PROVIDER = "Gemini"; // "OpenAI", "Ollama", "Gemini"
+    private const string MAIN_LLM_PROVIDER = "OpenAI"; // "OpenAI", "Ollama", "Gemini"
     private const string EMBEDDING_PROVIDER = "Ollama"; // "OpenAI", "Ollama" (default)
 
     public static IServiceCollection ConfigureServices(IServiceCollection services, IConfiguration configuration)

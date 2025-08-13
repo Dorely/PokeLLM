@@ -872,6 +872,8 @@ public class WorldGenerationPhasePlugin
                 }, _jsonOptions);
             }
             
+            // Mark world generation as complete
+            gameState.WorldGenerationComplete = true;
             
             // Add to recent events
             gameState.RecentEvents.Add(new EventLog 
