@@ -1,6 +1,7 @@
 using Microsoft.SemanticKernel;
 using PokeLLM.GameState.Models;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PokeLLM.GameRules.Interfaces;
 
@@ -23,10 +24,19 @@ public class RulesetActionRequest
 
 public class ActionEffect
 {
+    [JsonPropertyName("target")]
     public string Target { get; set; } = string.Empty;
+    
+    [JsonPropertyName("operation")]
     public string Operation { get; set; } = string.Empty;
+    
+    [JsonPropertyName("value")]
     public object Value { get; set; } = new();
+    
+    [JsonPropertyName("source")]
     public string Source { get; set; } = string.Empty;
+    
+    [JsonPropertyName("conditions")]
     public List<string> Conditions { get; set; } = new();
 }
 

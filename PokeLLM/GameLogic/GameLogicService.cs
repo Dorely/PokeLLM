@@ -374,7 +374,7 @@ public class GameLogicService : IGameLogicService
             };
         }
 
-        // Get stat modifier using D&D 5e rules
+        // Get stat modifier using standard RPG rules
         var abilityScore = GetAbilityScore(gameState.Player.Stats, statName);
         var statModifier = CalculateAbilityModifier(abilityScore);
 
@@ -537,7 +537,7 @@ public class GameLogicService : IGameLogicService
     #region Helper Methods
 
     /// <summary>
-    /// Calculates the D&D 5e ability modifier from an ability score
+    /// Calculates the standard RPG ability modifier from an ability score
     /// Formula: floor((abilityScore - 10) / 2)
     /// </summary>
     public int CalculateAbilityModifier(int abilityScore)
@@ -546,7 +546,7 @@ public class GameLogicService : IGameLogicService
     }
 
     /// <summary>
-    /// Gets the ability score for the specified stat name using D&D 5e ability scores
+    /// Gets the ability score for the specified stat name using standard ability scores
     /// </summary>
     public int GetAbilityScore(Stats stats, string statName)
     {
@@ -563,7 +563,7 @@ public class GameLogicService : IGameLogicService
     }
 
     /// <summary>
-    /// Validates that the stat name is one of the six D&D 5e ability scores
+    /// Validates that the stat name is one of the six standard ability scores
     /// </summary>
     public bool IsValidStatName(string statName)
     {

@@ -32,4 +32,10 @@
     <ProjectReference Include="..\PokeLLM\PokeLLM.Game.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="TestData\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

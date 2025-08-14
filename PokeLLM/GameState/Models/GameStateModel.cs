@@ -300,7 +300,7 @@ public class ItemInstance
 }
 
 /// <summary>
-/// D&D 5e-style ability scores for characters and Pokemon.
+/// Standard RPG-style ability scores for characters and Pokemon.
 /// Each score typically ranges from 3-20, with 10-11 being average for humans.
 /// </summary>
 public class Stats
@@ -338,7 +338,7 @@ public class Stats
 }
 
 /// <summary>
-/// Represents a Pokemon move with complete mechanical data for D&D 5e-style combat.
+/// Represents a Pokemon move with complete mechanical data for RPG-style combat.
 /// </summary>
 public class Move
 {

@@ -802,7 +802,7 @@ public class WorldGenerationPhasePlugin
                     }, _jsonOptions);
                     
                 case "random_stats":
-                    // Generate random D&D stats (3d6 for each)
+                    // Generate random RPG stats (3d6 for each)
                     var stats = new Dictionary<string, int>();
                     var statNames = new[] { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
                     

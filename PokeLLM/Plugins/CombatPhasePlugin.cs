@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace PokeLLM.Game.Plugins;
 
 /// <summary>
-/// Plugin for managing D&D 5e-style Pokemon combat encounters
+/// Plugin for managing RPG-style Pokemon combat encounters
 /// </summary>
 public class CombatPhasePlugin
 {
@@ -69,7 +69,7 @@ public class CombatPhasePlugin
     }
 
     [KernelFunction("make_skill_check")]
-    [Description("Makes a skill check using D&D 5e rules with the player's ability scores")]
+    [Description("Makes a skill check using standard RPG rules with the player's ability scores")]
     public async Task<string> MakeSkillCheck(
         [Description("Stat to use: Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma")] string statName,
         [Description("Difficulty Class (5=Very Easy, 8=Easy, 11=Medium, 14=Hard, 17=Very Hard, 20=Nearly Impossible)")] int difficultyClass,
