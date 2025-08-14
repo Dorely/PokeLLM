@@ -10,7 +10,11 @@
       "Bash(verbosity=quiet)",
       "Bash(dotnet run:*)",
       "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Orchestration\\IPhaseService.cs\")",
-      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Orchestration\\GameSetupService.cs\")"
+      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Orchestration\\GameSetupService.cs\")",
+      "WebFetch(domain:devblogs.microsoft.com)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

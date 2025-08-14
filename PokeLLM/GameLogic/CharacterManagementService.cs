@@ -34,6 +34,12 @@ public interface ICharacterManagementService
     // New methods for character creation
     Task<int[]> GenerateRandomStats();
     Task<int[]> GenerateStandardStats();
+    
+    // D&D 5e Character Management Methods
+    Task<object> CreateCharacter(string name, string race, string characterClass);
+    Task<object?> GetCurrentCharacter();
+    Task SaveCharacter(object character);
+    Task AddExperiencePoints(int xp);
 }
 
 /// <summary>
@@ -43,6 +49,7 @@ public class CharacterManagementService : ICharacterManagementService
 {
     private readonly IGameStateRepository _gameStateRepository;
     private readonly Random _random;
+    private object? _currentCharacter;
 
     public CharacterManagementService(IGameStateRepository gameStateRepository)
     {
@@ -309,4 +316,53 @@ public class CharacterManagementService : ICharacterManagementService
             await _gameStateRepository.SaveStateAsync(gameState);
         }
     }
+
+    #region D&D 5e Character Management
+
+    public async Task<object> CreateCharacter(string name, string race, string characterClass)
+    {
+        await Task.Yield();
+        
+        // Generic character creation - specific implementation would be provided by ruleset
+        var character = new Dictionary<string, object>
+        {
+            ["Name"] = name,
+            ["Race"] = race,
+            ["CharacterClass"] = characterClass,
+            ["Level"] = 1
+        };
+
+        _currentCharacter = character;
+        return character;
+    }
+
+    public async Task<object?> GetCurrentCharacter()
+    {
+        await Task.Yield();
+        return _currentCharacter;
+    }
+
+    public async Task SaveCharacter(object character)
+    {
+        await Task.Yield();
+        _currentCharacter = character;
+        // In a full implementation, this would persist to the game state
+    }
+
+    public async Task AddExperiencePoints(int xp)
+    {
+        await Task.Yield();
+        // Generic experience point handling - specific implementation would be provided by ruleset
+        if (_currentCharacter is Dictionary<string, object> character)
+        {
+            var currentXp = character.ContainsKey("ExperiencePoints") ? (int)character["ExperiencePoints"] : 0;
+            character["ExperiencePoints"] = currentXp + xp;
+        }
+    }
+
+    
+    // D&D-specific character creation logic has been removed
+    // Character creation is now handled generically via ruleset configuration
+
+    #endregion
 }

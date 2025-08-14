@@ -10,6 +10,8 @@ using PokeLLM.Game.Plugins;
 using PokeLLM.GameState;
 using PokeLLM.Game.VectorStore.Interfaces;
 using PokeLLM.Game.VectorStore;
+using PokeLLM.GameRules.Services;
+using PokeLLM.GameRules.Interfaces;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -121,6 +123,11 @@ public static class ServiceConfiguration
         services.AddTransient<UnifiedContextPlugin>();
         services.AddTransient<GameSetupPhasePlugin>();
         services.AddTransient<WorldGenerationPhasePlugin>();
+
+        // Register generic rule system services
+        services.AddTransient<IJavaScriptRuleEngine, JavaScriptRuleEngine>();
+        services.AddTransient<IDynamicFunctionFactory, DynamicFunctionFactory>();
+        services.AddTransient<IRulesetService, RulesetService>();
 
         // Register all LLM providers
         services.AddTransient<OpenAiLLMProvider>();
