@@ -2,6 +2,7 @@
 using PokeLLM.Game.Configuration;
 using PokeLLM.Game.GameLogic;
 using PokeLLM.GameState;
+using PokeLLM.GameLogic.Services;
 
 namespace PokeLLM.Game;
 
@@ -25,11 +26,70 @@ public class Program
         var provider = BuildServiceProvider();
         var gameController = provider.GetRequiredService<IGameController>();
         var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
+        var rulesetManager = provider.GetRequiredService<PokeLLM.GameRules.Interfaces.IRulesetManager>();
+        var rulesetSelectionService = provider.GetRequiredService<IRulesetSelectionService>();
 
-        if (!await gameStateRepository.HasGameStateAsync())
+        string selectedRulesetId;
+        
+        // Check if a game already exists
+        if (await gameStateRepository.HasGameStateAsync())
         {
+            // Load existing game and get its ruleset
+            var existingGameState = await gameStateRepository.LoadLatestStateAsync();
+            selectedRulesetId = existingGameState.ActiveRulesetId ?? "pokemon-adventure";
+            
+            Console.WriteLine($"Loading existing game with {selectedRulesetId} ruleset...");
+            
+            // Set the active ruleset to match the existing game
+            try
+            {
+                await rulesetManager.SetActiveRulesetAsync(selectedRulesetId);
+                var activeRuleset = rulesetManager.GetActiveRuleset();
+                if (activeRuleset == null)
+                {
+                    Console.WriteLine($"Warning: Could not load {selectedRulesetId} ruleset. Game may not function correctly.");
+                }
+                else
+                {
+                    Console.WriteLine($"✓ {selectedRulesetId} ruleset loaded successfully");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Error loading {selectedRulesetId} ruleset: {ex.Message}");
+            }
+        }
+        else
+        {
+            // New game - let user select ruleset (with wizard option)
+            selectedRulesetId = await rulesetSelectionService.SelectRulesetWithWizardAsync();
+            
+            // Set the active ruleset
+            try
+            {
+                await rulesetManager.SetActiveRulesetAsync(selectedRulesetId);
+                var activeRuleset = rulesetManager.GetActiveRuleset();
+                if (activeRuleset == null)
+                {
+                    Console.WriteLine($"Warning: Selected {selectedRulesetId} ruleset could not be loaded. Game may not function correctly.");
+                }
+                else
+                {
+                    Console.WriteLine($"✓ {selectedRulesetId} ruleset loaded successfully");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Error loading {selectedRulesetId} ruleset: {ex.Message}");
+                // Fallback to default ruleset
+                selectedRulesetId = "pokemon-adventure";
+                await rulesetManager.SetActiveRulesetAsync(selectedRulesetId);
+                Console.WriteLine("Falling back to pokemon-adventure ruleset.");
+            }
+
+            // Create new game state with selected ruleset
             await gameStateRepository.CreateNewGameStateAsync();
-            Console.WriteLine("New game created.");
+            Console.WriteLine($"New game created with {selectedRulesetId} ruleset.");
         }
 
         Console.WriteLine($"PokeLLM: ");

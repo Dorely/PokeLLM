@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using PokeLLM.Game.GameLogic;
@@ -12,6 +13,9 @@ using PokeLLM.Game.VectorStore.Interfaces;
 using PokeLLM.Game.VectorStore;
 using PokeLLM.GameRules.Services;
 using PokeLLM.GameRules.Interfaces;
+using PokeLLM.GameLogic;
+using PokeLLM.GameLogic.Services;
+using PokeLLM.Plugins;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -107,14 +111,19 @@ public static class ServiceConfiguration
         services.AddSingleton<IGameStateRepository, GameStateRepository>();
         services.AddTransient<IVectorStoreService, QdrantVectorStoreService>();
 
+        // Register unified entity service for dynamic ruleset management
+        services.AddTransient<IEntityService, BasicEntityService>();
+
         // Register Game Logic Services
         services.AddTransient<IGameLogicService, GameLogicService>();
         services.AddTransient<ICharacterManagementService, CharacterManagementService>();
         services.AddTransient<IInformationManagementService, InformationManagementService>();
         services.AddTransient<INpcManagementService, NpcManagementService>();
-        services.AddTransient<IPokemonManagementService, PokemonManagementService>();
-        services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
+        // TEMP: Disabled Pokemon-specific services that need refactoring
+        // services.AddTransient<IPokemonManagementService, PokemonManagementService>();
+        // services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
         services.AddTransient<IWorldManagementService, WorldManagementService>();
+        services.AddTransient<IRulesetSelectionService, RulesetSelectionService>();
 
         // Register plugins (updated for new architecture)
         services.AddTransient<ExplorationPhasePlugin>();
@@ -123,11 +132,19 @@ public static class ServiceConfiguration
         services.AddTransient<UnifiedContextPlugin>();
         services.AddTransient<GameSetupPhasePlugin>();
         services.AddTransient<WorldGenerationPhasePlugin>();
+        services.AddTransient<RulesetManagementPlugin>();
+        services.AddTransient<RulesetWizardPlugin>();
 
         // Register generic rule system services
         services.AddTransient<IJavaScriptRuleEngine, JavaScriptRuleEngine>();
         services.AddTransient<IDynamicFunctionFactory, DynamicFunctionFactory>();
         services.AddTransient<IRulesetService, RulesetService>();
+        services.AddSingleton<IRulesetManager, RulesetManager>();
+        
+        // Register ruleset wizard services
+        services.AddTransient<IRulesetWizardService, RulesetWizardService>();
+        services.AddTransient<IRulesetBuilderService, RulesetBuilderService>();
+        services.AddTransient<IRulesetSchemaValidator, RulesetSchemaValidator>();
 
         // Register all LLM providers
         services.AddTransient<OpenAiLLMProvider>();
@@ -153,8 +170,16 @@ public static class ServiceConfiguration
         // Register new service architecture
         services.AddScoped<IUnifiedContextService, UnifiedContextService>();
         
-        // Register phase service provider
+        // Register phase service provider - create a minimal implementation that works with dynamic rulesets
         services.AddScoped<IPhaseServiceProvider, PhaseServiceProvider>();
+        
+        // Register IPhaseService factory to provide a default phase service for services that need it
+        services.AddTransient<IPhaseService>(serviceProvider =>
+        {
+            var phaseServiceProvider = serviceProvider.GetRequiredService<IPhaseServiceProvider>();
+            // Use Exploration phase as default for general LLM interactions
+            return phaseServiceProvider.GetPhaseService(GameState.Models.GamePhase.Exploration);
+        });
         
         services.AddScoped<IGameController, GameController>();
 

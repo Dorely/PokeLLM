@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using PokeLLM.Game.GameLogic;
 using PokeLLM.GameState.Models;
 using PokeLLM.Game.VectorStore.Models;
+using PokeLLM.GameLogic;
 
 namespace PokeLLM.Game.Plugins;
 
@@ -15,8 +16,7 @@ public class ExplorationPhasePlugin
     private readonly IGameStateRepository _gameStateRepo;
     private readonly IWorldManagementService _worldManagementService;
     private readonly INpcManagementService _npcManagementService;
-    private readonly IPokemonManagementService _pokemonManagementService;
-    private readonly IPlayerPokemonManagementService _playerPokemonManagementService;
+    private readonly IEntityService _entityService;
     private readonly IInformationManagementService _informationManagementService;
     private readonly JsonSerializerOptions _jsonOptions;
 
@@ -25,16 +25,14 @@ public class ExplorationPhasePlugin
         IGameStateRepository gameStateRepo,
         IWorldManagementService worldManagementService,
         INpcManagementService npcManagementService,
-        IPokemonManagementService pokemonManagementService,
-        IPlayerPokemonManagementService playerPokemonManagementService,
+        IEntityService entityService,
         IInformationManagementService informationManagementService)
     {
         _gameLogicService = gameLogicService;
         _gameStateRepo = gameStateRepo;
         _worldManagementService = worldManagementService;
         _npcManagementService = npcManagementService;
-        _pokemonManagementService = pokemonManagementService;
-        _playerPokemonManagementService = playerPokemonManagementService;
+        _entityService = entityService;
         _informationManagementService = informationManagementService;
         _jsonOptions = new JsonSerializerOptions
         {
@@ -128,10 +126,11 @@ public class ExplorationPhasePlugin
                 case "move_to_location":
                     await _worldManagementService.MovePlayerToLocationAsync(locationId);
                     var newLocation = await _worldManagementService.GetLocationDetailsAsync(locationId);
+                    var locationName = newLocation?.ContainsKey("name") == true ? newLocation["name"]?.ToString() : locationId;
                     return JsonSerializer.Serialize(new 
                     { 
                         success = true, 
-                        message = $"Moved to {newLocation?.Name ?? locationId}",
+                        message = $"Moved to {locationName}",
                         location = newLocation,
                         action = action
                     }, _jsonOptions);
@@ -183,7 +182,8 @@ public class ExplorationPhasePlugin
                     
                 case "create_npc":
                     var newNpc = await _npcManagementService.CreateNpc(name, characterClass, locationId);
-                    await _worldManagementService.AddNpcToLocationAsync(locationId, newNpc.Id);
+                    var createdNpcId = newNpc?.ContainsKey("id") == true ? newNpc["id"]?.ToString() : name;
+                    await _worldManagementService.AddNpcToLocationAsync(locationId, createdNpcId);
                     return JsonSerializer.Serialize(new 
                     { 
                         success = true,
@@ -234,96 +234,48 @@ public class ExplorationPhasePlugin
         }
     }
 
-    [KernelFunction("manage_player_pokemon")]
-    [Description("Handle all player Pokemon operations including team management, capturing, and Pokemon interactions")]
-    public async Task<string> ManagePlayerPokemon(
-        [Description("Action: 'add_to_team', 'move_to_box', 'swap_positions', 'release_pokemon', 'update_friendship', 'update_experience', 'evolve_pokemon', 'learn_move', 'forget_move', 'change_nickname', 'get_team', 'get_boxed', 'get_pokemon_details'")] string action,
-        [Description("Pokemon ID or team index for operations")] string pokemonId = "",
-        [Description("Team slot index (0-5) for positioning")] int teamSlot = -1,
-        [Description("Amount to change (experience, friendship)")] int amount = 0,
-        [Description("Move name for learning/forgetting moves")] string moveName = "",
-        [Description("New nickname for the Pokemon")] string nickname = "",
-        [Description("Species to evolve into")] string evolutionSpecies = "")
+    [KernelFunction("manage_player_entities")]
+    [Description("Generic entity management - fallback for rulesets that don't provide specific entity management functions")]
+    public async Task<string> ManagePlayerEntities(
+        [Description("Action type for entity management")] string action,
+        [Description("Entity ID for operations")] string entityId = "",
+        [Description("Additional parameters as JSON string")] string parameters = "{}")
     {
-        Debug.WriteLine($"[ExplorationPhasePlugin] ManagePlayerPokemon called: {action}");
+        Debug.WriteLine($"[ExplorationPhasePlugin] ManagePlayerEntities called: {action}");
         
         try
         {
-            string result;
+            // This is a generic fallback - for Pokemon games, this should be handled by the ruleset
+            // For other game types, specific implementation would be provided by their rulesets
             
             switch (action.ToLower())
             {
-                case "add_to_team":
-                    result = await _playerPokemonManagementService.AddPokemonToTeamAsync(pokemonId);
-                    break;
-                    
-                case "move_to_box":
-                    result = await _playerPokemonManagementService.MovePokemonToBoxAsync(pokemonId);
-                    break;
-                    
-                case "swap_positions":
-                    result = await _playerPokemonManagementService.SwapPokemonPositionsAsync(pokemonId, teamSlot);
-                    break;
-                    
-                case "release_pokemon":
-                    result = await _playerPokemonManagementService.ReleasePokemonAsync(pokemonId);
-                    break;
-                    
-                case "update_friendship":
-                    result = await _playerPokemonManagementService.UpdatePokemonFriendshipAsync(pokemonId, amount);
-                    break;
-                    
-                case "update_experience":
-                    result = await _playerPokemonManagementService.UpdatePokemonExperienceAsync(pokemonId, amount);
-                    break;
-                    
-                case "evolve_pokemon":
-                    result = await _playerPokemonManagementService.EvolvePokemonAsync(pokemonId, evolutionSpecies);
-                    break;
-                    
-                case "learn_move":
-                    result = await _playerPokemonManagementService.TeachPokemonMoveAsync(pokemonId, moveName);
-                    break;
-                    
-                case "forget_move":
-                    result = await _playerPokemonManagementService.ForgetPokemonMoveAsync(pokemonId, moveName);
-                    break;
-                    
-                case "change_nickname":
-                    result = await _playerPokemonManagementService.ChangePokemonNicknameAsync(pokemonId, nickname);
-                    break;
-                    
-                case "get_team":
-                    var teamPokemon = await _playerPokemonManagementService.GetTeamPokemonAsync();
-                    return JsonSerializer.Serialize(new { teamPokemon = teamPokemon }, _jsonOptions);
-                    
-                case "get_boxed":
-                    var boxedPokemon = await _playerPokemonManagementService.GetBoxedPokemonAsync();
-                    return JsonSerializer.Serialize(new { boxedPokemon = boxedPokemon }, _jsonOptions);
-                    
-                case "get_pokemon_details":
-                    var pokemonDetails = await _playerPokemonManagementService.GetPokemonDetailsAsync(pokemonId);
-                    if (pokemonDetails == null)
-                    {
-                        return JsonSerializer.Serialize(new { error = $"Pokemon {pokemonId} not found" }, _jsonOptions);
-                    }
-                    return JsonSerializer.Serialize(new { pokemon = pokemonDetails }, _jsonOptions);
+                case "get_player_entities":
+                    // Return basic player team information
+                    var gameState = await _gameStateRepo.LoadLatestStateAsync();
+                    return JsonSerializer.Serialize(new 
+                    { 
+                        success = true,
+                        message = "Team entity queries are now handled through dynamic functions in the active ruleset",
+                        playerLevel = gameState.Player.Level,
+                        playerExperience = gameState.Player.Experience,
+                        playerConditions = gameState.Player.Conditions,
+                        // teamEntities and boxedEntities are now managed through ruleset data
+                        action = "get_player_entities"
+                    }, _jsonOptions);
                     
                 default:
-                    return JsonSerializer.Serialize(new { error = $"Unknown Pokemon action: {action}" }, _jsonOptions);
+                    return JsonSerializer.Serialize(new 
+                    { 
+                        error = "Entity management action not supported by fallback plugin. Ruleset should provide specific entity management functions.",
+                        action = action,
+                        availableActions = new[] { "get_player_entities" }
+                    }, _jsonOptions);
             }
-            
-            // Check if the result indicates an error
-            if (result.Contains("not found") || result.Contains("full") || result.Contains("Invalid") || result.Contains("already knows"))
-            {
-                return JsonSerializer.Serialize(new { error = result }, _jsonOptions);
-            }
-            
-            return JsonSerializer.Serialize(new { success = true, message = result }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ExplorationPhasePlugin] Error in ManagePlayerPokemon: {ex.Message}");
+            Debug.WriteLine($"[ExplorationPhasePlugin] Error in ManagePlayerEntities: {ex.Message}");
             return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
         }
     }
@@ -353,7 +305,7 @@ public class ExplorationPhasePlugin
                 case "set_time":
                     if (Enum.TryParse<TimeOfDay>(timeOfDay, true, out var parsedTime))
                     {
-                        await _worldManagementService.SetTimeOfDayAsync(parsedTime);
+                        await _worldManagementService.SetTimeOfDayAsync(timeOfDay);
                         return JsonSerializer.Serialize(new 
                         { 
                             success = true,
@@ -371,7 +323,7 @@ public class ExplorationPhasePlugin
                 case "set_weather":
                     if (Enum.TryParse<Weather>(weather, true, out var newWeather))
                     {
-                        await _worldManagementService.SetWeatherAsync(newWeather);
+                        await _worldManagementService.SetWeatherAsync(weather);
                         return JsonSerializer.Serialize(new 
                         { 
                             success = true,
@@ -615,6 +567,35 @@ public class ExplorationPhasePlugin
         {
             Debug.WriteLine($"[ExplorationPhasePlugin] Error in ManageExplorationEvents: {ex.Message}");
             return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("get_player_team_status")]
+    [Description("Get current player team composition and status")]
+    public async Task<string> GetPlayerTeamStatus()
+    {
+        Debug.WriteLine($"[ExplorationPhasePlugin] GetPlayerTeamStatus called");
+        
+        try
+        {
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            
+            // Return generic team status since specific team management is now handled by rulesets
+            return JsonSerializer.Serialize(new 
+            { 
+                success = true,
+                message = "Team status queries are now handled through dynamic functions in the active ruleset",
+                playerLevel = gameState.Player.Level,
+                playerExperience = gameState.Player.Experience,
+                playerConditions = gameState.Player.Conditions,
+                // teamEntities and boxedEntities are now managed through ruleset data
+                action = "get_player_team_status"
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ExplorationPhasePlugin] Error in GetPlayerTeamStatus: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message, action = "get_player_team_status" }, _jsonOptions);
         }
     }
 }

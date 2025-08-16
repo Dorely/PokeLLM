@@ -1,11 +1,13 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using PokeLLM.GameState.Models;
+using PokeLLM.GameRules.Interfaces;
 
 namespace PokeLLM.GameState;
 public interface IGameStateRepository
 {
     Task<GameStateModel> CreateNewGameStateAsync();
+    Task<GameStateModel> CreateNewGameStateAsync(string rulesetId);
     Task SaveStateAsync(GameStateModel gameState);
     Task<GameStateModel> LoadLatestStateAsync();
     Task<bool> HasGameStateAsync();
@@ -15,9 +17,11 @@ public class GameStateRepository : IGameStateRepository
     private readonly string _gameStateDirectory;
     private readonly string _currentStateFile;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly IRulesetManager _rulesetManager;
 
-    public GameStateRepository(string dataDirectory = "GameData")
+    public GameStateRepository(IRulesetManager rulesetManager, string dataDirectory = "GameData")
     {
+        _rulesetManager = rulesetManager;
         _gameStateDirectory = dataDirectory;
         _currentStateFile = Path.Combine(_gameStateDirectory, "game_current_state.json");
         
@@ -39,12 +43,33 @@ public class GameStateRepository : IGameStateRepository
 
     public async Task<GameStateModel> CreateNewGameStateAsync()
     {
+        // Create a new game state with no specific ruleset
         var state = new GameStateModel();
-        state.AdventureSummary = $"New Game - The Region has not been selected. Character Creation is not complete. The Adventure has not yet begun";
-        state.CurrentContext = "Beginning of a new Pokemon adventure. The trainer has not yet chosen a region or created their character.";
+        state.AdventureSummary = "New Game - Ruleset selection and character creation pending.";
+        state.CurrentContext = "Beginning of a new adventure. The player needs to select a ruleset and create their character.";
 
         await SaveStateAsync(state);
+        return state;
+    }
 
+    public async Task<GameStateModel> CreateNewGameStateAsync(string rulesetId)
+    {
+        var state = new GameStateModel();
+        state.AdventureSummary = "New Game - Character creation and adventure setup beginning.";
+        state.CurrentContext = "Beginning of a new adventure. The player is setting up their character and starting their journey.";
+
+        // Set ruleset and initialize schema
+        if (!string.IsNullOrEmpty(rulesetId))
+        {
+            await _rulesetManager.SetActiveRulesetAsync(rulesetId);
+            var ruleset = _rulesetManager.GetActiveRuleset();
+            if (ruleset != null)
+            {
+                _rulesetManager.InitializeGameStateFromRuleset(state, ruleset);
+            }
+        }
+
+        await SaveStateAsync(state);
         return state;
     }
 
@@ -61,12 +86,19 @@ public class GameStateRepository : IGameStateRepository
     {
         if(!File.Exists(_currentStateFile))
         {
-            await CreateNewGameStateAsync();
+            return await CreateNewGameStateAsync();
         }
 
         var json = await File.ReadAllTextAsync(_currentStateFile);
         var gameState = JsonSerializer.Deserialize<GameStateModel>(json, _jsonOptions);
-        return gameState;
+        
+        if (gameState != null && !string.IsNullOrEmpty(gameState.ActiveRulesetId))
+        {
+            // Set the active ruleset based on the loaded game state
+            await _rulesetManager.SetActiveRulesetAsync(gameState.ActiveRulesetId);
+        }
+        
+        return gameState ?? await CreateNewGameStateAsync();
     }
 
     public async Task<bool> HasGameStateAsync()

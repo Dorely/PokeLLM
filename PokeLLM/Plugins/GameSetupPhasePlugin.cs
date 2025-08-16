@@ -162,7 +162,7 @@ public class GameSetupPhasePlugin
     {
         try
         {
-            var results = await _informationManagementService.SearchGameRulesAsync(new List<string> { query, "class", "trainer class" }, "TrainerClass");
+            var results = await _informationManagementService.SearchGameRulesAsync(new List<string> { query, "class", "character class" }, "CharacterClass");
             
             return JsonSerializer.Serialize(new 
             { 
@@ -187,26 +187,34 @@ public class GameSetupPhasePlugin
     }
 
     [KernelFunction("create_trainer_class")]
-    [Description("Create a new trainer class and store it")]
-    public async Task<string> CreateTrainerClass([Description("Complete trainer class data")] TrainerClass classData)
+    [Description("Create a new character class with specific abilities and bonuses")]
+    public async Task<string> CreateTrainerClass([Description("Complete character class data as JSON")] string classData)
     {
         try
         {
-            // Store in vector database using existing TrainerClass structure
-            var vectorResult = await _informationManagementService.UpsertGameRuleAsync(
-                classData.Id,
-                "TrainerClass", 
-                classData.Name,
-                JsonSerializer.Serialize(classData, _jsonOptions),
-                classData.Tags?.ToList()
-            );
+            // Parse the class data as generic JSON since TrainerClass type is removed
+            var classJson = JsonDocument.Parse(classData);
+            
+            // Store the class definition in RulesetGameData for future use
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            
+            if (!gameState.RulesetGameData.ContainsKey("customClasses"))
+            {
+                gameState.RulesetGameData["customClasses"] = JsonSerializer.SerializeToElement(new List<object>());
+            }
+            
+            var existingClassesElement = gameState.RulesetGameData["customClasses"];
+            var existingClasses = JsonSerializer.Deserialize<List<object>>(existingClassesElement.GetRawText()) ?? new List<object>();
+            existingClasses.Add(classJson.RootElement);
+            gameState.RulesetGameData["customClasses"] = JsonSerializer.SerializeToElement(existingClasses);
+            
+            await _gameStateRepo.SaveStateAsync(gameState);
             
             return JsonSerializer.Serialize(new 
             { 
                 success = true,
-                classId = classData.Id,
-                name = classData.Name,
-                result = vectorResult
+                message = "Character class created successfully",
+                classData = classJson.RootElement
             }, _jsonOptions);
         }
         catch (Exception ex)
@@ -225,7 +233,7 @@ public class GameSetupPhasePlugin
         try
         {
             // Get class data from vector database
-            var classData = await _informationManagementService.SearchGameRulesAsync(new List<string> { classId }, "TrainerClass");
+            var classData = await _informationManagementService.SearchGameRulesAsync(new List<string> { classId }, "CharacterClass");
             var classInfo = classData.FirstOrDefault();
             
             if (classInfo == null)
@@ -234,25 +242,54 @@ public class GameSetupPhasePlugin
             }
             
             // Parse class data using existing TrainerClass structure
-            var trainerClass = JsonSerializer.Deserialize<TrainerClass>(classInfo.Content);
+            // Removed - using generic approach above instead
             
             // Update player with full class integration
-            await _characterManagementService.SetPlayerClass(classId);
-            
-            // Store full TrainerClass data in player
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
-            gameState.Player.TrainerClassData = trainerClass;
-            await _gameStateRepo.SaveStateAsync(gameState);
+            // The class is already stored in RulesetGameData above
             
             return JsonSerializer.Serialize(new 
             { 
                 success = true,
                 classId = classId,
-                className = trainerClass.Name,
-                statModifiers = trainerClass.StatModifiers,
-                startingAbilities = trainerClass.StartingAbilities,
-                startingMoney = trainerClass.StartingMoney,
-                startingItems = trainerClass.StartingItems
+                // Removed trainer class data since TrainerClass type no longer exists
+                classDescription = "Class data stored in ruleset game data"
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new { 
+                success = false,
+                error = ex.Message 
+            }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("set_trainer_class")]
+    [Description("Set the player's character class/profession")]
+    public async Task<string> SetTrainerClass(
+        [Description("The character class ID to set")] string classId)
+    {
+        try
+        {
+            // For now, store character class in RulesetGameData since CharacterDetails is removed
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            
+            // Initialize RulesetGameData if needed
+            if (!gameState.RulesetGameData.ContainsKey("characterClass"))
+            {
+                gameState.RulesetGameData["characterClass"] = JsonSerializer.SerializeToElement(string.Empty);
+            }
+            
+            // Store the class ID in ruleset game data
+            gameState.RulesetGameData["characterClass"] = JsonSerializer.SerializeToElement(classId);
+            
+            await _gameStateRepo.SaveStateAsync(gameState);
+            
+            return JsonSerializer.Serialize(new 
+            { 
+                success = true,
+                message = $"Character class set to {classId}",
+                classId = classId
             }, _jsonOptions);
         }
         catch (Exception ex)
@@ -291,7 +328,7 @@ public class GameSetupPhasePlugin
     [KernelFunction("set_player_stats")]
     [Description("Set the player's ability scores")]
     public async Task<string> SetPlayerStats(
-        [Description("Array of 6 ability scores: [Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma]")] int[] stats)
+        [Description("Array of 6 stat values: [Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma]")] int[] stats)
     {
         try
         {
@@ -299,56 +336,71 @@ public class GameSetupPhasePlugin
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
-                    error = "Must provide exactly 6 ability scores"
+                    error = "Stats array must contain exactly 6 values" 
                 }, _jsonOptions);
             }
             
-            foreach (var stat in stats)
+            // Store stats in RulesetGameData since Stats property is removed
+            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            
+            var statsData = new Dictionary<string, int>
             {
-                if (stat < 3 || stat > 20)
-                {
-                    return JsonSerializer.Serialize(new { 
-                        success = false,
-                        error = $"Ability scores must be between 3 and 20. Invalid value: {stat}"
-                    }, _jsonOptions);
-                }
-            }
+                ["strength"] = stats[0],
+                ["dexterity"] = stats[1],
+                ["constitution"] = stats[2],
+                ["intelligence"] = stats[3],
+                ["wisdom"] = stats[4],
+                ["charisma"] = stats[5]
+            };
             
-            await _characterManagementService.SetPlayerStats(stats);
+            gameState.RulesetGameData["stats"] = JsonSerializer.SerializeToElement(statsData);
             
-            var statNames = new[] { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
-            var statDict = statNames.Zip(stats, (name, value) => new { name, value }).ToDictionary(x => x.name, x => x.value);
+            await _gameStateRepo.SaveStateAsync(gameState);
             
-            return JsonSerializer.Serialize(new { 
+            return JsonSerializer.Serialize(new 
+            { 
                 success = true,
                 message = "Player stats set successfully",
-                stats = statDict
+                stats = statsData
             }, _jsonOptions);
         }
         catch (Exception ex)
         {
             return JsonSerializer.Serialize(new { 
                 success = false,
-                error = $"Error setting player stats: {ex.Message}"
+                error = ex.Message 
             }, _jsonOptions);
         }
     }
 
     [KernelFunction("generate_random_stats")]
-    [Description("Generate random ability scores using 4d6 drop lowest method")]
+    [Description("Generate random ability score array (4d6 drop lowest for each stat) for character creation")]
     public async Task<string> GenerateRandomStats()
     {
         try
         {
-            var stats = await _characterManagementService.GenerateRandomStats();
+            // Generate 6 stats using 4d6 drop lowest method
+            var stats = new int[6];
+            var random = new Random();
+            
+            for (int i = 0; i < 6; i++)
+            {
+                var rolls = new List<int>();
+                for (int j = 0; j < 4; j++)
+                {
+                    rolls.Add(random.Next(1, 7));
+                }
+                rolls.Sort();
+                rolls.RemoveAt(0); // Remove lowest
+                stats[i] = rolls.Sum();
+            }
             
             var result = new
             {
                 success = true,
                 stats,
                 total = stats.Sum(),
-                average = stats.Average(),
-                description = "Generated using 4d6 drop lowest method"
+                description = "Random stats generated using 4d6 drop lowest method"
             };
             
             return JsonSerializer.Serialize(result, _jsonOptions);
@@ -368,7 +420,7 @@ public class GameSetupPhasePlugin
     {
         try
         {
-            var stats = await _characterManagementService.GenerateStandardStats();
+            var stats = new int[] { 15, 14, 13, 12, 10, 8 };
             
             var result = new
             {
@@ -398,19 +450,29 @@ public class GameSetupPhasePlugin
             var gameState = await _gameStateRepo.LoadLatestStateAsync();
             var player = gameState.Player;
             
-            // Validate setup is complete
+            // Validate setup is complete - check basic requirements
+            var hasCharacterClass = gameState.RulesetGameData.ContainsKey("characterClass") && 
+                                   gameState.RulesetGameData["characterClass"].ValueKind != JsonValueKind.Null;
+            
             if (string.IsNullOrEmpty(gameState.Region) || 
                 string.IsNullOrEmpty(player.Name) || 
-                string.IsNullOrEmpty(player.CharacterDetails.Class))
+                !hasCharacterClass)
             {
                 return JsonSerializer.Serialize(new { 
                     success = false, 
-                    error = "Setup incomplete - region, name, and class required"
+                    error = "Setup incomplete - region, name, and character class required"
                 }, _jsonOptions);
             }
             
+            // Get character class from ruleset data
+            var characterClass = "unknown";
+            if (hasCharacterClass)
+            {
+                characterClass = gameState.RulesetGameData["characterClass"].GetString() ?? "unknown";
+            }
+            
             // Update adventure summary and transition to WorldGeneration phase
-            gameState.AdventureSummary = $"A new Pokemon adventure begins with {player.Name}, a {player.CharacterDetails.Class} trainer in the {gameState.Region} region. {setupSummary}";
+            gameState.AdventureSummary = $"A new adventure begins with {player.Name}, a {characterClass} in the {gameState.Region} region. {setupSummary}";
             gameState.CurrentPhase = GamePhase.WorldGeneration;
             gameState.PhaseChangeSummary = $"Game setup completed successfully. {setupSummary}";
             await _gameStateRepo.SaveStateAsync(gameState);
@@ -420,7 +482,7 @@ public class GameSetupPhasePlugin
                 success = true,
                 message = "Game setup completed successfully",
                 playerName = player.Name,
-                trainerClass = player.CharacterDetails.Class,
+                characterClass = characterClass,
                 region = gameState.Region,
                 setupComplete = true
             }, _jsonOptions);

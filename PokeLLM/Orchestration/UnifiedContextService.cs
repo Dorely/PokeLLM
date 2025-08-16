@@ -1,6 +1,8 @@
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using PokeLLM.GameState;
+using PokeLLM.GameRules.Interfaces;
+using PokeLLM.GameState.Models;
 using System.Text.RegularExpressions;
 
 namespace PokeLLM.Game.Orchestration;
@@ -22,16 +24,19 @@ public class UnifiedContextService : IUnifiedContextService
     private readonly ILLMProvider _llmProvider;
     private readonly IServiceProvider _serviceProvider;
     private readonly IGameStateRepository _gameStateRepository;
+    private readonly IRulesetManager _rulesetManager;
     private Kernel _contextKernel;
 
     public UnifiedContextService(
         ILLMProvider llmProvider,
         IGameStateRepository gameStateRepository,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IRulesetManager rulesetManager)
     {
         _llmProvider = llmProvider;
         _serviceProvider = serviceProvider;
         _gameStateRepository = gameStateRepository;
+        _rulesetManager = rulesetManager;
         InitializeKernel();
     }
 
@@ -85,9 +90,15 @@ public class UnifiedContextService : IUnifiedContextService
                                 "</COMPRESSED_HISTORY>";
             }
 
-            //Replace {{context}} placeholder with actual context
+            // Get ruleset-specific context elements for the current phase
+            var rulesetContextElements = GetRulesetContextElements(gameState.CurrentPhase);
+            var rulesetContextText = string.IsNullOrEmpty(rulesetContextElements) ? 
+                "" : $"\n\nRuleset Context Elements: {rulesetContextElements}";
+            
+            //Replace placeholders with actual context
             systemPrompt = systemPrompt.Replace("{{history}}", historyString);
             systemPrompt = systemPrompt.Replace("{{context}}", currentContext);
+            systemPrompt = systemPrompt.Replace("{{ruleset_context}}", rulesetContextText);
 
             contextHistory.AddSystemMessage(systemPrompt);
             contextHistory.AddUserMessage(finalDirective);
@@ -214,5 +225,19 @@ public class UnifiedContextService : IUnifiedContextService
     {
         var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
         return Path.Combine(baseDirectory, "Prompts", $"{promptName}.md");
+    }
+
+    private string GetRulesetContextElements(GamePhase currentPhase)
+    {
+        try
+        {
+            var contextElements = _rulesetManager.GetPhaseContextElements(currentPhase);
+            return string.Join(", ", contextElements);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[UnifiedContextService] Error getting ruleset context elements: {ex.Message}");
+            return string.Empty;
+        }
     }
 }

@@ -1,12 +1,13 @@
 using Microsoft.SemanticKernel;
-using PokeLLM.Game.GameLogic;
-using PokeLLM.Game.Plugins.Models;
-using PokeLLM.Game.VectorStore.Models;
-using PokeLLM.GameState.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PokeLLM.Game.GameLogic;
+using PokeLLM.GameState.Models;
+using PokeLLM.GameLogic;
+using PokeLLM.Game.VectorStore.Models;
+using PokeLLM.Game.Plugins.Models;
 
 namespace PokeLLM.Game.Plugins;
 
@@ -18,7 +19,7 @@ public class WorldGenerationPhasePlugin
     private readonly IGameStateRepository _gameStateRepo;
     private readonly IWorldManagementService _worldManagementService;
     private readonly INpcManagementService _npcManagementService;
-    private readonly IPokemonManagementService _pokemonManagementService;
+    private readonly IEntityService _entityService;
     private readonly IInformationManagementService _informationManagementService;
     private readonly IGameLogicService _gameLogicService;
     private readonly JsonSerializerOptions _jsonOptions;
@@ -27,14 +28,14 @@ public class WorldGenerationPhasePlugin
         IGameStateRepository gameStateRepo,
         IWorldManagementService worldManagementService,
         INpcManagementService npcManagementService,
-        IPokemonManagementService pokemonManagementService,
+        IEntityService entityService,
         IInformationManagementService informationManagementService,
         IGameLogicService gameLogicService)
     {
         _gameStateRepo = gameStateRepo;
         _worldManagementService = worldManagementService;
         _npcManagementService = npcManagementService;
-        _pokemonManagementService = pokemonManagementService;
+        _entityService = entityService;
         _informationManagementService = informationManagementService;
         _gameLogicService = gameLogicService;
         _jsonOptions = new JsonSerializerOptions
@@ -468,7 +469,7 @@ public class WorldGenerationPhasePlugin
         [Description("Optional location ID to place the NPC")] string locationId = "")
     {
         var npcData = npcDataDto.ToGameStateModel();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateNpc called: {npcData?.Id}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateNpc called: {npcData?.GetValueOrDefault("id")?.ToString()}");
         
         try
         {
@@ -481,7 +482,8 @@ public class WorldGenerationPhasePlugin
                 }, _jsonOptions);
             }
 
-            if (string.IsNullOrWhiteSpace(npcData.Id))
+            var npcId = npcData.GetValueOrDefault("id")?.ToString();
+            if (string.IsNullOrWhiteSpace(npcId))
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
@@ -489,27 +491,12 @@ public class WorldGenerationPhasePlugin
                 }, _jsonOptions);
             }
 
-            if (string.IsNullOrWhiteSpace(npcData.Name))
+            var npcName = npcData.GetValueOrDefault("name")?.ToString();
+            if (string.IsNullOrWhiteSpace(npcName))
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
                     error = "NPC name is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (npcData.Stats == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "NPC stats are required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (npcData.CharacterDetails == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "NPC character details are required and cannot be null" 
                 }, _jsonOptions);
             }
 
@@ -518,8 +505,8 @@ public class WorldGenerationPhasePlugin
             return JsonSerializer.Serialize(new 
             { 
                 success = true,
-                npcId = npcData.Id,
-                npcName = npcData.Name,
+                npcId = npcId,
+                npcName = npcName,
                 locationId = locationId,
                 result = result
             }, _jsonOptions);
@@ -535,13 +522,13 @@ public class WorldGenerationPhasePlugin
     }
 
     [KernelFunction("create_pokemon")]
-    [Description("Create a Pokemon instance in the game state")]
+    [Description("Create an entity instance in the game state (for Pokemon-style games)")]
     public async Task<string> CreatePokemon(
-        [Description("Pokemon data to create")] PokemonDto pokemonDataDto,
-        [Description("Optional location ID to place the Pokemon")] string locationId = "")
+        [Description("Entity data to create")] PokemonDto pokemonDataDto,
+        [Description("Optional location ID to place the entity")] string locationId = "")
     {
         var pokemonData = pokemonDataDto.ToGameStateModel();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreatePokemon called: {pokemonData?.Id}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreatePokemon called: {pokemonData?.GetValueOrDefault("id")?.ToString()}");
         
         try
         {
@@ -550,51 +537,47 @@ public class WorldGenerationPhasePlugin
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
-                    error = "Pokemon data is required and cannot be null" 
+                    error = "Entity data is required and cannot be null" 
                 }, _jsonOptions);
             }
 
-            if (string.IsNullOrWhiteSpace(pokemonData.Id))
+            var entityId = pokemonData.GetValueOrDefault("id")?.ToString();
+            if (string.IsNullOrWhiteSpace(entityId))
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
-                    error = "Pokemon ID is required and cannot be null or empty" 
+                    error = "Entity ID is required and cannot be null or empty" 
                 }, _jsonOptions);
             }
 
-            if (string.IsNullOrWhiteSpace(pokemonData.Species))
+            var species = pokemonData.GetValueOrDefault("species")?.ToString();
+            if (string.IsNullOrWhiteSpace(species))
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
-                    error = "Pokemon species is required and cannot be null or empty" 
+                    error = "Species is required and cannot be null or empty" 
                 }, _jsonOptions);
             }
 
-            if (pokemonData.Level <= 0)
+            var level = pokemonData.GetValueOrDefault("level");
+            if (level == null || (int)level <= 0)
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
-                    error = "Pokemon level must be greater than 0" 
+                    error = "Level must be greater than 0" 
                 }, _jsonOptions);
             }
 
-            if (pokemonData.Stats == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Pokemon stats are required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            var result = await _pokemonManagementService.CreatePokemonAsync(pokemonData, locationId);
+            // Use generic entity service instead of Pokemon-specific service
+            await _entityService.CreateEntity(entityId, "pokemon", pokemonData);
             
             return JsonSerializer.Serialize(new 
             { 
                 success = true,
-                pokemonId = pokemonData.Id,
-                species = pokemonData.Species,
+                entityId = entityId,
+                species = species,
                 locationId = locationId,
-                result = result
+                result = "Entity created successfully"
             }, _jsonOptions);
         }
         catch (Exception ex)
@@ -613,7 +596,7 @@ public class WorldGenerationPhasePlugin
         [Description("Location data to create")] LocationDto locationDataDto)
     {
         var locationData = locationDataDto.ToGameStateModel();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateLocation called: {locationData?.Id}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateLocation called: {locationData?.GetValueOrDefault("id")?.ToString()}");
         
         try
         {
@@ -626,7 +609,8 @@ public class WorldGenerationPhasePlugin
                 }, _jsonOptions);
             }
 
-            if (string.IsNullOrWhiteSpace(locationData.Id))
+            var locationId = locationData.GetValueOrDefault("id")?.ToString();
+            if (string.IsNullOrWhiteSpace(locationId))
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
@@ -634,7 +618,8 @@ public class WorldGenerationPhasePlugin
                 }, _jsonOptions);
             }
 
-            if (string.IsNullOrWhiteSpace(locationData.Name))
+            var locationName = locationData.GetValueOrDefault("name")?.ToString();
+            if (string.IsNullOrWhiteSpace(locationName))
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
@@ -647,8 +632,8 @@ public class WorldGenerationPhasePlugin
             return JsonSerializer.Serialize(new 
             { 
                 success = true,
-                locationId = locationData.Id,
-                name = locationData.Name,
+                locationId = locationId,
+                name = locationName,
                 result = result
             }, _jsonOptions);
         }

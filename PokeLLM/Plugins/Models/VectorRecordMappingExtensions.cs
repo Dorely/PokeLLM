@@ -161,120 +161,57 @@ public static class VectorRecordMappingExtensions
     #region GameStateModel Mappings
 
     /// <summary>
-    /// Convert NpcDto to Npc
+    /// Convert NPC DTO to generic dictionary
     /// </summary>
-    public static Npc ToGameStateModel(this NpcDto dto)
+    public static Dictionary<string, object> ToGameStateModel(this NpcDto dto)
     {
-        var npc = new Npc
+        return new Dictionary<string, object>
         {
-            Id = dto.Id,
-            Name = dto.Name,
-            IsTrainer = dto.IsTrainer,
-            Factions = dto.Factions.ToList(),
-            CharacterDetails = new CharacterDetails
-            {
-                Class = dto.Class,
-                Money = dto.Money
-            }
+            ["id"] = dto.Id,
+            ["name"] = dto.Name,
+            ["characterClass"] = dto.Class ?? "npc",
+            ["isTrainer"] = dto.IsTrainer,
+            ["money"] = dto.Money,
+            ["factions"] = dto.Factions ?? Array.Empty<string>(),
+            ["statsJson"] = dto.StatsJson ?? "{}",
+            ["type"] = "npc"
         };
-
-        // Deserialize stats from JSON if provided
-        if (!string.IsNullOrEmpty(dto.StatsJson) && dto.StatsJson != "{}")
-        {
-            try
-            {
-                npc.Stats = JsonSerializer.Deserialize<Stats>(dto.StatsJson) ?? new Stats();
-            }
-            catch
-            {
-                npc.Stats = new Stats();
-            }
-        }
-
-        return npc;
     }
 
     /// <summary>
-    /// Convert PokemonDto to Pokemon
+    /// Convert Pokemon DTO to generic dictionary
     /// </summary>
-    public static Pokemon ToGameStateModel(this PokemonDto dto)
+    public static Dictionary<string, object> ToGameStateModel(this PokemonDto dto)
     {
-        var pokemon = new Pokemon
+        return new Dictionary<string, object>
         {
-            Id = dto.Id,
-            NickName = dto.NickName,
-            Species = dto.Species,
-            Level = dto.Level,
-            Abilities = dto.Abilities.ToList(),
-            Factions = dto.Factions.ToList()
+            ["id"] = dto.Id,
+            ["species"] = dto.Species ?? "unknown",
+            ["nickname"] = dto.NickName ?? "",
+            ["level"] = dto.Level,
+            ["type1"] = dto.Type1 ?? "Normal",
+            ["type2"] = dto.Type2 ?? "",
+            ["abilities"] = dto.Abilities?.ToList() ?? new List<string>(),
+            ["factions"] = dto.Factions?.ToList() ?? new List<string>(),
+            ["statsJson"] = dto.StatsJson ?? "{}",
+            ["type"] = "pokemon"
         };
-
-        // Parse types
-        if (Enum.TryParse<PokemonType>(dto.Type1, true, out var type1))
-        {
-            pokemon.Type1 = type1;
-        }
-
-        if (!string.IsNullOrEmpty(dto.Type2) && Enum.TryParse<PokemonType>(dto.Type2, true, out var type2))
-        {
-            pokemon.Type2 = type2;
-        }
-
-        // Deserialize stats from JSON if provided
-        if (!string.IsNullOrEmpty(dto.StatsJson) && dto.StatsJson != "{}")
-        {
-            try
-            {
-                pokemon.Stats = JsonSerializer.Deserialize<Stats>(dto.StatsJson) ?? new Stats();
-            }
-            catch
-            {
-                pokemon.Stats = new Stats();
-            }
-        }
-
-        return pokemon;
     }
 
     /// <summary>
-    /// Convert LocationDto to Location
+    /// Convert Location DTO to generic dictionary
     /// </summary>
-    public static Location ToGameStateModel(this LocationDto dto)
+    public static Dictionary<string, object> ToGameStateModel(this LocationDto dto)
     {
-        var location = new Location
+        return new Dictionary<string, object>
         {
-            Id = dto.Id,
-            Name = dto.Name,
-            DescriptionVectorId = dto.Id // Use the location ID as the vector ID for lookup
+            ["id"] = dto.Id,
+            ["name"] = dto.Name ?? "Unknown Location",
+            ["description"] = dto.Description ?? "",
+            ["exits"] = new Dictionary<string, string>(), // LocationDto doesn't have Exits property
+            ["npcs"] = new List<string>(), // LocationDto doesn't have NPCs property
+            ["type"] = "location"
         };
-
-        // Deserialize points of interest from JSON if provided
-        if (!string.IsNullOrEmpty(dto.PointsOfInterestJson) && dto.PointsOfInterestJson != "{}")
-        {
-            try
-            {
-                location.PointsOfInterest = JsonSerializer.Deserialize<Dictionary<string, string>>(dto.PointsOfInterestJson) ?? new Dictionary<string, string>();
-            }
-            catch
-            {
-                location.PointsOfInterest = new Dictionary<string, string>();
-            }
-        }
-
-        // Deserialize exits from JSON if provided
-        if (!string.IsNullOrEmpty(dto.ExitsJson) && dto.ExitsJson != "{}")
-        {
-            try
-            {
-                location.Exits = JsonSerializer.Deserialize<Dictionary<string, string>>(dto.ExitsJson) ?? new Dictionary<string, string>();
-            }
-            catch
-            {
-                location.Exits = new Dictionary<string, string>();
-            }
-        }
-
-        return location;
     }
 
     #endregion

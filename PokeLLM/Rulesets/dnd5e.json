@@ -1,0 +1,2797 @@
+{
+  "metadata": {
+    "id": "dnd5e",
+    "name": "D&D 5e Adventure Ruleset",
+    "version": "1.0.0",
+    "description": "Complete D&D 5e ruleset with 12 classes, 9 races, comprehensive spells, equipment, and adventure mechanics",
+    "authors": ["PokeLLM Team"],
+    "tags": ["fantasy", "dnd", "5e", "adventure", "rpg"]
+  },
+  "gameStateSchema": {
+    "requiredCollections": [
+      "characters",
+      "npcs", 
+      "monsters",
+      "locations",
+      "equipment",
+      "spells",
+      "combatStates",
+      "questProgress",
+      "partyInventory"
+    ],
+    "playerFields": [
+      "race",
+      "characterClass",
+      "level",
+      "experience",
+      "abilityScores",
+      "hitPoints",
+      "armorClass",
+      "proficiencyBonus",
+      "skillProficiencies",
+      "savingThrowProficiencies",
+      "spellSlots",
+      "knownSpells",
+      "equipment",
+      "background",
+      "features",
+      "conditions"
+    ],
+    "dynamicCollections": {
+      "characters": "Character",
+      "npcs": "NPC",
+      "monsters": "Monster", 
+      "combatStates": "Combat",
+      "locations": "Location"
+    }
+  },
+  "races": [
+    {
+      "id": "human",
+      "name": "Human",
+      "description": "Versatile and ambitious, humans are the most common race in most D&D worlds",
+      "abilityScoreIncrease": {
+        "strength": 1,
+        "dexterity": 1,
+        "constitution": 1,
+        "intelligence": 1,
+        "wisdom": 1,
+        "charisma": 1
+      },
+      "traits": ["Extra Language", "Extra Skill", "Versatile"],
+      "size": "Medium",
+      "speed": 30,
+      "languages": ["Common"],
+      "extraLanguages": 1,
+      "extraSkills": 1
+    },
+    {
+      "id": "elf",
+      "name": "Elf", 
+      "description": "Graceful, magical, and long-lived, elves are a magical people of otherworldly grace",
+      "abilityScoreIncrease": {
+        "dexterity": 2
+      },
+      "traits": ["Darkvision", "Keen Senses", "Fey Ancestry", "Trance"],
+      "size": "Medium",
+      "speed": 30,
+      "languages": ["Common", "Elvish"],
+      "darkvision": 60,
+      "skillProficiencies": ["Perception"],
+      "features": {
+        "feyAncestry": "Advantage on saving throws against being charmed, magic can't put you to sleep",
+        "trance": "4 hours of meditation instead of 8 hours sleep"
+      }
+    },
+    {
+      "id": "dwarf",
+      "name": "Dwarf",
+      "description": "Stout and hardy, dwarves are known for their skill in warfare and metalwork",
+      "abilityScoreIncrease": {
+        "constitution": 2
+      },
+      "traits": ["Darkvision", "Dwarven Resilience", "Dwarven Combat Training", "Stonecunning"],
+      "size": "Medium",
+      "speed": 25,
+      "languages": ["Common", "Dwarvish"],
+      "darkvision": 60,
+      "weaponProficiencies": ["Battleaxe", "Handaxe", "Light Hammer", "Warhammer"],
+      "features": {
+        "dwarvenResilience": "Advantage on saving throws against poison, resistance to poison damage",
+        "stonecunning": "Double proficiency bonus on Intelligence (History) checks related to stonework"
+      }
+    },
+    {
+      "id": "halfling",
+      "name": "Halfling",
+      "description": "Small, nimble, and brave, halflings possess a natural luck and courage",
+      "abilityScoreIncrease": {
+        "dexterity": 2
+      },
+      "traits": ["Lucky", "Brave", "Halfling Nimbleness"],
+      "size": "Small",
+      "speed": 25,
+      "languages": ["Common", "Halfling"],
+      "features": {
+        "lucky": "Reroll natural 1s on attack rolls, ability checks, and saving throws",
+        "brave": "Advantage on saving throws against being frightened",
+        "halflingNimbleness": "Move through space of Medium or larger creatures"
+      }
+    },
+    {
+      "id": "dragonborn",
+      "name": "Dragonborn",
+      "description": "Draconic humanoids with breath weapons and draconic ancestry",
+      "abilityScoreIncrease": {
+        "strength": 2,
+        "charisma": 1
+      },
+      "traits": ["Draconic Ancestry", "Breath Weapon", "Damage Resistance"],
+      "size": "Medium", 
+      "speed": 30,
+      "languages": ["Common", "Draconic"],
+      "draconicAncestry": {
+        "options": ["Black", "Blue", "Brass", "Bronze", "Copper", "Gold", "Green", "Red", "Silver", "White"]
+      },
+      "features": {
+        "breathWeapon": "Damage type and area based on draconic ancestry, recharge on short/long rest",
+        "damageResistance": "Resistance to damage type associated with draconic ancestry"
+      }
+    },
+    {
+      "id": "gnome",
+      "name": "Gnome",
+      "description": "Small, intelligent, and curious, gnomes are natural inventors and scholars",
+      "abilityScoreIncrease": {
+        "intelligence": 2
+      },
+      "traits": ["Darkvision", "Gnome Cunning"],
+      "size": "Small",
+      "speed": 25,
+      "languages": ["Common", "Gnomish"],
+      "darkvision": 60,
+      "features": {
+        "gnomeCunning": "Advantage on Intelligence, Wisdom, and Charisma saving throws against magic"
+      }
+    },
+    {
+      "id": "half_elf",
+      "name": "Half-Elf",
+      "description": "Walking between two worlds, half-elves combine human ambition with elven grace",
+      "abilityScoreIncrease": {
+        "charisma": 2
+      },
+      "traits": ["Darkvision", "Fey Ancestry", "Versatile"],
+      "size": "Medium",
+      "speed": 30,
+      "languages": ["Common", "Elvish"],
+      "darkvision": 60,
+      "extraAbilityScores": 2,
+      "extraSkills": 2,
+      "extraLanguages": 1,
+      "features": {
+        "feyAncestry": "Advantage on saving throws against being charmed, magic can't put you to sleep"
+      }
+    },
+    {
+      "id": "half_orc",
+      "name": "Half-Orc",
+      "description": "Savage and strong, half-orcs struggle with their dual nature",
+      "abilityScoreIncrease": {
+        "strength": 2,
+        "constitution": 1
+      },
+      "traits": ["Darkvision", "Relentless Endurance", "Savage Attacks"],
+      "size": "Medium",
+      "speed": 30,
+      "languages": ["Common", "Orc"],
+      "darkvision": 60,
+      "skillProficiencies": ["Intimidation"],
+      "features": {
+        "relentlessEndurance": "Drop to 1 HP instead of 0 once per long rest",
+        "savageAttacks": "Extra weapon damage die on critical hits"
+      }
+    },
+    {
+      "id": "tiefling",
+      "name": "Tiefling",
+      "description": "Touched by infernal heritage, tieflings possess otherworldly features and magical abilities",
+      "abilityScoreIncrease": {
+        "intelligence": 1,
+        "charisma": 2
+      },
+      "traits": ["Darkvision", "Hellish Resistance", "Infernal Legacy"],
+      "size": "Medium",
+      "speed": 30,
+      "languages": ["Common", "Infernal"],
+      "darkvision": 60,
+      "features": {
+        "hellishResistance": "Resistance to fire damage",
+        "infernalLegacy": "Thaumaturgy cantrip, Hellish Rebuke and Darkness spells at higher levels"
+      },
+      "spellProgression": {
+        "1": ["Thaumaturgy"],
+        "3": ["Hellish Rebuke"],
+        "5": ["Darkness"]
+      }
+    }
+  ],
+  "classes": [
+    {
+      "id": "barbarian",
+      "name": "Barbarian",
+      "description": "A fierce warrior with primal instincts and supernatural resilience",
+      "hitDie": "d12",
+      "primaryAbility": ["Strength"],
+      "savingThrowProficiencies": ["Strength", "Constitution"],
+      "skillChoices": 2,
+      "skillList": ["Animal Handling", "Athletics", "Intimidation", "Nature", "Perception", "Survival"],
+      "armorProficiencies": ["Light Armor", "Medium Armor", "Shields"],
+      "weaponProficiencies": ["Simple Weapons", "Martial Weapons"],
+      "startingEquipment": {
+        "weapons": ["Greataxe", "Handaxe", "Handaxe", "Javelin"],
+        "armor": ["Leather Armor"],
+        "gear": ["Explorer's Pack"]
+      },
+      "classFeatures": {
+        "1": ["Rage", "Unarmored Defense"],
+        "2": ["Reckless Attack", "Danger Sense"],
+        "3": ["Primal Path"],
+        "4": ["Ability Score Improvement"],
+        "5": ["Extra Attack", "Fast Movement"],
+        "6": ["Path Feature"],
+        "7": ["Feral Instinct"],
+        "8": ["Ability Score Improvement"],
+        "9": ["Brutal Critical"],
+        "10": ["Path Feature"],
+        "11": ["Relentless Rage"],
+        "12": ["Ability Score Improvement"],
+        "13": ["Brutal Critical Improvement"],
+        "14": ["Path Feature"],
+        "15": ["Persistent Rage"],
+        "16": ["Ability Score Improvement"],
+        "17": ["Brutal Critical Improvement"],
+        "18": ["Indomitable Might"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Primal Champion"]
+      },
+      "levelProgression": {
+        "rageUsages": [2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, "Unlimited"],
+        "rageDamage": [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4]
+      }
+    },
+    {
+      "id": "bard",
+      "name": "Bard", 
+      "description": "A master of song, speech, and magic that they weave together",
+      "hitDie": "d8",
+      "primaryAbility": ["Charisma"],
+      "savingThrowProficiencies": ["Dexterity", "Charisma"],
+      "skillChoices": 3,
+      "skillList": "Any",
+      "armorProficiencies": ["Light Armor"],
+      "weaponProficiencies": ["Simple Weapons", "Hand Crossbow", "Longsword", "Rapier", "Shortsword"],
+      "toolProficiencies": ["Three musical instruments"],
+      "startingEquipment": {
+        "weapons": ["Rapier", "Dagger"],
+        "armor": ["Leather Armor"],
+        "gear": ["Entertainer's Pack", "Lute"]
+      },
+      "spellcasting": {
+        "ability": "Charisma",
+        "ritual": true,
+        "spellcastingFocus": "Musical instrument",
+        "cantripsKnown": [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+        "spellsKnown": [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22],
+        "spellSlots": {
+          "1": [2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+          "2": [0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "3": [0, 0, 0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "4": [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "6": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+          "7": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+          "8": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+          "9": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+        }
+      },
+      "classFeatures": {
+        "1": ["Spellcasting", "Bardic Inspiration"],
+        "2": ["Jack of All Trades", "Song of Rest"],
+        "3": ["Bard College", "Expertise"],
+        "4": ["Ability Score Improvement"],
+        "5": ["Bardic Inspiration Improvement", "Font of Inspiration"],
+        "6": ["Countercharm", "College Feature"],
+        "7": [],
+        "8": ["Ability Score Improvement"],
+        "9": ["Song of Rest Improvement"],
+        "10": ["Bardic Inspiration Improvement", "Expertise", "Magical Secrets"],
+        "11": [],
+        "12": ["Ability Score Improvement"],
+        "13": ["Song of Rest Improvement"],
+        "14": ["College Feature", "Magical Secrets"],
+        "15": ["Bardic Inspiration Improvement"],
+        "16": ["Ability Score Improvement"],
+        "17": ["Song of Rest Improvement"],
+        "18": ["Magical Secrets"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Superior Inspiration"]
+      }
+    },
+    {
+      "id": "cleric",
+      "name": "Cleric",
+      "description": "A divine magic user who channels the power of a deity",
+      "hitDie": "d8",
+      "primaryAbility": ["Wisdom"],
+      "savingThrowProficiencies": ["Wisdom", "Charisma"],
+      "skillChoices": 2,
+      "skillList": ["History", "Insight", "Medicine", "Persuasion", "Religion"],
+      "armorProficiencies": ["Light Armor", "Medium Armor", "Shields"],
+      "weaponProficiencies": ["Simple Weapons"],
+      "startingEquipment": {
+        "weapons": ["Mace", "Shield"],
+        "armor": ["Scale Mail"],
+        "gear": ["Priest's Pack", "Holy Symbol"]
+      },
+      "spellcasting": {
+        "ability": "Wisdom",
+        "ritual": true,
+        "spellcastingFocus": "Holy symbol",
+        "spellsKnown": "prepared",
+        "cantripsKnown": [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+        "spellSlots": {
+          "1": [2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+          "2": [0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "3": [0, 0, 0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "4": [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "6": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+          "7": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+          "8": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+          "9": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+        }
+      },
+      "classFeatures": {
+        "1": ["Spellcasting", "Divine Domain"],
+        "2": ["Channel Divinity", "Domain Feature"],
+        "3": [],
+        "4": ["Ability Score Improvement"],
+        "5": ["Destroy Undead"],
+        "6": ["Channel Divinity Improvement", "Domain Feature"],
+        "7": [],
+        "8": ["Ability Score Improvement", "Domain Feature", "Destroy Undead Improvement"],
+        "9": [],
+        "10": ["Divine Intervention"],
+        "11": ["Destroy Undead Improvement"],
+        "12": ["Ability Score Improvement"],
+        "13": [],
+        "14": ["Destroy Undead Improvement"],
+        "15": [],
+        "16": ["Ability Score Improvement"],
+        "17": ["Domain Feature", "Destroy Undead Improvement"],
+        "18": ["Channel Divinity Improvement"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Divine Intervention Improvement"]
+      }
+    },
+    {
+      "id": "druid",
+      "name": "Druid",
+      "description": "A nature priest wielding elemental forces and able to transform into animals",
+      "hitDie": "d8", 
+      "primaryAbility": ["Wisdom"],
+      "savingThrowProficiencies": ["Intelligence", "Wisdom"],
+      "skillChoices": 2,
+      "skillList": ["Arcana", "Animal Handling", "Insight", "Medicine", "Nature", "Perception", "Religion", "Survival"],
+      "armorProficiencies": ["Light Armor", "Medium Armor", "Shields (non-metal)"],
+      "weaponProficiencies": ["Clubs", "Daggers", "Darts", "Javelins", "Maces", "Quarterstaffs", "Scimitars", "Sickles", "Slings", "Spears"],
+      "toolProficiencies": ["Herbalism Kit"],
+      "startingEquipment": {
+        "weapons": ["Scimitar", "Shield"],
+        "armor": ["Leather Armor"],
+        "gear": ["Explorer's Pack", "Druidcraft Focus"]
+      },
+      "spellcasting": {
+        "ability": "Wisdom",
+        "ritual": true,
+        "spellcastingFocus": "Druidcraft focus",
+        "spellsKnown": "prepared",
+        "cantripsKnown": [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+        "spellSlots": {
+          "1": [2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+          "2": [0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "3": [0, 0, 0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "4": [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "6": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+          "7": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+          "8": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+          "9": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+        }
+      },
+      "classFeatures": {
+        "1": ["Druidcraft", "Spellcasting"],
+        "2": ["Wild Shape", "Druid Circle"],
+        "3": [],
+        "4": ["Wild Shape Improvement", "Ability Score Improvement"],
+        "5": [],
+        "6": ["Druid Circle Feature"],
+        "7": [],
+        "8": ["Wild Shape Improvement", "Ability Score Improvement"],
+        "9": [],
+        "10": ["Druid Circle Feature"],
+        "11": [],
+        "12": ["Ability Score Improvement"],
+        "13": [],
+        "14": ["Druid Circle Feature"],
+        "15": [],
+        "16": ["Ability Score Improvement"],
+        "17": [],
+        "18": ["Timeless Body", "Beast Spells"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Archdruid"]
+      }
+    },
+    {
+      "id": "fighter",
+      "name": "Fighter",
+      "description": "A master of martial combat, skilled with a variety of weapons and armor",
+      "hitDie": "d10",
+      "primaryAbility": ["Strength", "Dexterity"],
+      "savingThrowProficiencies": ["Strength", "Constitution"],
+      "skillChoices": 2,
+      "skillList": ["Acrobatics", "Animal Handling", "Athletics", "History", "Insight", "Intimidation", "Perception", "Survival"],
+      "armorProficiencies": ["Light Armor", "Medium Armor", "Heavy Armor", "Shields"],
+      "weaponProficiencies": ["Simple Weapons", "Martial Weapons"],
+      "startingEquipment": {
+        "weapons": ["Longsword", "Shield"],
+        "armor": ["Chain Mail"],
+        "gear": ["Dungeoneer's Pack"]
+      },
+      "classFeatures": {
+        "1": ["Fighting Style", "Second Wind"],
+        "2": ["Action Surge"],
+        "3": ["Martial Archetype"],
+        "4": ["Ability Score Improvement"],
+        "5": ["Extra Attack"],
+        "6": ["Ability Score Improvement"],
+        "7": ["Martial Archetype Feature"],
+        "8": ["Ability Score Improvement"],
+        "9": ["Indomitable"],
+        "10": ["Martial Archetype Feature"],
+        "11": ["Extra Attack (2)"],
+        "12": ["Ability Score Improvement"],
+        "13": ["Indomitable (2 uses)"],
+        "14": ["Ability Score Improvement"],
+        "15": ["Martial Archetype Feature"],
+        "16": ["Ability Score Improvement"],
+        "17": ["Action Surge (2 uses)", "Indomitable (3 uses)"],
+        "18": ["Martial Archetype Feature"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Extra Attack (3)"]
+      },
+      "fightingStyles": ["Archery", "Defense", "Dueling", "Great Weapon Fighting", "Protection", "Two-Weapon Fighting"]
+    },
+    {
+      "id": "monk",
+      "name": "Monk",
+      "description": "A martial artist harnessing inner power to achieve physical and spiritual perfection",
+      "hitDie": "d8",
+      "primaryAbility": ["Dexterity", "Wisdom"],
+      "savingThrowProficiencies": ["Strength", "Dexterity"],
+      "skillChoices": 2,
+      "skillList": ["Acrobatics", "Athletics", "History", "Insight", "Religion", "Stealth"],
+      "armorProficiencies": [],
+      "weaponProficiencies": ["Simple Weapons", "Shortswords"],
+      "toolProficiencies": ["One artisan's tools or musical instrument"],
+      "startingEquipment": {
+        "weapons": ["Shortsword", "Dart"],
+        "gear": ["Dungeoneer's Pack"]
+      },
+      "classFeatures": {
+        "1": ["Unarmored Defense", "Martial Arts"],
+        "2": ["Ki", "Unarmored Movement"],
+        "3": ["Monastic Tradition", "Deflect Missiles"],
+        "4": ["Ability Score Improvement", "Slow Fall"],
+        "5": ["Extra Attack", "Stunning Strike"],
+        "6": ["Ki-Empowered Strikes", "Monastic Tradition Feature"],
+        "7": ["Evasion", "Stillness of Mind"],
+        "8": ["Ability Score Improvement"],
+        "9": ["Unarmored Movement Improvement"],
+        "10": ["Purity of Body"],
+        "11": ["Monastic Tradition Feature"],
+        "12": ["Ability Score Improvement"],
+        "13": ["Tongue of the Sun and Moon"],
+        "14": ["Diamond Soul"],
+        "15": ["Timeless Body"],
+        "16": ["Ability Score Improvement"],
+        "17": ["Monastic Tradition Feature"],
+        "18": ["Empty Body"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Perfect Self"]
+      },
+      "kiProgression": [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+      "martialArtsProgression": ["1d4", "1d4", "1d4", "1d4", "1d6", "1d6", "1d6", "1d6", "1d6", "1d6", "1d8", "1d8", "1d8", "1d8", "1d8", "1d8", "1d10", "1d10", "1d10", "1d10"],
+      "unarmoredMovement": [0, 10, 10, 10, 10, 15, 15, 15, 15, 20, 20, 20, 20, 25, 25, 25, 25, 30, 30, 30]
+    },
+    {
+      "id": "paladin",
+      "name": "Paladin",
+      "description": "A holy warrior bound by sacred oaths to fight evil and protect the innocent",
+      "hitDie": "d10",
+      "primaryAbility": ["Strength", "Charisma"],
+      "savingThrowProficiencies": ["Wisdom", "Charisma"],
+      "skillChoices": 2,
+      "skillList": ["Athletics", "Insight", "Intimidation", "Medicine", "Persuasion", "Religion"],
+      "armorProficiencies": ["Light Armor", "Medium Armor", "Heavy Armor", "Shields"],
+      "weaponProficiencies": ["Simple Weapons", "Martial Weapons"],
+      "startingEquipment": {
+        "weapons": ["Longsword", "Shield"],
+        "armor": ["Chain Mail"],
+        "gear": ["Explorer's Pack", "Holy Symbol"]
+      },
+      "spellcasting": {
+        "ability": "Charisma",
+        "ritual": false,
+        "spellcastingFocus": "Holy symbol",
+        "spellsKnown": "prepared",
+        "spellSlots": {
+          "1": [0, 0, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+          "2": [0, 0, 0, 0, 0, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "3": [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "4": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 3, 3, 3],
+          "5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3]
+        }
+      },
+      "classFeatures": {
+        "1": ["Divine Sense", "Lay on Hands"],
+        "2": ["Fighting Style", "Spellcasting", "Divine Smite"],
+        "3": ["Divine Health", "Sacred Oath"],
+        "4": ["Ability Score Improvement"],
+        "5": ["Extra Attack"],
+        "6": ["Aura of Protection"],
+        "7": ["Sacred Oath Feature"],
+        "8": ["Ability Score Improvement"],
+        "9": [],
+        "10": ["Aura of Courage"],
+        "11": ["Improved Divine Smite"],
+        "12": ["Ability Score Improvement"],
+        "13": [],
+        "14": ["Cleansing Touch"],
+        "15": ["Sacred Oath Feature"],
+        "16": ["Ability Score Improvement"],
+        "17": [],
+        "18": ["Aura Improvements"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Sacred Oath Feature"]
+      },
+      "fightingStyles": ["Defense", "Dueling", "Great Weapon Fighting", "Protection"]
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "description": "A warrior of the wilderness, skilled in tracking, survival, and combat",
+      "hitDie": "d10", 
+      "primaryAbility": ["Dexterity", "Wisdom"],
+      "savingThrowProficiencies": ["Strength", "Dexterity"],
+      "skillChoices": 3,
+      "skillList": ["Animal Handling", "Athletics", "Insight", "Investigation", "Nature", "Perception", "Stealth", "Survival"],
+      "armorProficiencies": ["Light Armor", "Medium Armor", "Shields"],
+      "weaponProficiencies": ["Simple Weapons", "Martial Weapons"],
+      "startingEquipment": {
+        "weapons": ["Longbow", "Shortsword"],
+        "armor": ["Studded Leather"],
+        "gear": ["Explorer's Pack"]
+      },
+      "spellcasting": {
+        "ability": "Wisdom",
+        "ritual": false,
+        "spellsKnown": "known",
+        "spellSlots": {
+          "1": [0, 0, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+          "2": [0, 0, 0, 0, 0, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "3": [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "4": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 3, 3, 3],
+          "5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3]
+        },
+        "spellsKnown": [0, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11]
+      },
+      "classFeatures": {
+        "1": ["Favored Enemy", "Natural Explorer"],
+        "2": ["Fighting Style", "Spellcasting"],
+        "3": ["Ranger Archetype", "Primeval Awareness"],
+        "4": ["Ability Score Improvement"],
+        "5": ["Extra Attack"],
+        "6": ["Favored Enemy and Natural Explorer"],
+        "7": ["Ranger Archetype Feature"],
+        "8": ["Ability Score Improvement", "Land's Stride"],
+        "9": [],
+        "10": ["Natural Explorer", "Hide in Plain Sight"],
+        "11": ["Ranger Archetype Feature"],
+        "12": ["Ability Score Improvement"],
+        "13": [],
+        "14": ["Favored Enemy", "Vanish"],
+        "15": ["Ranger Archetype Feature"],
+        "16": ["Ability Score Improvement"],
+        "17": [],
+        "18": ["Feral Senses"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Foe Slayer"]
+      },
+      "fightingStyles": ["Archery", "Defense", "Dueling", "Two-Weapon Fighting"]
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "description": "A scoundrel who uses stealth and trickery to overcome obstacles",
+      "hitDie": "d8",
+      "primaryAbility": ["Dexterity"],
+      "savingThrowProficiencies": ["Dexterity", "Intelligence"],
+      "skillChoices": 4,
+      "skillList": ["Acrobatics", "Athletics", "Deception", "Insight", "Intimidation", "Investigation", "Perception", "Performance", "Persuasion", "Sleight of Hand", "Stealth"],
+      "armorProficiencies": ["Light Armor"],
+      "weaponProficiencies": ["Simple Weapons", "Hand Crossbow", "Longsword", "Rapier", "Shortsword"],
+      "toolProficiencies": ["Thieves' Tools"],
+      "startingEquipment": {
+        "weapons": ["Rapier", "Shortsword", "Shortbow"],
+        "armor": ["Studded Leather"],
+        "gear": ["Burglar's Pack", "Thieves' Tools"]
+      },
+      "classFeatures": {
+        "1": ["Expertise", "Sneak Attack", "Thieves' Cant"],
+        "2": ["Cunning Action"],
+        "3": ["Roguish Archetype"],
+        "4": ["Ability Score Improvement"],
+        "5": ["Uncanny Dodge"],
+        "6": ["Expertise"],
+        "7": ["Evasion"],
+        "8": ["Ability Score Improvement"],
+        "9": ["Roguish Archetype Feature"],
+        "10": ["Ability Score Improvement"],
+        "11": ["Reliable Talent"],
+        "12": ["Ability Score Improvement"],
+        "13": ["Roguish Archetype Feature"],
+        "14": ["Blindsense"],
+        "15": ["Slippery Mind"],
+        "16": ["Ability Score Improvement"],
+        "17": ["Roguish Archetype Feature"],
+        "18": ["Elusive"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Stroke of Luck"]
+      },
+      "sneakAttackProgression": ["1d6", "1d6", "2d6", "2d6", "3d6", "3d6", "4d6", "4d6", "5d6", "5d6", "6d6", "6d6", "7d6", "7d6", "8d6", "8d6", "9d6", "9d6", "10d6", "10d6"]
+    },
+    {
+      "id": "sorcerer",
+      "name": "Sorcerer",
+      "description": "A spellcaster who draws on inherent magic from a gift or bloodline",
+      "hitDie": "d6",
+      "primaryAbility": ["Charisma"],
+      "savingThrowProficiencies": ["Constitution", "Charisma"],
+      "skillChoices": 2,
+      "skillList": ["Arcana", "Deception", "Insight", "Intimidation", "Persuasion", "Religion"],
+      "armorProficiencies": [],
+      "weaponProficiencies": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light Crossbow"],
+      "startingEquipment": {
+        "weapons": ["Light Crossbow", "Dagger"],
+        "gear": ["Dungeoneer's Pack", "Arcane Focus"]
+      },
+      "spellcasting": {
+        "ability": "Charisma",
+        "ritual": false,
+        "spellcastingFocus": "Arcane focus",
+        "cantripsKnown": [4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+        "spellsKnown": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15],
+        "spellSlots": {
+          "1": [2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+          "2": [0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "3": [0, 0, 0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "4": [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "6": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+          "7": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+          "8": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+          "9": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+        }
+      },
+      "classFeatures": {
+        "1": ["Spellcasting", "Sorcerous Origin"],
+        "2": ["Font of Magic"],
+        "3": ["Metamagic"],
+        "4": ["Ability Score Improvement"],
+        "5": [],
+        "6": ["Sorcerous Origin Feature"],
+        "7": [],
+        "8": ["Ability Score Improvement"],
+        "9": [],
+        "10": ["Metamagic"],
+        "11": [],
+        "12": ["Ability Score Improvement"],
+        "13": [],
+        "14": ["Sorcerous Origin Feature"],
+        "15": [],
+        "16": ["Ability Score Improvement"],
+        "17": ["Metamagic"],
+        "18": ["Sorcerous Origin Feature"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Sorcerous Restoration"]
+      },
+      "sorceryPoints": [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    },
+    {
+      "id": "warlock",
+      "name": "Warlock",
+      "description": "A wielder of magic derived from a bargain with an extraplanar entity",
+      "hitDie": "d8",
+      "primaryAbility": ["Charisma"],
+      "savingThrowProficiencies": ["Wisdom", "Charisma"],
+      "skillChoices": 2,
+      "skillList": ["Arcana", "Deception", "History", "Intimidation", "Investigation", "Nature", "Religion"],
+      "armorProficiencies": ["Light Armor"],
+      "weaponProficiencies": ["Simple Weapons"],
+      "startingEquipment": {
+        "weapons": ["Light Crossbow", "Simple Weapon"],
+        "armor": ["Leather Armor"],
+        "gear": ["Dungeoneer's Pack", "Arcane Focus"]
+      },
+      "spellcasting": {
+        "ability": "Charisma",
+        "ritual": false,
+        "spellcastingFocus": "Arcane focus",
+        "pactMagic": true,
+        "cantripsKnown": [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+        "spellsKnown": [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15],
+        "spellSlots": [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4],
+        "slotLevel": [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+      },
+      "classFeatures": {
+        "1": ["Otherworldly Patron", "Pact Magic"],
+        "2": ["Eldritch Invocations"],
+        "3": ["Pact Boon"],
+        "4": ["Ability Score Improvement"],
+        "5": [],
+        "6": ["Otherworldly Patron Feature"],
+        "7": [],
+        "8": ["Ability Score Improvement"],
+        "9": [],
+        "10": ["Otherworldly Patron Feature"],
+        "11": ["Mystic Arcanum (6th level)"],
+        "12": ["Ability Score Improvement"],
+        "13": ["Mystic Arcanum (7th level)"],
+        "14": ["Otherworldly Patron Feature"],
+        "15": ["Mystic Arcanum (8th level)"],
+        "16": ["Ability Score Improvement"],
+        "17": ["Mystic Arcanum (9th level)"],
+        "18": [],
+        "19": ["Ability Score Improvement"],
+        "20": ["Eldritch Master"]
+      },
+      "invocationsKnown": [0, 2, 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8]
+    },
+    {
+      "id": "wizard",
+      "name": "Wizard",
+      "description": "A scholarly magic-user capable of manipulating the structures of reality",
+      "hitDie": "d6",
+      "primaryAbility": ["Intelligence"],
+      "savingThrowProficiencies": ["Intelligence", "Wisdom"],
+      "skillChoices": 2,
+      "skillList": ["Arcana", "History", "Insight", "Investigation", "Medicine", "Religion"],
+      "armorProficiencies": [],
+      "weaponProficiencies": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light Crossbow"],
+      "startingEquipment": {
+        "weapons": ["Dagger"],
+        "gear": ["Scholar's Pack", "Spellbook", "Arcane Focus"]
+      },
+      "spellcasting": {
+        "ability": "Intelligence",
+        "ritual": true,
+        "spellcastingFocus": "Arcane focus",
+        "spellbook": true,
+        "cantripsKnown": [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+        "spellsKnown": "spellbook",
+        "spellSlots": {
+          "1": [2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+          "2": [0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "3": [0, 0, 0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "4": [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+          "6": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+          "7": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+          "8": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+          "9": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+        }
+      },
+      "classFeatures": {
+        "1": ["Spellcasting", "Arcane Recovery"],
+        "2": ["Arcane Tradition"],
+        "3": [],
+        "4": ["Ability Score Improvement"],
+        "5": [],
+        "6": ["Arcane Tradition Feature"],
+        "7": [],
+        "8": ["Ability Score Improvement"],
+        "9": [],
+        "10": ["Arcane Tradition Feature"],
+        "11": [],
+        "12": ["Ability Score Improvement"],
+        "13": [],
+        "14": ["Arcane Tradition Feature"],
+        "15": [],
+        "16": ["Ability Score Improvement"],
+        "17": [],
+        "18": ["Spell Mastery"],
+        "19": ["Ability Score Improvement"],
+        "20": ["Signature Spells"]
+      }
+    }
+  ],
+  "backgrounds": [
+    {
+      "id": "acolyte",
+      "name": "Acolyte",
+      "description": "You have spent your life in the service of a temple",
+      "skillProficiencies": ["Insight", "Religion"],
+      "languages": 2,
+      "equipment": ["Holy Symbol", "Prayer Book", "Incense"],
+      "feature": "Shelter of the Faithful"
+    },
+    {
+      "id": "criminal",
+      "name": "Criminal",
+      "description": "You are an experienced criminal with a history of breaking the law",
+      "skillProficiencies": ["Deception", "Stealth"],
+      "toolProficiencies": ["Thieves' Tools", "Gaming Set"],
+      "equipment": ["Crowbar", "Dark Clothes", "Belt Pouch"],
+      "feature": "Criminal Contact"
+    },
+    {
+      "id": "folk_hero",
+      "name": "Folk Hero",
+      "description": "You come from a humble social rank, but are destined for much greater things",
+      "skillProficiencies": ["Animal Handling", "Survival"],
+      "toolProficiencies": ["Artisan's Tools", "Vehicles (Land)"],
+      "equipment": ["Artisan's Tools", "Shovel", "Iron Pot"],
+      "feature": "Rustic Hospitality"
+    },
+    {
+      "id": "noble",
+      "name": "Noble", 
+      "description": "You understand wealth, power, and privilege",
+      "skillProficiencies": ["History", "Persuasion"],
+      "toolProficiencies": ["Gaming Set"],
+      "languages": 1,
+      "equipment": ["Signet Ring", "Scroll of Pedigree", "Fine Clothes"],
+      "feature": "Position of Privilege"
+    },
+    {
+      "id": "sage",
+      "name": "Sage",
+      "description": "You spent years learning the lore of the multiverse",
+      "skillProficiencies": ["Arcana", "History"],
+      "languages": 2,
+      "equipment": ["Bottle of Ink", "Quill", "Small Knife", "Scroll"],
+      "feature": "Researcher"
+    },
+    {
+      "id": "soldier",
+      "name": "Soldier",
+      "description": "You had a career as a soldier in an army",
+      "skillProficiencies": ["Athletics", "Intimidation"],
+      "toolProficiencies": ["Gaming Set", "Vehicles (Land)"],
+      "equipment": ["Insignia of Rank", "Trophy", "Deck of Cards"],
+      "feature": "Military Rank"
+    }
+  ],
+  "spells": [
+    {
+      "id": "acid_splash",
+      "name": "Acid Splash",
+      "level": 0,
+      "school": "Conjuration",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "You hurl a bubble of acid",
+      "damage": "1d6",
+      "damageType": "acid",
+      "classes": ["sorcerer", "wizard"],
+      "savingThrow": "Dexterity"
+    },
+    {
+      "id": "dancing_lights",
+      "name": "Dancing Lights",
+      "level": 0,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "components": ["V", "S", "M"],
+      "duration": "Concentration, up to 1 minute",
+      "description": "You create up to four torch-sized lights",
+      "classes": ["bard", "sorcerer", "wizard"]
+    },
+    {
+      "id": "eldritch_blast",
+      "name": "Eldritch Blast",
+      "level": 0,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "A beam of crackling energy streaks toward a creature",
+      "damage": "1d10",
+      "damageType": "force",
+      "classes": ["warlock"]
+    },
+    {
+      "id": "fire_bolt",
+      "name": "Fire Bolt",
+      "level": 0,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "You hurl a mote of fire at a creature or object",
+      "damage": "1d10",
+      "damageType": "fire",
+      "classes": ["sorcerer", "wizard"]
+    },
+    {
+      "id": "guidance",
+      "name": "Guidance",
+      "level": 0,
+      "school": "Divination",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "components": ["V", "S"],
+      "duration": "Concentration, up to 1 minute",
+      "description": "You touch one willing creature and give guidance",
+      "classes": ["cleric", "druid"]
+    },
+    {
+      "id": "light",
+      "name": "Light",
+      "level": 0,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "components": ["V", "M"],
+      "duration": "1 hour",
+      "description": "You touch one object and it sheds bright light",
+      "classes": ["bard", "cleric", "sorcerer", "wizard"]
+    },
+    {
+      "id": "mage_hand",
+      "name": "Mage Hand",
+      "level": 0,
+      "school": "Conjuration",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": ["V", "S"],
+      "duration": "1 minute",
+      "description": "A spectral, floating hand appears at a point you choose",
+      "classes": ["bard", "sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "minor_illusion",
+      "name": "Minor Illusion",
+      "level": 0,
+      "school": "Illusion",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": ["S", "M"],
+      "duration": "1 minute",
+      "description": "You create a sound or an image of an object",
+      "classes": ["bard", "sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "prestidigitation",
+      "name": "Prestidigitation",
+      "level": 0,
+      "school": "Transmutation",
+      "castingTime": "1 action",
+      "range": "10 feet",
+      "components": ["V", "S"],
+      "duration": "Up to 1 hour",
+      "description": "This spell is a minor magical trick that novice spellcasters use for practice",
+      "classes": ["bard", "sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "sacred_flame",
+      "name": "Sacred Flame",
+      "level": 0,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "Flame-like radiance descends on a creature",
+      "damage": "1d8",
+      "damageType": "radiant",
+      "classes": ["cleric"],
+      "savingThrow": "Dexterity"
+    },
+    {
+      "id": "spare_the_dying",
+      "name": "Spare the Dying",
+      "level": 0,
+      "school": "Necromancy",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "You touch a living creature that has 0 hit points",
+      "classes": ["cleric"]
+    },
+    {
+      "id": "thaumaturgy",
+      "name": "Thaumaturgy",
+      "level": 0,
+      "school": "Transmutation",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": ["V"],
+      "duration": "Up to 1 minute",
+      "description": "You manifest a minor wonder, a sign of supernatural power",
+      "classes": ["cleric"]
+    },
+    {
+      "id": "alarm",
+      "name": "Alarm",
+      "level": 1,
+      "school": "Abjuration",
+      "castingTime": "1 minute",
+      "range": "30 feet",
+      "components": ["V", "S", "M"],
+      "duration": "8 hours",
+      "description": "You set an alarm against unwanted intrusion",
+      "classes": ["ranger", "wizard"],
+      "ritual": true
+    },
+    {
+      "id": "burning_hands",
+      "name": "Burning Hands",
+      "level": 1,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "Self (15-foot cone)",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "A thin sheet of flames shoots forth from your outstretched fingertips",
+      "damage": "3d6",
+      "damageType": "fire",
+      "classes": ["sorcerer", "wizard"],
+      "savingThrow": "Dexterity"
+    },
+    {
+      "id": "charm_person",
+      "name": "Charm Person",
+      "level": 1,
+      "school": "Enchantment",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": ["V", "S"],
+      "duration": "1 hour",
+      "description": "You attempt to charm a humanoid you can see",
+      "classes": ["bard", "druid", "sorcerer", "warlock", "wizard"],
+      "savingThrow": "Wisdom"
+    },
+    {
+      "id": "cure_wounds",
+      "name": "Cure Wounds",
+      "level": 1,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "A creature you touch regains hit points",
+      "healing": "1d8",
+      "classes": ["bard", "cleric", "druid", "paladin", "ranger"]
+    },
+    {
+      "id": "detect_magic",
+      "name": "Detect Magic",
+      "level": 1,
+      "school": "Divination",
+      "castingTime": "1 action",
+      "range": "Self",
+      "components": ["V", "S"],
+      "duration": "Concentration, up to 10 minutes",
+      "description": "For the duration, you sense the presence of magic",
+      "classes": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "wizard"],
+      "ritual": true
+    },
+    {
+      "id": "disguise_self",
+      "name": "Disguise Self",
+      "level": 1,
+      "school": "Illusion",
+      "castingTime": "1 action",
+      "range": "Self",
+      "components": ["V", "S"],
+      "duration": "1 hour",
+      "description": "You make yourself look different until the spell ends",
+      "classes": ["bard", "sorcerer", "wizard"]
+    },
+    {
+      "id": "faerie_fire",
+      "name": "Faerie Fire",
+      "level": 1,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": ["V"],
+      "duration": "Concentration, up to 1 minute",
+      "description": "Objects in a 20-foot cube are outlined in colored light",
+      "classes": ["bard", "druid"],
+      "savingThrow": "Dexterity"
+    },
+    {
+      "id": "healing_word",
+      "name": "Healing Word",
+      "level": 1,
+      "school": "Evocation",
+      "castingTime": "1 bonus action",
+      "range": "60 feet",
+      "components": ["V"],
+      "duration": "Instantaneous",
+      "description": "A creature you can see regains hit points",
+      "healing": "1d4",
+      "classes": ["bard", "cleric", "druid"]
+    },
+    {
+      "id": "magic_missile",
+      "name": "Magic Missile",
+      "level": 1,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "You create three glowing darts of magical force",
+      "damage": "1d4+1",
+      "damageType": "force",
+      "classes": ["sorcerer", "wizard"]
+    },
+    {
+      "id": "shield",
+      "name": "Shield",
+      "level": 1,
+      "school": "Abjuration",
+      "castingTime": "1 reaction",
+      "range": "Self",
+      "components": ["V", "S"],
+      "duration": "1 round",
+      "description": "An invisible barrier of magical force appears and protects you",
+      "classes": ["sorcerer", "wizard"]
+    },
+    {
+      "id": "sleep",
+      "name": "Sleep",
+      "level": 1,
+      "school": "Enchantment",
+      "castingTime": "1 action",
+      "range": "90 feet",
+      "components": ["V", "S", "M"],
+      "duration": "1 minute",
+      "description": "Creatures within 20 feet of a point fall unconscious",
+      "classes": ["bard", "sorcerer", "wizard"]
+    },
+    {
+      "id": "thunderwave",
+      "name": "Thunderwave",
+      "level": 1,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "Self (15-foot cube)",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "A wave of thunderous force sweeps out from you",
+      "damage": "2d8",
+      "damageType": "thunder",
+      "classes": ["bard", "druid", "sorcerer", "wizard"],
+      "savingThrow": "Constitution"
+    },
+    {
+      "id": "blur",
+      "name": "Blur",
+      "level": 2,
+      "school": "Illusion",
+      "castingTime": "1 action",
+      "range": "Self",
+      "components": ["V"],
+      "duration": "Concentration, up to 1 minute",
+      "description": "Your body becomes blurred, shifting and wavering",
+      "classes": ["sorcerer", "wizard"]
+    },
+    {
+      "id": "darkness",
+      "name": "Darkness",
+      "level": 2,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": ["V", "M"],
+      "duration": "Concentration, up to 10 minutes",
+      "description": "Magical darkness spreads from a point you choose",
+      "classes": ["sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "hold_person",
+      "name": "Hold Person",
+      "level": 2,
+      "school": "Enchantment",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": ["V", "S", "M"],
+      "duration": "Concentration, up to 1 minute",
+      "description": "Choose a humanoid that you can see. The target must succeed on a Wisdom saving throw",
+      "classes": ["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"],
+      "savingThrow": "Wisdom"
+    },
+    {
+      "id": "invisibility",
+      "name": "Invisibility",
+      "level": 2,
+      "school": "Illusion",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "components": ["V", "S", "M"],
+      "duration": "Concentration, up to 1 hour",
+      "description": "A creature you touch becomes invisible",
+      "classes": ["bard", "sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "misty_step",
+      "name": "Misty Step",
+      "level": 2,
+      "school": "Conjuration",
+      "castingTime": "1 bonus action",
+      "range": "Self",
+      "components": ["V"],
+      "duration": "Instantaneous",
+      "description": "Briefly surrounded by silvery mist, you teleport up to 30 feet",
+      "classes": ["sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "scorching_ray",
+      "name": "Scorching Ray",
+      "level": 2,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "You create three rays of fire and hurl them at targets",
+      "damage": "2d6",
+      "damageType": "fire",
+      "classes": ["sorcerer", "wizard"]
+    },
+    {
+      "id": "web",
+      "name": "Web",
+      "level": 2,
+      "school": "Conjuration",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": ["V", "S", "M"],
+      "duration": "Concentration, up to 1 hour",
+      "description": "You conjure a mass of thick, sticky webbing",
+      "classes": ["sorcerer", "wizard"],
+      "savingThrow": "Dexterity"
+    },
+    {
+      "id": "counterspell",
+      "name": "Counterspell",
+      "level": 3,
+      "school": "Abjuration",
+      "castingTime": "1 reaction",
+      "range": "60 feet",
+      "components": ["S"],
+      "duration": "Instantaneous",
+      "description": "You attempt to interrupt a creature in the process of casting a spell",
+      "classes": ["sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "fireball",
+      "name": "Fireball",
+      "level": 3,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "150 feet",
+      "components": ["V", "S", "M"],
+      "duration": "Instantaneous",
+      "description": "A bright streak flashes from your pointing finger to a point you choose",
+      "damage": "8d6",
+      "damageType": "fire",
+      "classes": ["sorcerer", "wizard"],
+      "savingThrow": "Dexterity"
+    },
+    {
+      "id": "fly",
+      "name": "Fly",
+      "level": 3,
+      "school": "Transmutation",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "components": ["V", "S", "M"],
+      "duration": "Concentration, up to 10 minutes",
+      "description": "You touch a willing creature and grant it a flying speed",
+      "classes": ["sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "lightning_bolt",
+      "name": "Lightning Bolt",
+      "level": 3,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "Self (100-foot line)",
+      "components": ["V", "S", "M"],
+      "duration": "Instantaneous",
+      "description": "A stroke of lightning forming a line 100 feet long and 5 feet wide",
+      "damage": "8d6",
+      "damageType": "lightning",
+      "classes": ["sorcerer", "wizard"],
+      "savingThrow": "Dexterity"
+    }
+  ],
+  "equipment": {
+    "weapons": [
+      {
+        "id": "club",
+        "name": "Club",
+        "category": "Simple Melee",
+        "damage": "1d4",
+        "damageType": "bludgeoning",
+        "properties": ["light"],
+        "weight": 2,
+        "cost": "1 sp"
+      },
+      {
+        "id": "dagger",
+        "name": "Dagger",
+        "category": "Simple Melee",
+        "damage": "1d4", 
+        "damageType": "piercing",
+        "properties": ["finesse", "light", "thrown"],
+        "range": "20/60",
+        "weight": 1,
+        "cost": "2 gp"
+      },
+      {
+        "id": "handaxe",
+        "name": "Handaxe",
+        "category": "Simple Melee",
+        "damage": "1d6",
+        "damageType": "slashing",
+        "properties": ["light", "thrown"],
+        "range": "20/60",
+        "weight": 2,
+        "cost": "5 gp"
+      },
+      {
+        "id": "javelin",
+        "name": "Javelin",
+        "category": "Simple Melee",
+        "damage": "1d6",
+        "damageType": "piercing",
+        "properties": ["thrown"],
+        "range": "30/120",
+        "weight": 2,
+        "cost": "5 sp"
+      },
+      {
+        "id": "mace",
+        "name": "Mace",
+        "category": "Simple Melee",
+        "damage": "1d6",
+        "damageType": "bludgeoning",
+        "properties": [],
+        "weight": 4,
+        "cost": "5 gp"
+      },
+      {
+        "id": "quarterstaff",
+        "name": "Quarterstaff",
+        "category": "Simple Melee",
+        "damage": "1d6",
+        "damageType": "bludgeoning",
+        "properties": ["versatile"],
+        "versatileDamage": "1d8",
+        "weight": 4,
+        "cost": "2 sp"
+      },
+      {
+        "id": "spear",
+        "name": "Spear",
+        "category": "Simple Melee",
+        "damage": "1d6",
+        "damageType": "piercing",
+        "properties": ["thrown", "versatile"],
+        "versatileDamage": "1d8",
+        "range": "20/60",
+        "weight": 3,
+        "cost": "1 gp"
+      },
+      {
+        "id": "light_crossbow",
+        "name": "Light Crossbow",
+        "category": "Simple Ranged",
+        "damage": "1d8",
+        "damageType": "piercing",
+        "properties": ["ammunition", "loading", "two-handed"],
+        "range": "80/320",
+        "weight": 5,
+        "cost": "25 gp"
+      },
+      {
+        "id": "shortbow",
+        "name": "Shortbow",
+        "category": "Simple Ranged",
+        "damage": "1d6",
+        "damageType": "piercing",
+        "properties": ["ammunition", "two-handed"],
+        "range": "80/320",
+        "weight": 2,
+        "cost": "25 gp"
+      },
+      {
+        "id": "battleaxe",
+        "name": "Battleaxe",
+        "category": "Martial Melee",
+        "damage": "1d8",
+        "damageType": "slashing",
+        "properties": ["versatile"],
+        "versatileDamage": "1d10",
+        "weight": 4,
+        "cost": "10 gp"
+      },
+      {
+        "id": "longsword",
+        "name": "Longsword", 
+        "category": "Martial Melee",
+        "damage": "1d8",
+        "damageType": "slashing",
+        "properties": ["versatile"],
+        "versatileDamage": "1d10",
+        "weight": 3,
+        "cost": "15 gp"
+      },
+      {
+        "id": "rapier",
+        "name": "Rapier",
+        "category": "Martial Melee",
+        "damage": "1d8",
+        "damageType": "piercing",
+        "properties": ["finesse"],
+        "weight": 2,
+        "cost": "25 gp"
+      },
+      {
+        "id": "shortsword",
+        "name": "Shortsword",
+        "category": "Martial Melee",
+        "damage": "1d6",
+        "damageType": "piercing",
+        "properties": ["finesse", "light"],
+        "weight": 2,
+        "cost": "10 gp"
+      },
+      {
+        "id": "greataxe",
+        "name": "Greataxe",
+        "category": "Martial Melee",
+        "damage": "1d12",
+        "damageType": "slashing",
+        "properties": ["heavy", "two-handed"],
+        "weight": 7,
+        "cost": "30 gp"
+      },
+      {
+        "id": "greatsword",
+        "name": "Greatsword",
+        "category": "Martial Melee",
+        "damage": "2d6",
+        "damageType": "slashing",
+        "properties": ["heavy", "two-handed"],
+        "weight": 6,
+        "cost": "50 gp"
+      },
+      {
+        "id": "longbow",
+        "name": "Longbow",
+        "category": "Martial Ranged",
+        "damage": "1d8",
+        "damageType": "piercing",
+        "properties": ["ammunition", "heavy", "two-handed"],
+        "range": "150/600",
+        "weight": 2,
+        "cost": "50 gp"
+      }
+    ],
+    "armor": [
+      {
+        "id": "leather",
+        "name": "Leather",
+        "category": "Light Armor",
+        "armorClass": 11,
+        "dexBonus": "full",
+        "weight": 10,
+        "cost": "10 gp"
+      },
+      {
+        "id": "studded_leather",
+        "name": "Studded Leather",
+        "category": "Light Armor",
+        "armorClass": 12,
+        "dexBonus": "full",
+        "weight": 13,
+        "cost": "45 gp"
+      },
+      {
+        "id": "hide",
+        "name": "Hide",
+        "category": "Medium Armor",
+        "armorClass": 12,
+        "dexBonus": "max2",
+        "weight": 12,
+        "cost": "10 gp"
+      },
+      {
+        "id": "chain_shirt",
+        "name": "Chain Shirt",
+        "category": "Medium Armor",
+        "armorClass": 13,
+        "dexBonus": "max2",
+        "weight": 20,
+        "cost": "50 gp"
+      },
+      {
+        "id": "scale_mail",
+        "name": "Scale Mail",
+        "category": "Medium Armor",
+        "armorClass": 14,
+        "dexBonus": "max2",
+        "disadvantage": "stealth",
+        "weight": 45,
+        "cost": "50 gp"
+      },
+      {
+        "id": "chain_mail",
+        "name": "Chain Mail",
+        "category": "Heavy Armor",
+        "armorClass": 16,
+        "dexBonus": "none",
+        "disadvantage": "stealth",
+        "weight": 55,
+        "cost": "75 gp"
+      },
+      {
+        "id": "splint",
+        "name": "Splint",
+        "category": "Heavy Armor",
+        "armorClass": 17,
+        "dexBonus": "none",
+        "disadvantage": "stealth",
+        "weight": 60,
+        "cost": "200 gp"
+      },
+      {
+        "id": "plate",
+        "name": "Plate",
+        "category": "Heavy Armor",
+        "armorClass": 18,
+        "dexBonus": "none",
+        "disadvantage": "stealth",
+        "weight": 65,
+        "cost": "1500 gp"
+      },
+      {
+        "id": "shield",
+        "name": "Shield",
+        "category": "Shield",
+        "armorClass": 2,
+        "weight": 6,
+        "cost": "10 gp"
+      }
+    ],
+    "adventuringGear": [
+      {
+        "id": "backpack",
+        "name": "Backpack",
+        "weight": 5,
+        "cost": "2 gp"
+      },
+      {
+        "id": "bedroll",
+        "name": "Bedroll",
+        "weight": 7,
+        "cost": "1 gp"
+      },
+      {
+        "id": "blanket",
+        "name": "Blanket",
+        "weight": 3,
+        "cost": "5 sp"
+      },
+      {
+        "id": "rope_hemp_50_feet",
+        "name": "Rope, hemp (50 feet)",
+        "weight": 20,
+        "cost": "2 gp"
+      },
+      {
+        "id": "torch",
+        "name": "Torch",
+        "weight": 1,
+        "cost": "1 cp"
+      },
+      {
+        "id": "tinderbox",
+        "name": "Tinderbox",
+        "weight": 1,
+        "cost": "5 sp"
+      },
+      {
+        "id": "rations",
+        "name": "Rations (1 day)",
+        "weight": 2,
+        "cost": "5 sp"
+      },
+      {
+        "id": "waterskin",
+        "name": "Waterskin",
+        "weight": 5,
+        "cost": "2 gp"
+      },
+      {
+        "id": "crowbar",
+        "name": "Crowbar",
+        "weight": 5,
+        "cost": "2 gp"
+      },
+      {
+        "id": "grappling_hook",
+        "name": "Grappling hook",
+        "weight": 4,
+        "cost": "2 gp"
+      },
+      {
+        "id": "thieves_tools",
+        "name": "Thieves' tools",
+        "weight": 1,
+        "cost": "25 gp"
+      }
+    ]
+  },
+  "conditions": [
+    {
+      "id": "blinded",
+      "name": "Blinded",
+      "description": "A blinded creature can't see and automatically fails any ability check that requires sight",
+      "effects": [
+        "Attack rolls against the creature have advantage",
+        "The creature's attack rolls have disadvantage"
+      ]
+    },
+    {
+      "id": "charmed",
+      "name": "Charmed",
+      "description": "A charmed creature can't attack the charmer or target the charmer with harmful abilities",
+      "effects": [
+        "The charmer has advantage on social interaction with the creature"
+      ]
+    },
+    {
+      "id": "deafened",
+      "name": "Deafened",
+      "description": "A deafened creature can't hear and automatically fails any ability check that requires hearing"
+    },
+    {
+      "id": "frightened",
+      "name": "Frightened",
+      "description": "A frightened creature has disadvantage on ability checks and attack rolls",
+      "effects": [
+        "The creature can't willingly move closer to the source of its fear"
+      ]
+    },
+    {
+      "id": "grappled",
+      "name": "Grappled",
+      "description": "A grappled creature's speed becomes 0, and it can't benefit from any bonus to its speed"
+    },
+    {
+      "id": "incapacitated",
+      "name": "Incapacitated", 
+      "description": "An incapacitated creature can't take actions or reactions"
+    },
+    {
+      "id": "invisible",
+      "name": "Invisible",
+      "description": "An invisible creature is impossible to see without the aid of magic",
+      "effects": [
+        "Attack rolls against the creature have disadvantage",
+        "The creature's attack rolls have advantage"
+      ]
+    },
+    {
+      "id": "paralyzed",
+      "name": "Paralyzed",
+      "description": "A paralyzed creature is incapacitated and can't move or speak",
+      "effects": [
+        "The creature automatically fails Strength and Dexterity saving throws",
+        "Attack rolls against the creature have advantage",
+        "Any attack that hits the creature is a critical hit if the attacker is within 5 feet"
+      ]
+    },
+    {
+      "id": "poisoned",
+      "name": "Poisoned",
+      "description": "A poisoned creature has disadvantage on attack rolls and ability checks"
+    },
+    {
+      "id": "prone",
+      "name": "Prone",
+      "description": "A prone creature's only movement option is to crawl",
+      "effects": [
+        "The creature has disadvantage on attack rolls",
+        "Attack rolls against the creature have advantage if the attacker is within 5 feet",
+        "Attack rolls against the creature have disadvantage if the attacker is more than 5 feet away"
+      ]
+    },
+    {
+      "id": "restrained",
+      "name": "Restrained",
+      "description": "A restrained creature's speed becomes 0",
+      "effects": [
+        "The creature has disadvantage on attack rolls and Dexterity saving throws",
+        "Attack rolls against the creature have advantage"
+      ]
+    },
+    {
+      "id": "stunned",
+      "name": "Stunned",
+      "description": "A stunned creature is incapacitated, can't move, and can speak only falteringly",
+      "effects": [
+        "The creature automatically fails Strength and Dexterity saving throws",
+        "Attack rolls against the creature have advantage"
+      ]
+    },
+    {
+      "id": "unconscious",
+      "name": "Unconscious",
+      "description": "An unconscious creature is incapacitated, can't move or speak, and is unaware of its surroundings",
+      "effects": [
+        "The creature drops whatever it's holding and falls prone",
+        "The creature automatically fails Strength and Dexterity saving throws",
+        "Attack rolls against the creature have advantage",
+        "Any attack that hits the creature is a critical hit if the attacker is within 5 feet"
+      ]
+    }
+  ],
+  "experienceSystem": {
+    "levelChart": {
+      "1": 0,
+      "2": 300,
+      "3": 900,
+      "4": 2700,
+      "5": 6500,
+      "6": 14000,
+      "7": 23000,
+      "8": 34000,
+      "9": 48000,
+      "10": 64000,
+      "11": 85000,
+      "12": 100000,
+      "13": 120000,
+      "14": 140000,
+      "15": 165000,
+      "16": 195000,
+      "17": 225000,
+      "18": 265000,
+      "19": 305000,
+      "20": 355000
+    },
+    "proficiencyBonusChart": {
+      "1-4": 2,
+      "5-8": 3,
+      "9-12": 4,
+      "13-16": 5,
+      "17-20": 6
+    }
+  },
+  "functionDefinitions": {
+    "GameSetup": [
+      {
+        "id": "select_race",
+        "name": "select_race",
+        "description": "Select a character race that provides ability score increases and racial traits",
+        "parameters": [
+          {
+            "name": "raceId",
+            "type": "string",
+            "description": "ID of the race to select",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.race == null || character.race == ''",
+          "rulesetData.races.hasOwnProperty({{raceId}})"
+        ],
+        "effects": [
+          {
+            "target": "character.race",
+            "operation": "set",
+            "value": "{{raceId}}"
+          },
+          {
+            "target": "character.abilityScores",
+            "operation": "addFromRuleset",
+            "source": "races.{{raceId}}.abilityScoreIncrease"
+          },
+          {
+            "target": "character.traits",
+            "operation": "addFromRuleset",
+            "source": "races.{{raceId}}.traits"
+          },
+          {
+            "target": "character.speed",
+            "operation": "setFromRuleset",
+            "source": "races.{{raceId}}.speed"
+          }
+        ]
+      },
+      {
+        "id": "select_class",
+        "name": "select_class",
+        "description": "Select a character class that determines hit points, proficiencies, and class features",
+        "parameters": [
+          {
+            "name": "classId",
+            "type": "string",
+            "description": "ID of the class to select",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.characterClass == null || character.characterClass == ''",
+          "rulesetData.classes.hasOwnProperty({{classId}})"
+        ],
+        "effects": [
+          {
+            "target": "character.characterClass",
+            "operation": "set",
+            "value": "{{classId}}"
+          },
+          {
+            "target": "character.hitDie",
+            "operation": "setFromRuleset",
+            "source": "classes.{{classId}}.hitDie"
+          },
+          {
+            "target": "character.savingThrowProficiencies",
+            "operation": "addFromRuleset",
+            "source": "classes.{{classId}}.savingThrowProficiencies"
+          },
+          {
+            "target": "character.features",
+            "operation": "addFromRuleset",
+            "source": "classes.{{classId}}.classFeatures.1"
+          }
+        ]
+      },
+      {
+        "id": "select_background",
+        "name": "select_background",
+        "description": "Select a background that provides skill proficiencies and equipment",
+        "parameters": [
+          {
+            "name": "backgroundId",
+            "type": "string",
+            "description": "ID of the background to select",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.background == null || character.background == ''",
+          "rulesetData.backgrounds.hasOwnProperty({{backgroundId}})"
+        ],
+        "effects": [
+          {
+            "target": "character.background",
+            "operation": "set",
+            "value": "{{backgroundId}}"
+          },
+          {
+            "target": "character.skillProficiencies",
+            "operation": "addFromRuleset",
+            "source": "backgrounds.{{backgroundId}}.skillProficiencies"
+          },
+          {
+            "target": "character.equipment",
+            "operation": "addFromRuleset",
+            "source": "backgrounds.{{backgroundId}}.equipment"
+          }
+        ]
+      },
+      {
+        "id": "allocate_ability_scores",
+        "name": "allocate_ability_scores",
+        "description": "Allocate ability scores using standard array or point buy method",
+        "parameters": [
+          {
+            "name": "method",
+            "type": "string",
+            "description": "Method to use: 'standard_array' or 'point_buy'",
+            "required": true
+          },
+          {
+            "name": "scores",
+            "type": "object",
+            "description": "Ability scores allocation",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "{{method}} == 'standard_array' || {{method}} == 'point_buy'",
+          "character.abilityScores.strength == null"
+        ],
+        "effects": [
+          {
+            "target": "character.abilityScores",
+            "operation": "set",
+            "value": "{{scores}}"
+          },
+          {
+            "target": "character.abilityModifiers",
+            "operation": "calculateFromAbilities",
+            "value": "standard"
+          }
+        ]
+      },
+      {
+        "id": "choose_starting_equipment",
+        "name": "choose_starting_equipment",
+        "description": "Choose starting equipment based on class and background",
+        "parameters": [
+          {
+            "name": "equipmentChoice",
+            "type": "string",
+            "description": "Equipment package choice or custom selection",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.equipment.length == 0 || character.equipment == null"
+        ],
+        "effects": [
+          {
+            "target": "character.equipment",
+            "operation": "addStartingEquipment",
+            "value": "{{equipmentChoice}}"
+          },
+          {
+            "target": "character.armorClass",
+            "operation": "calculateAC",
+            "value": "equipped"
+          }
+        ]
+      },
+      {
+        "id": "finalize_character",
+        "name": "finalize_character",
+        "description": "Finalize character creation by calculating final stats and hit points",
+        "parameters": [
+          {
+            "name": "characterName",
+            "type": "string",
+            "description": "Character's name",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.race != null && character.characterClass != null",
+          "character.abilityScores.strength != null"
+        ],
+        "effects": [
+          {
+            "target": "character.name",
+            "operation": "set",
+            "value": "{{characterName}}"
+          },
+          {
+            "target": "character.level",
+            "operation": "set",
+            "value": 1
+          },
+          {
+            "target": "character.hitPoints",
+            "operation": "calculateMaxHP",
+            "value": "level1"
+          },
+          {
+            "target": "character.proficiencyBonus",
+            "operation": "set",
+            "value": 2
+          }
+        ]
+      }
+    ],
+    "WorldGeneration": [
+      {
+        "id": "create_campaign_setting",
+        "name": "create_campaign_setting",
+        "description": "Create a campaign setting with theme, tone, and major locations",
+        "parameters": [
+          {
+            "name": "settingName",
+            "type": "string",
+            "description": "Name of the campaign setting",
+            "required": true
+          },
+          {
+            "name": "theme",
+            "type": "string",
+            "description": "Campaign theme (high fantasy, dark fantasy, etc.)",
+            "required": true
+          },
+          {
+            "name": "startingRegion",
+            "type": "string",
+            "description": "Starting region description",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.campaign == null"
+        ],
+        "effects": [
+          {
+            "target": "gameState.campaign",
+            "operation": "createCampaign",
+            "value": {
+              "name": "{{settingName}}",
+              "theme": "{{theme}}",
+              "startingRegion": "{{startingRegion}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "generate_starting_location",
+        "name": "generate_starting_location",
+        "description": "Generate a starting town or location with NPCs and services",
+        "parameters": [
+          {
+            "name": "locationType",
+            "type": "string",
+            "description": "Type of location (town, village, city, etc.)",
+            "required": true
+          },
+          {
+            "name": "locationName",
+            "type": "string",
+            "description": "Name of the location",
+            "required": true
+          },
+          {
+            "name": "size",
+            "type": "string",
+            "description": "Size category (small, medium, large)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.currentLocation == null"
+        ],
+        "effects": [
+          {
+            "target": "gameState.locations",
+            "operation": "addLocation",
+            "value": {
+              "id": "starting_location",
+              "name": "{{locationName}}",
+              "type": "{{locationType}}",
+              "size": "{{size}}"
+            }
+          },
+          {
+            "target": "gameState.currentLocation",
+            "operation": "set",
+            "value": "starting_location"
+          }
+        ]
+      },
+      {
+        "id": "create_initial_npcs",
+        "name": "create_initial_npcs",
+        "description": "Create important NPCs for the starting location",
+        "parameters": [
+          {
+            "name": "npcType",
+            "type": "string",
+            "description": "Type of NPC (merchant, guard, innkeeper, etc.)",
+            "required": true
+          },
+          {
+            "name": "npcName",
+            "type": "string",
+            "description": "Name of the NPC",
+            "required": true
+          },
+          {
+            "name": "role",
+            "type": "string",
+            "description": "NPC's role in the location",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.currentLocation != null"
+        ],
+        "effects": [
+          {
+            "target": "gameState.npcs",
+            "operation": "addNPC",
+            "value": {
+              "name": "{{npcName}}",
+              "type": "{{npcType}}",
+              "role": "{{role}}",
+              "location": "gameState.currentLocation"
+            }
+          }
+        ]
+      },
+      {
+        "id": "establish_plot_hooks",
+        "name": "establish_plot_hooks",
+        "description": "Create initial adventure hooks and story threads",
+        "parameters": [
+          {
+            "name": "hookType",
+            "type": "string",
+            "description": "Type of plot hook (mystery, threat, opportunity, etc.)",
+            "required": true
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "description": "Description of the plot hook",
+            "required": true
+          },
+          {
+            "name": "urgency",
+            "type": "string",
+            "description": "Urgency level (low, medium, high)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [],
+        "effects": [
+          {
+            "target": "gameState.plotHooks",
+            "operation": "addPlotHook",
+            "value": {
+              "type": "{{hookType}}",
+              "description": "{{description}}",
+              "urgency": "{{urgency}}"
+            }
+          }
+        ]
+      }
+    ],
+    "Exploration": [
+      {
+        "id": "skill_check",
+        "name": "skill_check",
+        "description": "Make an ability check using a specific skill",
+        "parameters": [
+          {
+            "name": "skill",
+            "type": "string",
+            "description": "Skill to use for the check",
+            "required": true
+          },
+          {
+            "name": "difficulty",
+            "type": "int",
+            "description": "Difficulty Class (DC) of the check",
+            "required": true
+          },
+          {
+            "name": "advantage",
+            "type": "boolean",
+            "description": "Whether the check has advantage",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "{{difficulty}} >= 5 && {{difficulty}} <= 30"
+        ],
+        "effects": [
+          {
+            "target": "gameState.lastRoll",
+            "operation": "rollSkillCheck",
+            "value": {
+              "skill": "{{skill}}",
+              "dc": "{{difficulty}}",
+              "advantage": "{{advantage}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "social_encounter",
+        "name": "social_encounter",
+        "description": "Engage in social interaction with an NPC",
+        "parameters": [
+          {
+            "name": "npcId",
+            "type": "string",
+            "description": "ID of the NPC to interact with",
+            "required": true
+          },
+          {
+            "name": "approachType",
+            "type": "string",
+            "description": "Type of approach (friendly, intimidating, deceptive, etc.)",
+            "required": true
+          },
+          {
+            "name": "goal",
+            "type": "string",
+            "description": "What the character wants to achieve",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.npcs.hasOwnProperty({{npcId}})"
+        ],
+        "effects": [
+          {
+            "target": "gameState.npcs[{{npcId}}].disposition",
+            "operation": "adjustDisposition",
+            "value": "{{approachType}}"
+          },
+          {
+            "target": "gameState.currentEncounter",
+            "operation": "set",
+            "value": {
+              "type": "social",
+              "npc": "{{npcId}}",
+              "goal": "{{goal}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "investigation",
+        "name": "investigation",
+        "description": "Investigate an area, object, or situation for clues",
+        "parameters": [
+          {
+            "name": "target",
+            "type": "string",
+            "description": "What is being investigated",
+            "required": true
+          },
+          {
+            "name": "method",
+            "type": "string",
+            "description": "Investigation method (visual, physical, magical, etc.)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [],
+        "effects": [
+          {
+            "target": "gameState.investigation",
+            "operation": "performInvestigation",
+            "value": {
+              "target": "{{target}}",
+              "method": "{{method}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "travel_encounter",
+        "name": "travel_encounter",
+        "description": "Handle encounters while traveling between locations",
+        "parameters": [
+          {
+            "name": "destination",
+            "type": "string",
+            "description": "Destination location",
+            "required": true
+          },
+          {
+            "name": "travelMethod",
+            "type": "string",
+            "description": "Method of travel (foot, horse, etc.)",
+            "required": true
+          },
+          {
+            "name": "pace",
+            "type": "string",
+            "description": "Travel pace (fast, normal, slow)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.locations.hasOwnProperty({{destination}})"
+        ],
+        "effects": [
+          {
+            "target": "gameState.travel",
+            "operation": "initiateTravel",
+            "value": {
+              "destination": "{{destination}}",
+              "method": "{{travelMethod}}",
+              "pace": "{{pace}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "rest",
+        "name": "rest",
+        "description": "Take a short or long rest to recover resources",
+        "parameters": [
+          {
+            "name": "restType",
+            "type": "string",
+            "description": "Type of rest (short or long)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "{{restType}} == 'short' || {{restType}} == 'long'"
+        ],
+        "effects": [
+          {
+            "target": "character.hitPoints",
+            "operation": "restRecover",
+            "value": "{{restType}}"
+          },
+          {
+            "target": "character.spellSlots",
+            "operation": "restRecover",
+            "value": "{{restType}}"
+          },
+          {
+            "target": "character.features",
+            "operation": "restRecover",
+            "value": "{{restType}}"
+          }
+        ]
+      }
+    ],
+    "Combat": [
+      {
+        "id": "roll_initiative",
+        "name": "roll_initiative",
+        "description": "Roll initiative to determine combat turn order",
+        "parameters": [
+          {
+            "name": "combatants",
+            "type": "array",
+            "description": "List of combatants entering combat",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.combat == null"
+        ],
+        "effects": [
+          {
+            "target": "gameState.combat",
+            "operation": "initiateCombat",
+            "value": {
+              "combatants": "{{combatants}}",
+              "round": 1
+            }
+          },
+          {
+            "target": "gameState.combat.initiative",
+            "operation": "rollInitiative",
+            "value": "all"
+          }
+        ]
+      },
+      {
+        "id": "attack_roll",
+        "name": "attack_roll",
+        "description": "Make an attack roll against a target",
+        "parameters": [
+          {
+            "name": "weapon",
+            "type": "string",
+            "description": "Weapon or attack type used",
+            "required": true
+          },
+          {
+            "name": "targetId",
+            "type": "string",
+            "description": "ID of the target",
+            "required": true
+          },
+          {
+            "name": "advantage",
+            "type": "boolean",
+            "description": "Whether the attack has advantage",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "gameState.combat != null",
+          "character.equipment.includes({{weapon}}) || {{weapon}} == 'unarmed'"
+        ],
+        "effects": [
+          {
+            "target": "gameState.combat.lastAttack",
+            "operation": "rollAttack",
+            "value": {
+              "weapon": "{{weapon}}",
+              "target": "{{targetId}}",
+              "advantage": "{{advantage}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "damage_roll",
+        "name": "damage_roll",
+        "description": "Roll damage for a successful attack",
+        "parameters": [
+          {
+            "name": "weapon",
+            "type": "string",
+            "description": "Weapon used for the attack",
+            "required": true
+          },
+          {
+            "name": "critical",
+            "type": "boolean",
+            "description": "Whether this is a critical hit",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "gameState.combat.lastAttack.hit == true"
+        ],
+        "effects": [
+          {
+            "target": "gameState.combat.lastAttack.damage",
+            "operation": "rollDamage",
+            "value": {
+              "weapon": "{{weapon}}",
+              "critical": "{{critical}}"
+            }
+          },
+          {
+            "target": "gameState.combat.targets[gameState.combat.lastAttack.target].hitPoints",
+            "operation": "applyDamage",
+            "value": "gameState.combat.lastAttack.damage"
+          }
+        ]
+      },
+      {
+        "id": "cast_spell",
+        "name": "cast_spell",
+        "description": "Cast a spell using available spell slots",
+        "parameters": [
+          {
+            "name": "spellId",
+            "type": "string",
+            "description": "ID of the spell to cast",
+            "required": true
+          },
+          {
+            "name": "spellLevel",
+            "type": "int",
+            "description": "Level at which to cast the spell",
+            "required": true
+          },
+          {
+            "name": "targetId",
+            "type": "string",
+            "description": "Target of the spell (if applicable)",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "character.spellSlots[{{spellLevel}}] > 0",
+          "character.knownSpells.includes({{spellId}}) || character.spellbook.includes({{spellId}})",
+          "rulesetData.spells[{{spellId}}].level <= {{spellLevel}}"
+        ],
+        "effects": [
+          {
+            "target": "character.spellSlots[{{spellLevel}}]",
+            "operation": "subtract",
+            "value": 1
+          },
+          {
+            "target": "gameState.combat.lastSpell",
+            "operation": "castSpell",
+            "value": {
+              "spell": "{{spellId}}",
+              "level": "{{spellLevel}}",
+              "target": "{{targetId}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "use_ability",
+        "name": "use_ability",
+        "description": "Use a class feature or special ability",
+        "parameters": [
+          {
+            "name": "abilityId",
+            "type": "string",
+            "description": "ID of the ability to use",
+            "required": true
+          },
+          {
+            "name": "targetId",
+            "type": "string",
+            "description": "Target of the ability (if applicable)",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "character.features.includes({{abilityId}})",
+          "character.abilityUses[{{abilityId}}] > 0 || character.abilityUses[{{abilityId}}] == null"
+        ],
+        "effects": [
+          {
+            "target": "character.abilityUses[{{abilityId}}]",
+            "operation": "subtract",
+            "value": 1
+          },
+          {
+            "target": "gameState.combat.lastAbility",
+            "operation": "useAbility",
+            "value": {
+              "ability": "{{abilityId}}",
+              "target": "{{targetId}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "end_turn",
+        "name": "end_turn",
+        "description": "End the current character's turn and advance combat",
+        "parameters": [],
+        "ruleValidations": [
+          "gameState.combat != null"
+        ],
+        "effects": [
+          {
+            "target": "gameState.combat.currentTurn",
+            "operation": "advanceTurn",
+            "value": "next"
+          },
+          {
+            "target": "gameState.combat.round",
+            "operation": "checkRoundAdvancement",
+            "value": "conditional"
+          }
+        ]
+      }
+    ],
+    "LevelUp": [
+      {
+        "id": "gain_experience",
+        "name": "gain_experience",
+        "description": "Award experience points for completing encounters or challenges",
+        "parameters": [
+          {
+            "name": "source",
+            "type": "string",
+            "description": "Source of experience (combat, exploration, social, etc.)",
+            "required": true
+          },
+          {
+            "name": "amount",
+            "type": "int",
+            "description": "Amount of experience gained",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "{{amount}} > 0 && {{amount}} <= 10000"
+        ],
+        "effects": [
+          {
+            "target": "character.experience",
+            "operation": "add",
+            "value": "{{amount}}"
+          },
+          {
+            "target": "character.levelUpReady",
+            "operation": "checkLevelUp",
+            "value": "current"
+          }
+        ]
+      },
+      {
+        "id": "level_up",
+        "name": "level_up",
+        "description": "Advance character to the next level",
+        "parameters": [
+          {
+            "name": "hitPointIncrease",
+            "type": "int",
+            "description": "Hit point increase (rolled or average)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.experience >= getExperienceForLevel(character.level + 1)",
+          "character.level < 20"
+        ],
+        "effects": [
+          {
+            "target": "character.level",
+            "operation": "add",
+            "value": 1
+          },
+          {
+            "target": "character.hitPoints",
+            "operation": "add",
+            "value": "{{hitPointIncrease}}"
+          },
+          {
+            "target": "character.maxHitPoints",
+            "operation": "add",
+            "value": "{{hitPointIncrease}}"
+          },
+          {
+            "target": "character.proficiencyBonus",
+            "operation": "calculateProficiency",
+            "value": "character.level"
+          },
+          {
+            "target": "character.features",
+            "operation": "addLevelFeatures",
+            "value": "character.level"
+          }
+        ]
+      },
+      {
+        "id": "ability_score_improvement",
+        "name": "ability_score_improvement",
+        "description": "Improve ability scores or select a feat",
+        "parameters": [
+          {
+            "name": "improvementType",
+            "type": "string",
+            "description": "Type of improvement (ability_scores or feat)",
+            "required": true
+          },
+          {
+            "name": "improvements",
+            "type": "object",
+            "description": "Ability score improvements or feat selection",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.level % 4 == 0 || (character.characterClass == 'fighter' && (character.level == 6 || character.level == 14))",
+          "{{improvementType}} == 'ability_scores' || {{improvementType}} == 'feat'"
+        ],
+        "effects": [
+          {
+            "target": "character.abilityScores",
+            "operation": "improveAbilities",
+            "value": "{{improvements}}"
+          },
+          {
+            "target": "character.abilityModifiers",
+            "operation": "recalculate",
+            "value": "all"
+          }
+        ]
+      },
+      {
+        "id": "learn_spells",
+        "name": "learn_spells",
+        "description": "Learn new spells available at the current level",
+        "parameters": [
+          {
+            "name": "spellIds",
+            "type": "array",
+            "description": "List of spell IDs to learn",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.spellcasting != null",
+          "character.knownSpells.length + {{spellIds}}.length <= getMaxSpellsKnown(character.level)"
+        ],
+        "effects": [
+          {
+            "target": "character.knownSpells",
+            "operation": "addSpells",
+            "value": "{{spellIds}}"
+          },
+          {
+            "target": "character.spellSlots",
+            "operation": "updateSlots",
+            "value": "character.level"
+          }
+        ]
+      }
+    ]
+  },
+  "promptTemplates": {
+    "GameSetup": {
+      "systemPrompt": "You are helping create a D&D 5e character for an epic fantasy adventure. Guide the player through selecting their race, class, background, and starting equipment to create a unique hero ready for adventure in a magical world of dragons, dungeons, and glory.",
+      "phaseObjective": "Complete character creation by selecting race, class, background, allocating ability scores, and finalizing starting equipment",
+      "availableFunctions": ["select_race", "select_class", "select_background", "allocate_ability_scores", "choose_starting_equipment", "finalize_character"],
+      "contextElements": [
+        "Available races with ability score bonuses and racial traits",
+        "Character classes with their roles and capabilities", 
+        "Backgrounds providing skills and roleplay hooks",
+        "Ability score allocation methods and their impact",
+        "Starting equipment options and their strategic value"
+      ]
+    },
+    "WorldGeneration": {
+      "systemPrompt": "You are the Dungeon Master creating a rich D&D 5e fantasy world. Build an engaging campaign setting with memorable locations, interesting NPCs, and compelling adventures. Create a world that feels alive and full of opportunities for heroic deeds and epic quests.",
+      "phaseObjective": "Build a complete campaign world with locations, NPCs, and adventure hooks",
+      "availableFunctions": ["create_campaign_setting", "generate_starting_location", "create_initial_npcs", "establish_plot_hooks"],
+      "contextElements": [
+        "Campaign themes and tones",
+        "Starting locations and their inhabitants",
+        "Important NPCs and their motivations",
+        "Adventure hooks and story opportunities",
+        "World history and current events"
+      ]
+    },
+    "Exploration": {
+      "systemPrompt": "You are guiding a D&D 5e adventure through exploration and discovery. Manage skill checks, social encounters, investigations, and travel between locations. Create immersive experiences that showcase character abilities and advance the story through meaningful choices and consequences.",
+      "phaseObjective": "Facilitate exploration, social interaction, investigation, and adventure progression",
+      "availableFunctions": ["skill_check", "social_encounter", "investigation", "travel_encounter", "rest"],
+      "contextElements": [
+        "Current location and available activities",
+        "NPCs and their attitudes toward the party",
+        "Available clues and information",
+        "Character skills and proficiencies",
+        "Party resources and current status"
+      ]
+    },
+    "Combat": {
+      "systemPrompt": "You are managing D&D 5e tactical combat encounters. Handle initiative, attack rolls, damage, spellcasting, and special abilities according to the rules. Create dynamic battles where strategy, teamwork, and resource management determine victory. Apply conditions, terrain effects, and tactical positioning for engaging combat.",
+      "phaseObjective": "Execute turn-based combat with accurate rule application and tactical depth",
+      "availableFunctions": ["roll_initiative", "attack_roll", "damage_roll", "cast_spell", "use_ability", "end_turn"],
+      "contextElements": [
+        "Combat participants and their current status",
+        "Initiative order and current turn",
+        "Available actions, spells, and abilities",
+        "Battlefield conditions and positioning",
+        "Hit points, armor class, and saving throws"
+      ]
+    },
+    "LevelUp": {
+      "systemPrompt": "You are managing D&D 5e character advancement and progression. Handle experience gain, level advancement, ability score improvements, new spell learning, and feature unlocks. Guide players through meaningful choices that shape their character's growth and capabilities.",
+      "phaseObjective": "Process character advancement, new abilities, and power growth",
+      "availableFunctions": ["gain_experience", "level_up", "ability_score_improvement", "learn_spells"],
+      "contextElements": [
+        "Character's current level and experience",
+        "Available advancement options",
+        "New class features and abilities",
+        "Spell progression for spellcasters",
+        "Ability score improvement opportunities"
+      ]
+    }
+  }
+}

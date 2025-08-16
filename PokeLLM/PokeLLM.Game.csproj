@@ -15,6 +15,7 @@
     <None Remove="Prompts\LevelUpPhase.md" />
     <None Remove="Prompts\UnifiedContextSubroutine.md" />
     <None Remove="Prompts\WorldGenerationPhase.md" />
+    <None Remove="Rulesets\pokemon-adventure.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,6 +38,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Prompts\WorldGenerationPhase.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Rulesets\pokemon-adventure.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

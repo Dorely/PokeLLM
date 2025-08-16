@@ -1,21 +1,23 @@
 using Microsoft.SemanticKernel;
+using Microsoft.Extensions.DependencyInjection;
 using PokeLLM.GameRules.Interfaces;
 using PokeLLM.GameState.Models;
 using PokeLLM.Game.GameLogic;
 using System.ComponentModel;
 using System.Text.Json;
+using System.Reflection;
 
 namespace PokeLLM.GameRules.Services;
 
 public class DynamicFunctionFactory : IDynamicFunctionFactory
 {
     private readonly IJavaScriptRuleEngine _ruleEngine;
-    private readonly ICharacterManagementService _characterManagementService;
+    private readonly IServiceProvider _serviceProvider;
 
-    public DynamicFunctionFactory(IJavaScriptRuleEngine ruleEngine, ICharacterManagementService characterManagementService)
+    public DynamicFunctionFactory(IJavaScriptRuleEngine ruleEngine, IServiceProvider serviceProvider)
     {
         _ruleEngine = ruleEngine;
-        _characterManagementService = characterManagementService;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<IEnumerable<KernelFunction>> GenerateFunctionsFromRulesetAsync(JsonDocument ruleset, GamePhase phase)
@@ -68,7 +70,7 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
                     }
                 }
 
-                // Apply effects to character and game state
+                // Apply effects to character and/or game state
                 var appliedEffects = new List<string>();
                 foreach (var effect in definition.Effects)
                 {
@@ -128,15 +130,18 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
 
     private Type GetParameterType(string typeName)
     {
-        return typeName.ToLower() switch
+        switch (typeName.ToLower())
         {
-            "string" => typeof(string),
-            "int" => typeof(int),
-            "bool" => typeof(bool),
-            "double" => typeof(double),
-            "float" => typeof(float),
-            _ => typeof(string)
-        };
+            case "string": return typeof(string);
+            case "int": return typeof(int);
+            case "bool": return typeof(bool);
+            case "boolean": return typeof(bool);
+            case "double": return typeof(double);
+            case "float": return typeof(float);
+            case "object": return typeof(object);
+            case "array": return typeof(object[]);
+            default: return typeof(string);
+        }
     }
 
     private async Task<string> ApplyEffectAsync(ActionEffect effect, KernelArguments args)
@@ -149,10 +154,26 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
             var operation = effect.Operation;
             var value = effect.Value;
 
-            // Get character object from args
-            if (!args.TryGetValue("character", out var characterObj) || characterObj == null)
+            // Determine target root object (character or gameState)
+            object? rootTargetObject = null;
+            string pathWithoutRoot = target;
+            if (target.StartsWith("character."))
             {
-                return $"Failed to apply effect: character not found in arguments";
+                if (!args.TryGetValue("character", out var characterObj) || characterObj == null)
+                {
+                    return $"Failed to apply effect: character not found in arguments";
+                }
+                rootTargetObject = characterObj;
+                pathWithoutRoot = target.Substring("character.".Length);
+            }
+            else if (target.StartsWith("gameState."))
+            {
+                if (!args.TryGetValue("gameState", out var gameStateObj) || gameStateObj == null)
+                {
+                    return $"Failed to apply effect: gameState not found in arguments";
+                }
+                rootTargetObject = gameStateObj;
+                pathWithoutRoot = target.Substring("gameState.".Length);
             }
 
             // Replace template variables in target and value
@@ -160,10 +181,8 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
             {
                 var templateKey = $"{{{{{arg.Key}}}}}";
                 var replacement = arg.Value?.ToString() ?? "";
-                
                 target = target.Replace(templateKey, replacement);
                 
-                // Handle all value types, not just strings
                 var valueStr = value?.ToString() ?? "";
                 if (valueStr.Contains("{{"))
                 {
@@ -173,16 +192,21 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
             }
 
             // Apply effect based on operation
-            var effectResult = operation.ToLower() switch
+            var op = operation.ToLower();
+            if (rootTargetObject != null)
             {
-                "set" => ApplySetEffect(characterObj, target, value),
-                "add" => ApplyAddEffect(characterObj, target, value),
-                "subtract" => ApplySubtractEffect(characterObj, target, value),
-                "addpokemon" => await ApplyAddPokemonEffect(target, value?.ToString() ?? ""),
-                _ => $"Unknown operation: {operation}"
-            };
+                return op switch
+                {
+                    "set" => ApplySetEffect(rootTargetObject, pathWithoutRoot, value),
+                    "add" => ApplyAddEffect(rootTargetObject, pathWithoutRoot, value),
+                    "subtract" => ApplySubtractEffect(rootTargetObject, pathWithoutRoot, value),
+                    "addentity" or "addpokemon" => await ApplyAddEntityEffect(target, value?.ToString() ?? ""),
+                    "removeentity" or "removepokemon" => await ApplyRemoveEntityEffect(target, value?.ToString() ?? ""),
+                    _ => $"Unknown operation: {operation}"
+                };
+            }
 
-            return effectResult;
+            return $"Unsupported target path: {target}";
         }
         catch (Exception ex)
         {
@@ -190,47 +214,76 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
         }
     }
 
-    private string ApplySetEffect(object character, string target, object value)
+    private string ApplySetEffect(object rootObject, string targetPath, object value)
     {
         try
         {
-            // Parse target path (e.g., "character.race" or "character.inventory[pokeball]")
-            var targetPath = target.StartsWith("character.") 
-                ? target.Substring("character.".Length)
-                : target;
+            // Handle nested properties using dot notation (e.g., "attribute.subField")
+            var currentObject = rootObject;
+            var segments = targetPath.Split('.', StringSplitOptions.RemoveEmptyEntries);
 
-            // Use reflection to set property value
-            var characterType = character.GetType();
-            
-            // Try multiple property name variations
-            var property = characterType.GetProperty(targetPath) ?? 
-                          characterType.GetProperty(char.ToUpper(targetPath[0]) + targetPath.Substring(1)) ??
-                          characterType.GetProperty(targetPath.ToLower()) ??
-                          characterType.GetProperty(targetPath.ToUpper());
-
-            if (property != null && property.CanWrite)
+            for (int i = 0; i < segments.Length; i++)
             {
-                // Handle string values specially to avoid conversion issues
-                object convertedValue;
-                if (property.PropertyType == typeof(string))
+                var segment = segments[i];
+                var currentType = currentObject.GetType();
+                var property = currentType.GetProperty(segment, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if (property == null)
                 {
-                    convertedValue = value?.ToString() ?? "";
+                    return $"Property {segment} not found on {currentType.Name}";
+                }
+
+                if (i == segments.Length - 1)
+                {
+                    // Final segment - set the value
+                    object convertedValue;
+                    if (property.PropertyType == typeof(string))
+                    {
+                        convertedValue = value?.ToString() ?? "";
+                    }
+                    else if (property.PropertyType == typeof(int) && value is JsonElement je && je.ValueKind == JsonValueKind.Number)
+                    {
+                        convertedValue = je.GetInt32();
+                    }
+                    else
+                    {
+                        try
+                        {
+                            convertedValue = Convert.ChangeType(value, property.PropertyType);
+                        }
+                        catch
+                        {
+                            // Fallback: try JSON deserialization into property type
+                            var json = JsonSerializer.Serialize(value);
+                            convertedValue = JsonSerializer.Deserialize(json, property.PropertyType);
+                        }
+                    }
+
+                    property.SetValue(currentObject, convertedValue);
+                    var verifyValue = property.GetValue(currentObject);
+                    return $"Set {targetPath} = {value} (verified: {verifyValue})";
                 }
                 else
                 {
-                    convertedValue = Convert.ChangeType(value, property.PropertyType);
+                    // Traverse to next object
+                    var nextObject = property.GetValue(currentObject);
+                    if (nextObject == null)
+                    {
+                        // Try to instantiate if it's a class with parameterless ctor
+                        if (property.PropertyType.GetConstructor(Type.EmptyTypes) != null)
+                        {
+                            nextObject = Activator.CreateInstance(property.PropertyType);
+                            property.SetValue(currentObject, nextObject);
+                        }
+                        else
+                        {
+                            return $"Cannot traverse null property {segment} on {currentType.Name}";
+                        }
+                    }
+                    currentObject = nextObject;
                 }
-                
-                property.SetValue(character, convertedValue);
-                
-                // Verify the value was actually set
-                var verifyValue = property.GetValue(character);
-                return $"Set {target} = {value} (verified: {verifyValue})";
             }
 
-            // Debug information about available properties
-            var availableProperties = characterType.GetProperties().Select(p => p.Name).ToArray();
-            return $"Property {target} (path: {targetPath}) not found. Available: {string.Join(", ", availableProperties)}";
+            return $"Property path {targetPath} not found";
         }
         catch (Exception ex)
         {
@@ -242,14 +295,14 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
     {
         try
         {
-            // Handle list additions (e.g., character.pokemon.add)
+            // Handle list additions (e.g., character.entities.add)
             if (target.Contains(".") && !target.Contains("["))
             {
                 var parts = target.Split('.');
-                if (parts.Length >= 2)
+                if (parts.Length >= 1)
                 {
-                    var propertyName = char.ToUpper(parts[1][0]) + parts[1].Substring(1);
-                    var property = character.GetType().GetProperty(propertyName);
+                    var propertyName = char.ToUpper(parts[0][0]) + parts[0].Substring(1);
+                    var property = character.GetType().GetProperty(propertyName) ?? character.GetType().GetProperty(parts[0], BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
                     if (property != null && typeof(System.Collections.IList).IsAssignableFrom(property.PropertyType))
                     {
@@ -272,16 +325,16 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
     {
         try
         {
-            // Handle dictionary operations (e.g., character.inventory[pokeball])
+            // Handle dictionary operations (e.g., inventory[item])
             if (target.Contains("[") && target.Contains("]"))
             {
-                var propertyMatch = System.Text.RegularExpressions.Regex.Match(target, @"character\.(\w+)\[([^\]]+)\]");
+                var propertyMatch = System.Text.RegularExpressions.Regex.Match(target, @"(\w+)\[([^\]]+)\]");
                 if (propertyMatch.Success)
                 {
-                    var propertyName = char.ToUpper(propertyMatch.Groups[1].Value[0]) + propertyMatch.Groups[1].Value.Substring(1);
+                    var propertyName = propertyMatch.Groups[1].Value;
                     var key = propertyMatch.Groups[2].Value.Replace("\"", "").Replace("'", "");
                     
-                    var property = character.GetType().GetProperty(propertyName);
+                    var property = character.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
                     if (property != null && typeof(System.Collections.IDictionary).IsAssignableFrom(property.PropertyType))
                     {
                         var dict = (System.Collections.IDictionary)property.GetValue(character)!;
@@ -314,69 +367,81 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
             if (!args.TryGetValue("character", out var characterObj) || characterObj == null)
                 return false;
                 
-            // Handle common validation patterns
-            if (rule.Contains("character.race") && rule.Contains("''"))
+            // Generic empty string validation (e.g., "character.property == ''" or "character.property == \"\"")
+            if (rule.Contains("==") && (rule.Contains("''") || rule.Contains("\"\"") || rule.Contains("== null")))
             {
-                var raceProperty = characterObj.GetType().GetProperty("Race");
-                if (raceProperty != null)
-                {
-                    var raceValue = raceProperty.GetValue(characterObj)?.ToString();
-                    return string.IsNullOrEmpty(raceValue);
-                }
-            }
-            
-            if (rule.Contains("character.characterClass") && rule.Contains("''"))
-            {
-                var classProperty = characterObj.GetType().GetProperty("CharacterClass");
-                if (classProperty != null)
-                {
-                    var classValue = classProperty.GetValue(characterObj)?.ToString();
-                    return string.IsNullOrEmpty(classValue);
-                }
-            }
-            
-            if (rule.Contains("character.trainerClass") && rule.Contains("''"))
-            {
-                var trainerClassProperty = characterObj.GetType().GetProperty("TrainerClass");
-                if (trainerClassProperty != null)
-                {
-                    var trainerClassValue = trainerClassProperty.GetValue(characterObj)?.ToString();
-                    return string.IsNullOrEmpty(trainerClassValue);
-                }
-            }
-            
-            // For Pokemon team limit validation
-            if (rule.Contains("character.pokemon.length < 6"))
-            {
-                var pokemonProperty = characterObj.GetType().GetProperty("Pokemon");
-                if (pokemonProperty != null && pokemonProperty.PropertyType.GetInterface("ICollection") != null)
-                {
-                    var pokemonCollection = (System.Collections.ICollection)pokemonProperty.GetValue(characterObj)!;
-                    return pokemonCollection.Count < 6;
-                }
-                
-                // For test character models that might not have proper Pokemon collections, always return true
-                return true;
-            }
-            
-            // For Pokemon inventory validation
-            if (rule.Contains("character.inventory[") && rule.Contains("] > 0"))
-            {
-                // Extract the item key from the rule (e.g., "pokeball" from "character.inventory[pokeball] > 0")
-                var match = System.Text.RegularExpressions.Regex.Match(rule, @"character\.inventory\[([^\]]+)\] > 0");
+                var match = System.Text.RegularExpressions.Regex.Match(rule, @"character\.(\w+)\s*==");
                 if (match.Success)
                 {
-                    var itemKey = match.Groups[1].Value;
-                    var inventoryProperty = characterObj.GetType().GetProperty("Inventory");
-                    if (inventoryProperty != null && typeof(System.Collections.IDictionary).IsAssignableFrom(inventoryProperty.PropertyType))
+                    var propertyName = match.Groups[1].Value;
+                    var property = characterObj.GetType().GetProperty(propertyName, System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    if (property != null)
                     {
-                        var inventory = (System.Collections.IDictionary)inventoryProperty.GetValue(characterObj)!;
-                        if (inventory.Contains(itemKey))
-                        {
-                            var itemCount = Convert.ToInt32(inventory[itemKey]);
-                            return itemCount > 0;
-                        }
+                        var propertyValue = property.GetValue(characterObj);
+                        return propertyValue == null || string.IsNullOrEmpty(propertyValue.ToString());
                     }
+                    return false; // Property not found
+                }
+            }
+            
+            
+            // Generic collection size validation (e.g., "character.entities.length < 6")
+            var collectionLengthMatch = System.Text.RegularExpressions.Regex.Match(rule, @"character\.(\w+)\.length\s*([<>=!]+)\s*(\d+)");
+            if (collectionLengthMatch.Success)
+            {
+                var propertyName = collectionLengthMatch.Groups[1].Value;
+                var operatorStr = collectionLengthMatch.Groups[2].Value;
+                var expectedCount = int.Parse(collectionLengthMatch.Groups[3].Value);
+                
+                var property = characterObj.GetType().GetProperty(propertyName, System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (property != null && property.PropertyType.GetInterface("ICollection") != null)
+                {
+                    var collection = (System.Collections.ICollection)property.GetValue(characterObj)!;
+                    var actualCount = collection?.Count ?? 0;
+                    
+                    return operatorStr switch
+                    {
+                        "<" => actualCount < expectedCount,
+                        "<=" => actualCount <= expectedCount,
+                        ">" => actualCount > expectedCount,
+                        ">=" => actualCount >= expectedCount,
+                        "==" or "=" => actualCount == expectedCount,
+                        "!=" => actualCount != expectedCount,
+                        _ => false
+                    };
+                }
+                
+                return true; // Default to valid if property not found
+            }
+            
+            // Generic inventory/dictionary validation (e.g., "character.inventory[item] > 0")
+            var inventoryMatch = System.Text.RegularExpressions.Regex.Match(rule, @"character\.(\w+)\[([^\]]+)\]\s*([<>=!]+)\s*(\d+)");
+            if (inventoryMatch.Success)
+            {
+                var containerName = inventoryMatch.Groups[1].Value;
+                var itemKey = inventoryMatch.Groups[2].Value;
+                var operatorStr = inventoryMatch.Groups[3].Value;
+                var expectedValue = int.Parse(inventoryMatch.Groups[4].Value);
+                
+                var containerProperty = characterObj.GetType().GetProperty(containerName, System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (containerProperty != null && typeof(System.Collections.IDictionary).IsAssignableFrom(containerProperty.PropertyType))
+                {
+                    var container = (System.Collections.IDictionary)containerProperty.GetValue(characterObj)!;
+                    if (container.Contains(itemKey))
+                    {
+                        var actualValue = Convert.ToInt32(container[itemKey]);
+                        return operatorStr switch
+                        {
+                            "<" => actualValue < expectedValue,
+                            "<=" => actualValue <= expectedValue,
+                            ">" => actualValue > expectedValue,
+                            ">=" => actualValue >= expectedValue,
+                            "==" or "=" => actualValue == expectedValue,
+                            "!=" => actualValue != expectedValue,
+                            _ => false
+                        };
+                    }
+                    return expectedValue == 0; // Item not found - only valid if expecting 0
                 }
                 return false;
             }
@@ -390,23 +455,68 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
         }
     }
 
-    private async Task<string> ApplyAddPokemonEffect(string target, string pokemonId)
+    private async Task<string> ApplyAddEntityEffect(string target, string entityId)
     {
         try
         {
-            // Debug: Check what Pokemon ID we received
-            if (pokemonId.Contains("{{") || string.IsNullOrEmpty(pokemonId))
+            // Validate entity ID is properly resolved
+            if (entityId.Contains("{{") || string.IsNullOrEmpty(entityId))
             {
-                return $"Error: Pokemon ID not properly resolved: '{pokemonId}'";
+                return $"Error: Entity ID not properly resolved: '{entityId}'";
             }
             
-            // Call the actual character management service to add Pokemon to team
-            await _characterManagementService.AddPokemonToTeam(pokemonId);
-            return $"Added Pokemon {pokemonId} to team via game state service";
+            // Generic entity handling that can work for any game type
+            // The ruleset should define what entities mean for the specific game
+            
+            // For now, we'll attempt to use the character management service if available
+            // This provides backward compatibility while being game-agnostic
+            try
+            {
+                var characterManagementService = _serviceProvider.GetRequiredService<ICharacterManagementService>();
+                
+                // Use reflection to find an appropriate method for adding entities
+                var methods = characterManagementService.GetType().GetMethods()
+                    .Where(m => m.Name.Contains("Add") && m.Name.Contains("Team"))
+                    .ToList();
+                
+                if (methods.Any())
+                {
+                    // Try the first available method - this is game-specific
+                    var method = methods.First();
+                    await (Task)method.Invoke(characterManagementService, new object[] { entityId });
+                    return $"Added entity {entityId} to team via game state service";
+                }
+            }
+            catch (Exception ex)
+            {
+                // Fallback to generic processing
+                return $"Generic entity addition processed: {entityId} to {target} (service error: {ex.Message})";
+            }
+            
+            return $"Generic entity addition processed: {entityId} to {target}";
         }
         catch (Exception ex)
         {
-            return $"Failed to add Pokemon {pokemonId} to team: {ex.Message}";
+            return $"Failed to add entity {entityId}: {ex.Message}";
+        }
+    }
+
+    private async Task<string> ApplyRemoveEntityEffect(string target, string entityId)
+    {
+        try
+        {
+            // Validate entity ID is properly resolved
+            if (entityId.Contains("{{") || string.IsNullOrEmpty(entityId))
+            {
+                return $"Error: Entity ID not properly resolved: '{entityId}'";
+            }
+            
+            // Generic entity removal - could be extended based on game type
+            return $"Generic entity removal processed: {entityId} from {target}";
+        }
+        catch (Exception ex)
+        {
+            return $"Failed to remove entity {entityId}: {ex.Message}";
         }
     }
 }

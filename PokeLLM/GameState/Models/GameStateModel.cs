@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace PokeLLM.GameState.Models;
@@ -22,15 +23,16 @@ public class GameStateModel
     public DateTime LastSaveTime { get; set; } = DateTime.UtcNow;
 
     [JsonPropertyName("player")]
-    public PlayerState Player { get; set; } = new();
+    [Description("Basic player information - extended data stored in RulesetGameData")]
+    public BasicPlayerState Player { get; set; } = new();
 
     [JsonPropertyName("currentLocationId")]
     [Description("The ID of the player's current location. Used to look up the location in WorldLocations.")]
     public string CurrentLocationId { get; set; } = string.Empty;
 
     [JsonPropertyName("worldLocations")]
-    [Description("All loaded locations in the world, keyed by their unique Location ID.")]
-    public Dictionary<string, Location> WorldLocations { get; set; } = new();
+    [Description("All loaded locations in the world, keyed by their unique Location ID. Location structure defined by active ruleset.")]
+    public Dictionary<string, object> WorldLocations { get; set; } = new();
 
     [JsonPropertyName("region")]
     public string Region { get; set; } = string.Empty;
@@ -41,13 +43,9 @@ public class GameStateModel
     [JsonPropertyName("weather")]
     public Weather Weather { get; set; } = Weather.Clear;
 
-    [JsonPropertyName("worldNpcs")]
-    [Description("All generated NPCs, keyed by their unique Character ID.")]
-    public Dictionary<string, Npc> WorldNpcs { get; set; } = new();
-
-    [JsonPropertyName("worldPokemon")]
-    [Description("All generated pokemon (wild or otherwise not on the player's team), keyed by their unique Pokemon Instance ID.")]
-    public Dictionary<string, Pokemon> WorldPokemon { get; set; } = new();
+    [JsonPropertyName("worldEntities")]
+    [Description("All game entities (NPCs, creatures, items, etc.), keyed by their unique Entity ID. Entity types defined by active ruleset.")]
+    public Dictionary<string, object> WorldEntities { get; set; } = new();
 
     [JsonPropertyName("adventureSummary")]
     [Description("A continuously updated high-level summary of the adventure so far.")]
@@ -65,13 +63,20 @@ public class GameStateModel
     public string PhaseChangeSummary { get; set; } = string.Empty;
 
     [JsonPropertyName("combatState")]
-    [Description("The state of the current combat encounter. This is null when not in combat.")]
-    public CombatState CombatState { get; set; }
+    [Description("The state of the current combat encounter. This is null when not in combat. Combat structure defined by active ruleset.")]
+    public object CombatState { get; set; }
 
     [JsonPropertyName("currentContext")]
     [Description("Rich contextual description of the current scene, environment, and situation for storytelling continuity.")]
     public string CurrentContext { get; set; } = "";
 
+    [JsonPropertyName("activeRulesetId")]
+    [Description("The ID of the currently active ruleset that defines game mechanics and available functions.")]
+    public string ActiveRulesetId { get; set; } = string.Empty;
+
+    [JsonPropertyName("rulesetGameData")]
+    [Description("Dynamic game data specific to the active ruleset. Contents vary based on the ruleset's gameStateSchema.")]
+    public Dictionary<string, JsonElement> RulesetGameData { get; set; } = new();
 }
 
 public class EventLog
@@ -80,7 +85,10 @@ public class EventLog
     public string EventDescription {  get; set; }
 }
 
-public class PlayerState
+/// <summary>
+/// Basic player state with minimal hardcoded fields. Extended player data stored in RulesetGameData.
+/// </summary>
+public class BasicPlayerState
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
@@ -88,207 +96,24 @@ public class PlayerState
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 
-    [JsonPropertyName("abilities")]
-    public List<string> Abilities { get; set; } = new();
-
-    [JsonPropertyName("characterDetails")]
-    public CharacterDetails CharacterDetails { get; set; } = new();
+    [JsonPropertyName("level")]
+    public int Level { get; set; } = 1;
 
     [JsonPropertyName("experience")]
     public int Experience { get; set; } = 0;
 
-    [JsonPropertyName("level")]
-    public int Level { get; set; } = 1;
-
-    [JsonPropertyName("stats")]
-    public Stats Stats { get; set; } = new();
-
-    [JsonPropertyName("trainerClassData")]
-    [Description("Reference to trainer class data with modifiers and abilities.")]
-    public TrainerClass TrainerClassData { get; set; } = new();
+    [JsonPropertyName("relationships")]
+    [Description("Relationships with NPCs and factions, keyed by ID. Scale is -100 to 100.")]
+    public Dictionary<string, int> Relationships { get; set; } = new();
 
     [JsonPropertyName("conditions")]
+    [Description("Player conditions and status effects")]
     public List<string> Conditions { get; set; } = new();
-
-    [JsonPropertyName("teamPokemon")]
-    [Description("Caught pokemon actively on the team. Limit 6.")]
-    public List<OwnedPokemon> TeamPokemon { get; set; } = new();
-
-    [JsonPropertyName("boxedPokemon")]
-    [Description("Caught pokemon not actively on the team.")]
-    public List<OwnedPokemon> BoxedPokemon { get; set; } = new();
-
-    [JsonPropertyName("playerNpcRelationships")]
-    [Description("List of player's individual relationships, keyed by Character ID (e.g., 'char_prof_oak'). Scale is -100 to 100.")]
-    public Dictionary<string, int> PlayerNpcRelationships { get; set; } = new();
-
-    [JsonPropertyName("factionRelationships")]
-    [Description("List of player's factions reputations, keyed by Faction ID (e.g., 'faction_team_rocket'). Scale is -100 to 100.")]
-    public Dictionary<string, int> PlayerFactionRelationships { get; set; } = new();
-
-    [JsonPropertyName("gymBadges")]
-    public List<string> GymBadges { get; set; } = new();
-
-    /// <summary>
-    /// Calculated effective stats with class modifiers applied
-    /// </summary>
-    [JsonIgnore]
-    public Stats EffectiveStats => CalculateEffectiveStats();
-    
-    private Stats CalculateEffectiveStats()
-    {
-        return new Stats
-        {
-            Strength = Stats.Strength + (TrainerClassData.StatModifiers?.GetValueOrDefault("Strength", 0) ?? 0),
-            Dexterity = Stats.Dexterity + (TrainerClassData.StatModifiers?.GetValueOrDefault("Dexterity", 0) ?? 0),
-            Constitution = Stats.Constitution + (TrainerClassData.StatModifiers?.GetValueOrDefault("Constitution", 0) ?? 0),
-            Intelligence = Stats.Intelligence + (TrainerClassData.StatModifiers?.GetValueOrDefault("Intelligence", 0) ?? 0),
-            Wisdom = Stats.Wisdom + (TrainerClassData.StatModifiers?.GetValueOrDefault("Wisdom", 0) ?? 0),
-            Charisma = Stats.Charisma + (TrainerClassData.StatModifiers?.GetValueOrDefault("Charisma", 0) ?? 0),
-            CurrentVigor = Stats.CurrentVigor,
-            MaxVigor = Stats.MaxVigor + (TrainerClassData.StatModifiers?.GetValueOrDefault("Vigor", 0) ?? 0)
-        };
-    }
 }
 
-public class Npc
-{
-    [JsonPropertyName("id")]
-    [Description("Unique, descriptive character ID, e.g., 'char_gary_oak' or 'char_lance'. Used as a key in dictionaries and for vector DB lookups.")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
-    [JsonPropertyName("stats")]
-    public Stats Stats { get; set; } = new();
-
-    [JsonPropertyName("characterDetails")]
-    public CharacterDetails CharacterDetails { get; set; } = new();
-
-    [JsonPropertyName("isTrainer")]
-    public bool IsTrainer { get; set; } = false;
-
-    [JsonPropertyName("pokemonOwned")]
-    [Description("List of the unique instance IDs of the pokemon this character owns. Pokemon data is stored in the WorldPokemon collection.")]
-    public List<string> PokemonOwned { get; set; } = new();
-
-    [JsonPropertyName("factions")]
-    [Description("List of the Faction IDs this entity belongs to.")]
-    public List<string> Factions { get; set; } = new();
-}
-
-public class CharacterDetails
-{
-    [JsonPropertyName("class")]
-    public string Class { get; set; } = string.Empty;
-
-    [JsonPropertyName("inventory")]
-    public List<ItemInstance> Inventory { get; set; } = new();
-
-    [JsonPropertyName("money")]
-    public int Money { get; set; } = 500;
-
-    [JsonPropertyName("globalRenown")]
-    [Description("0-100 scale of how famous this character is in a positive way.")]
-    public int GlobalRenown { get; set; } = 0;
-
-    [JsonPropertyName("globalNotoriety")]
-    [Description("0-100 scale of how famous this character is in a negative way.")]
-    public int GlobalNotoriety { get; set; } = 0;
-}
-
-public class Pokemon
-{
-    [JsonPropertyName("id")]
-    [Description("Unique, descriptive instance ID for this specific Pokemon, e.g., 'pkmn_inst_001_pidgey'.")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("nickName")]
-    public string NickName { get; set; } = string.Empty;
-
-    [JsonPropertyName("species")]
-    [Description("The species name, e.g., 'Pikachu'. Can be used to look up canonical species data in a vector DB.")]
-    public string Species { get; set; } = string.Empty;
-
-    [JsonPropertyName("level")]
-    public int Level { get; set; } = 1;
-
-    [JsonPropertyName("knownMoves")]
-    [Description("List of moves this Pokemon knows. Up to 4 moves can be known at once.")]
-    public List<Move> KnownMoves { get; set; } = new();
-
-    [JsonPropertyName("heldItem")]
-    [Description("The item this pokemon is holding")]
-    public string HeldItem { get; set; } = string.Empty;
-
-    [JsonPropertyName("stats")]
-    public Stats Stats { get; set; } = new();
-
-    [JsonPropertyName("type1")]
-    public PokemonType Type1 { get; set; } = PokemonType.Normal;
-
-    [JsonPropertyName("type2")]
-    public PokemonType Type2 { get; set; } = PokemonType.None;
-
-    [JsonPropertyName("abilities")]
-    public List<string> Abilities { get; set; } = new();
-
-    [JsonPropertyName("statusEffects")]
-    public List<string> StatusEffects { get; set; } = new();
-
-    [JsonPropertyName("factions")]
-    [Description("List of the Faction IDs this entity belongs to.")]
-    public List<string> Factions { get; set; } = new();
-}
-
-public class OwnedPokemon
-{
-    [JsonPropertyName("pokemon")]
-    public Pokemon Pokemon { get; set; } = new();
-
-    [JsonPropertyName("experience")]
-    public int Experience { get; set; } = 0;
-
-    [JsonPropertyName("caughtLocationId")]
-    [Description("The ID of the location where the pokemon was caught.")]
-    public string CaughtLocationId { get; set; } = string.Empty;
-
-    [JsonPropertyName("friendship")]
-    [Description("0 - 100 scale. 0 is hated, 100 is loved.")]
-    public int Friendship { get; set; } = 50;
-}
-
-public class Location
-{
-    [JsonPropertyName("id")]
-    [Description("Unique, descriptive location ID, e.g., 'loc_pallet_town'.")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
-    [JsonPropertyName("descriptionVectorId")]
-    [Description("The key to look up the detailed, narrative description in the vector DB.")]
-    public string DescriptionVectorId { get; set; } = string.Empty;
-
-    [JsonPropertyName("pointsOfInterest")]
-    [Description("Key locations or objects within this location, with their own IDs and descriptions.")]
-    public Dictionary<string, string> PointsOfInterest { get; set; } = new();
-
-    [JsonPropertyName("exits")]
-    [Description("Connections to other locations, keyed by direction, value is the destination Location ID.")]
-    public Dictionary<string, string> Exits { get; set; } = new();
-
-    [JsonPropertyName("presentNpcIds")]
-    [Description("List of Character IDs for NPCs currently at this location.")]
-    public List<string> PresentNpcIds { get; set; } = new();
-
-    [JsonPropertyName("presentPokemonIds")]
-    [Description("List of Pokemon Instance IDs for wild Pokemon currently at this location.")]
-    public List<string> PresentPokemonIds { get; set; } = new();
-}
-
+/// <summary>
+/// Generic item instance for inventories
+/// </summary>
 public class ItemInstance
 {
     [JsonPropertyName("itemId")]
@@ -299,234 +124,7 @@ public class ItemInstance
     public int Quantity { get; set; }
 }
 
-/// <summary>
-/// Standard RPG-style ability scores for characters and Pokemon.
-/// Each score typically ranges from 3-20, with 10-11 being average for humans.
-/// </summary>
-public class Stats
-{
 
-    [JsonPropertyName("currentVigor")]
-    public int CurrentVigor { get; set; } = 10;
-
-    [JsonPropertyName("maxVigor")]
-    public int MaxVigor { get; set; } = 10;
-
-    [JsonPropertyName("strength")]
-    [Description("Physical power and raw muscle. Affects melee attack damage and athletic feats.")]
-    public int Strength { get; set; } = 10;
-
-    [JsonPropertyName("dexterity")]
-    [Description("Agility, reflexes, and hand-eye coordination. Affects AC, initiative, and ranged attacks.")]
-    public int Dexterity { get; set; } = 10;
-
-    [JsonPropertyName("constitution")]
-    [Description("Health, stamina, and vital force. Affects hit points and endurance.")]
-    public int Constitution { get; set; } = 10;
-
-    [JsonPropertyName("intelligence")]
-    [Description("Reasoning ability, memory, and analytical thinking. Affects special attack accuracy and damage.")]
-    public int Intelligence { get; set; } = 10;
-
-    [JsonPropertyName("wisdom")]
-    [Description("Awareness, intuition, and insight. Affects perception and saving throws.")]
-    public int Wisdom { get; set; } = 10;
-
-    [JsonPropertyName("charisma")]
-    [Description("Force of personality, leadership, and social ability. Affects Pokemon capture and friendship.")]
-    public int Charisma { get; set; } = 10;
-}
-
-/// <summary>
-/// Represents a Pokemon move with complete mechanical data for RPG-style combat.
-/// </summary>
-public class Move
-{
-    [JsonPropertyName("id")]
-    [Description("Unique move identifier, e.g., 'move_tackle' or 'move_thunderbolt'.")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("name")]
-    [Description("Display name of the move, e.g., 'Tackle' or 'Thunderbolt'.")]
-    public string Name { get; set; } = string.Empty;
-
-    [JsonPropertyName("category")]
-    [Description("The type of move: Physical (uses Strength), Special (uses Intelligence), or Status (no damage).")]
-    public MoveCategory Category { get; set; } = MoveCategory.Physical;
-
-    [JsonPropertyName("damageDice")]
-    [Description("Damage dice notation for the move, e.g., '1d6', '2d10', '1d4+3', or empty for status moves.")]
-    public string DamageDice { get; set; } = string.Empty;
-
-    [JsonPropertyName("type")]
-    [Description("The Pokemon type of this move for type effectiveness calculations.")]
-    public PokemonType Type { get; set; } = PokemonType.Normal;
-
-    [JsonPropertyName("vigorCost")]
-    [Description("Amount of Vigor (energy) this move costs to use. Typical range 1-5")]
-    public int VigorCost { get; set; } = 1;
-
-    [JsonPropertyName("description")]
-    [Description("Narrative description of the move's effects and appearance.")]
-    public string Description { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Blueprint data for Pokemon species, defining their base characteristics.
-/// Used as templates when creating new Pokemon instances.
-/// </summary>
-public class PokemonSpeciesData
-{
-    [JsonPropertyName("speciesName")]
-    [Description("The name of the Pokemon species, e.g., 'Pikachu'.")]
-    public string SpeciesName { get; set; } = string.Empty;
-
-    [JsonPropertyName("baseAbilityScores")]
-    [Description("Base ability scores that all Pokemon of this species start with.")]
-    public Stats BaseAbilityScores { get; set; } = new();
-
-    [JsonPropertyName("learnableMoves")]
-    [Description("List of moves that Pokemon of this species can learn through leveling or training.")]
-    public List<Move> LearnableMoves { get; set; } = new();
-
-    [JsonPropertyName("evolutionInfo")]
-    [Description("A description of what the pokemon evolves into and it's requirements")]
-    public string EvolutionInfo { get; set; } = string.Empty;
-
-    [JsonPropertyName("type1")]
-    [Description("Primary type of this Pokemon species.")]
-    public PokemonType Type1 { get; set; } = PokemonType.Normal;
-
-    [JsonPropertyName("type2")]
-    [Description("Secondary type of this Pokemon species, if any.")]
-    public PokemonType Type2 { get; set; } = PokemonType.None;
-
-    [JsonPropertyName("baseVigor")]
-    [Description("Base vigor (health/energy) for this species.")]
-    public int BaseVigor { get; set; } = 10;
-}
-
-/// <summary>
-/// Blueprint data for trainer classes, defining their progression and abilities.
-/// </summary>
-public class TrainerClass
-{
-    [JsonPropertyName("id")]
-    [Description("Unique identifier for the trainer class, e.g., 'class_researcher', 'class_athlete'.")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("name")]
-    [Description("The name of the trainer class, e.g., 'Researcher', 'Athlete', 'Coordinator'.")]
-    public string Name { get; set; } = string.Empty;
-
-    [JsonPropertyName("description")]
-    [Description("Description of the trainer class and its role.")]
-    public string Description { get; set; } = string.Empty;
-
-    [JsonPropertyName("statModifiers")]
-    [Description("Stat modifiers applied when this class is selected. Keys are stat names, values are modifiers.")]
-    public Dictionary<string, int> StatModifiers { get; set; } = new();
-
-    [JsonPropertyName("startingAbilities")]
-    [Description("List of abilities granted to characters of this class.")]
-    public List<string> StartingAbilities { get; set; } = new();
-
-    [JsonPropertyName("startingMoney")]
-    [Description("Additional starting money for this class.")]
-    public int StartingMoney { get; set; } = 1000;
-
-    [JsonPropertyName("startingItems")]
-    [Description("List of items granted to characters of this class.")]
-    public List<string> StartingItems { get; set; } = new();
-
-    [JsonPropertyName("tags")]
-    [Description("Tags for searching and categorizing this class.")]
-    public List<string> Tags { get; set; } = new();
-
-    [JsonPropertyName("levelUpTable")]
-    [Description("Features gained at each level for this class.")]
-    public Dictionary<int, string> LevelUpTable { get; set; } = new();
-}
-
-/// <summary>
-/// Contains all information about an active combat encounter.
-/// </summary>
-public class CombatState
-{
-    [JsonPropertyName("combatId")]
-    [Description("A unique identifier for this combat encounter.")]
-    public string CombatId { get; set; } = Guid.NewGuid().ToString();
-
-    [JsonPropertyName("combatants")]
-    [Description("A list of all participants in the combat.")]
-    public List<Combatant> Combatants { get; set; } = new();
-
-    [JsonPropertyName("turnOrder")]
-    [Description("The initiative order of combatants, from highest to lowest initiative.")]
-    public List<string> TurnOrder { get; set; } = new();
-
-    [JsonPropertyName("currentTurnIndex")]
-    [Description("The index in the TurnOrder list of the combatant whose turn it is.")]
-    public int CurrentTurnIndex { get; set; } = 0;
-
-    [JsonPropertyName("roundNumber")]
-    [Description("The current round number of the combat.")]
-    public int RoundNumber { get; set; } = 1;
-
-    [JsonPropertyName("combatLog")]
-    [Description("A log of significant events that have occurred during the combat.")]
-    public List<string> CombatLog { get; set; } = new();
-
-    [JsonPropertyName("environmentEffects")]
-    [Description("Any active environmental effects that might affect the combat (e.g., 'Rainy', 'Tall Grass').")]
-    public List<string> EnvironmentEffects { get; set; } = new();
-}
-
-/// <summary>
-/// Represents a single participant in a combat encounter.
-/// </summary>
-public class Combatant
-{
-    [JsonPropertyName("combatantId")]
-    [Description("A unique ID for this combatant in this specific combat, typically the Pokemon or NPC instance ID.")]
-    public string CombatantId { get; set; } = string.Empty;
-
-    [JsonPropertyName("displayName")]
-    [Description("The name to display for this combatant (e.g., 'Pikachu' or 'Team Rocket Grunt').")]
-    public string DisplayName { get; set; } = string.Empty;
-
-    [JsonPropertyName("team")]
-    [Description("The team this combatant belongs to, e.g., 'Player' or 'Opponent'.")]
-    public string Team { get; set; } = string.Empty;
-
-    [JsonPropertyName("initiative")]
-    [Description("The combatant's initiative roll, determining their place in the turn order.")]
-    public int Initiative { get; set; } = 0;
-
-    [JsonPropertyName("isDefeated")]
-    [Description("Whether this combatant has been defeated.")]
-    public bool IsDefeated { get; set; } = false;
-
-    [JsonPropertyName("temporaryEffects")]
-    [Description("A list of temporary effects on this combatant, with their duration in rounds.")]
-    public Dictionary<string, int> TemporaryEffects { get; set; } = new();
-}
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum MoveCategory 
-{ 
-    [Description("Physical moves use Strength for attack rolls and damage.")]
-    Physical, 
-    
-    [Description("Special moves use Intelligence for attack rolls and damage.")]
-    Special, 
-    
-    [Description("Status moves don't deal damage but apply effects.")]
-    Status 
-}
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum PokemonType {None, Normal, Fire, Water, Grass, Electric, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Steel, Dark, Fairy }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum TimeOfDay { Dawn, Morning, Day, Afternoon, Dusk, Night }

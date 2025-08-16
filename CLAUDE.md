@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with the PokeLLM codebase.
 
 ## Project Overview
 
-PokeLLM is a C# console application that creates a structured Pokemon role-playing game powered by Large Language Models (LLM). The application supports multiple LLM providers (OpenAI, Ollama, Gemini) with flexible provider configuration and uses a layered architecture with game controllers, specialized services, and vector storage.
+PokeLLM is a C# console application that creates a Pokemon RPG powered by Large Language Models. It features a dynamic ruleset system, multiple LLM providers (OpenAI, Ollama, Gemini), and a layered architecture with game controllers and specialized services.
 
 ## Essential Commands
 
@@ -29,23 +29,11 @@ dotnet build --no-restore
 
 ### Core Components
 
-**Game Controller System** (`GameLogic/GameController.cs`):
-- Main entry point that routes player input based on game status
-- Coordinates between setup, world generation, and gameplay phases
-- Handles automatic phase transitions
-- Implements streaming responses with cancellation support
-
-**Game Logic Services** (`GameLogic/`):
-- `GameSetupService`: Handles initial game configuration
-- `WorldGenerationService`: Manages world creation process
-- `UnifiedContextService`: Centralized context management
-- Specialized management services for characters, NPCs, Pokemon, and world state
-
-**Orchestration System** (`Orchestration/OrchestrationService.cs`):
-- Focused on gameplay phase management during exploration/combat
-- Handles context gathering and management subroutines
-- Maintains separate Semantic Kernel instances for each game phase
-- Implements streaming responses with error handling
+**Phase Service** (`Orchestration/PhaseService.cs`):
+- Main orchestration component for all game phases
+- Handles LLM integration via Semantic Kernel
+- Manages context gathering and streaming responses
+- Integrates with dynamic ruleset system
 
 **Game Phases**:
 - GameSetup: Initial setup (replaces GameCreation/CharacterCreation)
@@ -63,17 +51,12 @@ dotnet build --no-restore
 - Provider selection configured in `ServiceConfiguration.cs` via `MAIN_LLM_PROVIDER` and `EMBEDDING_PROVIDER` constants
 - Supports mixing providers (e.g., Gemini for chat, Ollama for embeddings)
 
-**Plugin System** (`Plugins/`):
-- Each game phase has a dedicated plugin with specific functions
-- `GameSetupPhasePlugin`: Initial game configuration
-- `WorldGenerationPhasePlugin`: World creation functions
-- `ExplorationPhasePlugin`: Main gameplay interactions
-- `CombatPhasePlugin`: Battle mechanics
-- `LevelUpPhasePlugin`: Character progression
-- `UnifiedContextPlugin`: Centralized context management
-- `ContextGatheringPlugin`: Lightweight context assembly
-- `ContextManagementPlugin`: Comprehensive context validation
-- `ChatManagementPlugin`: Chat history compression
+**Dynamic Ruleset System**:
+- Game mechanics defined in JSON ruleset files
+- `IRulesetManager`: Loads and applies rulesets
+- `IDynamicFunctionFactory`: Generates LLM functions from rulesets
+- Functions generated dynamically replacing static plugins
+- Current ruleset: `pokemon-adventure.json`
 
 **Game State Management** (`GameState/`):
 - `GameStateRepository`: SQLite-based persistence
@@ -98,15 +81,13 @@ dotnet build --no-restore
 - User secrets for API keys (project has UserSecrets enabled)
 - Configuration sections: OpenAI, Ollama, Gemini, Qdrant
 
-### Context Management Flow
+### Application Flow
 
-The application uses a layered architecture with centralized context management:
-
-1. **Game Controller Layer**: Routes input based on game status (setup, world generation, gameplay)
-2. **Service Layer**: Specialized services handle specific game logic areas
-3. **Unified Context Service**: Centralized context management across all phases
-4. **Orchestration Layer**: Manages complex gameplay interactions during exploration/combat
-5. **Plugin Layer**: Provides LLM-accessible functions for each game phase
+1. **Entry Point**: `Program.cs` initializes services and loads the pokemon-adventure ruleset
+2. **Game Controller**: Routes input based on current game phase
+3. **Phase Service**: Orchestrates LLM interactions with dynamic functions
+4. **State Management**: SQLite persistence with automatic saves
+5. **Streaming Responses**: Real-time LLM output to console
 
 ### Key Patterns
 
@@ -125,9 +106,9 @@ The application uses a layered architecture with centralized context management:
 - Focus on dependency resolution, configuration, and vector store operations
 
 ### Prompt System
-- Each game phase has a corresponding `.md` file in `Prompts/` directory
-- System prompts define behavior and available functions for each phase
-- Prompts are loaded dynamically by `OrchestrationService`
+- System prompts defined in ruleset JSON files
+- Phase-specific prompts generated dynamically
+- Context templates configurable per ruleset
 
 ### State Management
 - Game state persisted automatically after each turn
@@ -153,5 +134,30 @@ The application uses a layered architecture with centralized context management:
 
 ### Build Dependencies
 - Project targets .NET 8.0
-- Uses preview packages for Semantic Kernel connectors
-- All content files (prompts, appsettings) are copied to output directory
+- Uses Semantic Kernel for LLM integration
+- Content files (rulesets, appsettings) copied to output directory
+
+## Dynamic Ruleset System
+
+Game mechanics are completely configurable through JSON ruleset files located in `PokeLLM/Rulesets/`.
+
+### Key Components
+- `IRulesetManager`: Loads and applies rulesets
+- `IDynamicFunctionFactory`: Generates LLM functions from rulesets  
+- `RulesetManagementPlugin`: Handles ruleset operations
+- `GameStateModel.RulesetGameData`: Dynamic game data storage
+
+### Ruleset Structure
+- **Metadata**: Name, version, description
+- **Game Data**: Species, moves, items, type effectiveness
+- **Function Definitions**: LLM-callable functions per phase
+- **Prompt Templates**: Phase-specific system prompts
+- **Validation Rules**: Game mechanics compliance
+
+### Current Ruleset
+`pokemon-adventure.json` - Complete Pokemon RPG with:
+- 151 original Pokemon species with stats and movesets
+- Type effectiveness chart and battle mechanics
+- Trainer classes and progression systems
+- Items, abilities, and status effects
+- All 5 game phases with 50+ dynamic functions

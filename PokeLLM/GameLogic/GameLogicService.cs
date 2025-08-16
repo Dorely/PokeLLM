@@ -164,7 +164,7 @@ public interface IGameLogicService
 
     // Helper Methods
     int CalculateAbilityModifier(int abilityScore);
-    int GetAbilityScore(Stats stats, string statName);
+    int GetAbilityScore(string statName);
     bool IsValidStatName(string statName);
     string GetDifficultyDescription(int difficultyClass);
 }
@@ -364,18 +364,9 @@ public class GameLogicService : IGameLogicService
             };
         }
 
-        // Validate stat name
-        if (!IsValidStatName(statName))
-        {
-            return new SkillCheckResult
-            {
-                Success = false,
-                Error = "Invalid stat name. Use: Strength, Dexterity, Constitution, Intelligence, Wisdom, or Charisma"
-            };
-        }
-
-        // Get stat modifier using standard RPG rules
-        var abilityScore = GetAbilityScore(gameState.Player.Stats, statName);
+        // For now, use a default ability score of 10 (average) since player stats are now dynamic
+        // In a full implementation, this would look up stats from RulesetGameData
+        var abilityScore = 10; // Default average ability score
         var statModifier = CalculateAbilityModifier(abilityScore);
 
         // Roll the dice based on advantage/disadvantage
@@ -546,20 +537,14 @@ public class GameLogicService : IGameLogicService
     }
 
     /// <summary>
-    /// Gets the ability score for the specified stat name using standard ability scores
+    /// Gets the ability score for the specified stat name using default values
+    /// In a full implementation, this would look up stats from RulesetGameData
     /// </summary>
-    public int GetAbilityScore(Stats stats, string statName)
+    public int GetAbilityScore(string statName)
     {
-        return statName.ToLower() switch
-        {
-            "strength" => stats.Strength,
-            "dexterity" => stats.Dexterity,
-            "constitution" => stats.Constitution,
-            "intelligence" => stats.Intelligence,
-            "wisdom" => stats.Wisdom,
-            "charisma" => stats.Charisma,
-            _ => 10 // Default to 10 (average) if invalid stat name
-        };
+        // Return default ability score of 10 for all stats during migration
+        // In the final implementation, this would look up values from the active ruleset
+        return 10;
     }
 
     /// <summary>

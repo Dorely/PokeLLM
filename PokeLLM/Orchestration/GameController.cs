@@ -46,7 +46,7 @@ public class GameController : IGameController
             case GamePhase.WorldGeneration:
                 // World generation runs autonomously - adjust input for continuation
                 string worldGenInput = input == "Begin world generation based on setup." || string.IsNullOrEmpty(input) ? 
-                    "Begin comprehensive world generation based on the completed setup. Create a rich, detailed world with multiple locations, NPCs, wild Pokemon, and lore. Provide engaging updates about your progress." : 
+                    "Begin comprehensive world generation based on the completed setup. Create a rich, detailed world with multiple locations, NPCs, and entities appropriate for the active ruleset. Provide engaging updates about your progress." : 
                     input;
                     
                 var worldGenPhaseService = _phaseServiceProvider.GetPhaseService(GamePhase.WorldGeneration);
@@ -125,9 +125,10 @@ public class GameController : IGameController
     private async Task<bool> IsGameSetupCompleteAsync()
     {
         var gameState = await _gameStateRepository.LoadLatestStateAsync();
+        // For now, just check basic requirements since CharacterDetails is removed
+        // In a full implementation, this would check ruleset-specific setup requirements
         return !string.IsNullOrEmpty(gameState.Region) &&
-               !string.IsNullOrEmpty(gameState.Player.Name) &&
-               !string.IsNullOrEmpty(gameState.Player.CharacterDetails.Class);
+               !string.IsNullOrEmpty(gameState.Player.Name);
     }
     
     private string CreatePhaseTransitionMessage(GamePhase fromPhase, GamePhase toPhase, string phaseChangeSummary)
@@ -143,7 +144,7 @@ public class GameController : IGameController
         {
             GamePhase.GameSetup => $"{baseMessage} Please continue with game setup. Help the player configure their character and choose their region.",
             
-            GamePhase.WorldGeneration => $"{baseMessage} Please begin world generation based on the completed setup. Create a rich, detailed world with multiple locations, NPCs, wild Pokemon, and lore.",
+            GamePhase.WorldGeneration => $"{baseMessage} Please begin world generation based on the completed setup. Create a rich, detailed world with multiple locations, NPCs, and entities appropriate for the active ruleset.",
             
             GamePhase.Exploration => $"{baseMessage} Please continue the adventure in exploration mode. The player can now explore the world, interact with NPCs, and discover new locations.",
             

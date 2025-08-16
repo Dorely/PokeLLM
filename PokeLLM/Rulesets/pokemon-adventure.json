@@ -1,0 +1,1235 @@
+{
+  "metadata": {
+    "id": "pokemon-adventure",
+    "name": "Pokemon Adventure RPG",
+    "version": "1.0.0",
+    "description": "D&D-style Pokemon adventure ruleset with trainer progression, multi-combatant battles, and energy-based combat",
+    "authors": ["PokeLLM Team"],
+    "tags": ["pokemon", "adventure", "rpg", "trainer", "battle"]
+  },
+  "gameStateSchema": {
+    "requiredCollections": [
+      "trainers",
+      "wildPokemon",
+      "capturedPokemon",
+      "locations",
+      "items",
+      "battleStates",
+      "gymBadges",
+      "questProgress"
+    ],
+    "playerFields": [
+      "trainerClass",
+      "level",
+      "experience",
+      "stats",
+      "energy",
+      "abilities",
+      "inventory",
+      "activePokemon",
+      "pokemonTeam",
+      "gymBadges",
+      "knownMoves"
+    ],
+    "dynamicCollections": {
+      "wildPokemon": "Pokemon",
+      "capturedPokemon": "Pokemon",
+      "trainers": "Trainer",
+      "battleStates": "Battle",
+      "locations": "Location"
+    }
+  },
+  "trainerClasses": [
+    {
+      "id": "ace_trainer",
+      "name": "Ace Trainer",
+      "description": "Well-rounded trainer with balanced combat and exploration skills",
+      "baseStats": {
+        "strength": 12,
+        "dexterity": 12,
+        "constitution": 14,
+        "intelligence": 12,
+        "wisdom": 13,
+        "charisma": 12
+      },
+      "startingAbilities": ["Leadership", "Pokemon Bond"],
+      "levelProgression": {
+        "statGrowth": {
+          "strength": 2,
+          "dexterity": 2,
+          "constitution": 3,
+          "intelligence": 2,
+          "wisdom": 3,
+          "charisma": 2
+        },
+        "abilityUnlocks": {
+          "5": "Battle Strategy",
+          "10": "Team Coordination",
+          "15": "Master Trainer",
+          "20": "Champion's Spirit"
+        }
+      },
+      "startingItems": ["5 Pokeball", "3 Potion", "Trainer License", "Pokedex"],
+      "startingPokemon": 1
+    },
+    {
+      "id": "pokemon_researcher",
+      "name": "Pokemon Researcher",
+      "description": "Scholar focused on Pokemon biology, behavior, and type effectiveness",
+      "baseStats": {
+        "strength": 10,
+        "dexterity": 11,
+        "constitution": 12,
+        "intelligence": 16,
+        "wisdom": 14,
+        "charisma": 11
+      },
+      "startingAbilities": ["Type Analysis", "Pokemon Knowledge"],
+      "levelProgression": {
+        "statGrowth": {
+          "strength": 1,
+          "dexterity": 2,
+          "constitution": 2,
+          "intelligence": 4,
+          "wisdom": 3,
+          "charisma": 2
+        },
+        "abilityUnlocks": {
+          "5": "Advanced Analysis",
+          "10": "Weakness Exploitation",
+          "15": "Type Mastery",
+          "20": "Professor's Insight"
+        }
+      },
+      "startingItems": ["3 Pokeball", "Research Notes", "Advanced Pokedex", "Type Chart"],
+      "startingPokemon": 1
+    },
+    {
+      "id": "pokemon_ranger",
+      "name": "Pokemon Ranger",
+      "description": "Nature-focused trainer skilled in exploration and Pokemon communication",
+      "baseStats": {
+        "strength": 13,
+        "dexterity": 15,
+        "constitution": 14,
+        "intelligence": 11,
+        "wisdom": 15,
+        "charisma": 10
+      },
+      "startingAbilities": ["Nature Walk", "Pokemon Empathy"],
+      "levelProgression": {
+        "statGrowth": {
+          "strength": 2,
+          "dexterity": 3,
+          "constitution": 3,
+          "intelligence": 2,
+          "wisdom": 3,
+          "charisma": 1
+        },
+        "abilityUnlocks": {
+          "5": "Wild Bond",
+          "10": "Terrain Mastery",
+          "15": "Alpha Connection",
+          "20": "Guardian of Nature"
+        }
+      },
+      "startingItems": ["4 Pokeball", "Survival Kit", "Map", "Ranger Badge"],
+      "startingPokemon": 1
+    }
+  ],
+  "pokemonTypes": [
+    "Normal", "Fire", "Water", "Electric", "Grass", "Ice",
+    "Fighting", "Poison", "Ground", "Flying", "Psychic", "Bug",
+    "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy"
+  ],
+  "typeChart": {
+    "Normal": {
+      "superEffective": [],
+      "notVeryEffective": ["Rock", "Steel"],
+      "noEffect": ["Ghost"]
+    },
+    "Fire": {
+      "superEffective": ["Grass", "Ice", "Bug", "Steel"],
+      "notVeryEffective": ["Fire", "Water", "Rock", "Dragon"],
+      "noEffect": []
+    },
+    "Water": {
+      "superEffective": ["Fire", "Ground", "Rock"],
+      "notVeryEffective": ["Water", "Grass", "Dragon"],
+      "noEffect": []
+    },
+    "Electric": {
+      "superEffective": ["Water", "Flying"],
+      "notVeryEffective": ["Electric", "Grass", "Dragon"],
+      "noEffect": ["Ground"]
+    },
+    "Grass": {
+      "superEffective": ["Water", "Ground", "Rock"],
+      "notVeryEffective": ["Fire", "Grass", "Poison", "Flying", "Bug", "Dragon", "Steel"],
+      "noEffect": []
+    },
+    "Ice": {
+      "superEffective": ["Grass", "Ground", "Flying", "Dragon"],
+      "notVeryEffective": ["Fire", "Water", "Ice", "Steel"],
+      "noEffect": []
+    },
+    "Fighting": {
+      "superEffective": ["Normal", "Ice", "Rock", "Dark", "Steel"],
+      "notVeryEffective": ["Poison", "Flying", "Psychic", "Bug", "Fairy"],
+      "noEffect": ["Ghost"]
+    },
+    "Poison": {
+      "superEffective": ["Grass", "Fairy"],
+      "notVeryEffective": ["Poison", "Ground", "Rock", "Ghost"],
+      "noEffect": ["Steel"]
+    },
+    "Ground": {
+      "superEffective": ["Fire", "Electric", "Poison", "Rock", "Steel"],
+      "notVeryEffective": ["Grass", "Bug"],
+      "noEffect": ["Flying"]
+    },
+    "Flying": {
+      "superEffective": ["Electric", "Grass", "Fighting", "Bug"],
+      "notVeryEffective": ["Electric", "Rock", "Steel"],
+      "noEffect": []
+    },
+    "Psychic": {
+      "superEffective": ["Fighting", "Poison"],
+      "notVeryEffective": ["Psychic", "Steel"],
+      "noEffect": ["Dark"]
+    },
+    "Bug": {
+      "superEffective": ["Grass", "Psychic", "Dark"],
+      "notVeryEffective": ["Fire", "Fighting", "Poison", "Flying", "Ghost", "Steel", "Fairy"],
+      "noEffect": []
+    },
+    "Rock": {
+      "superEffective": ["Fire", "Ice", "Flying", "Bug"],
+      "notVeryEffective": ["Fighting", "Ground", "Steel"],
+      "noEffect": []
+    },
+    "Ghost": {
+      "superEffective": ["Psychic", "Ghost"],
+      "notVeryEffective": ["Dark"],
+      "noEffect": ["Normal"]
+    },
+    "Dragon": {
+      "superEffective": ["Dragon"],
+      "notVeryEffective": ["Steel"],
+      "noEffect": ["Fairy"]
+    },
+    "Dark": {
+      "superEffective": ["Psychic", "Ghost"],
+      "notVeryEffective": ["Fighting", "Dark", "Fairy"],
+      "noEffect": []
+    },
+    "Steel": {
+      "superEffective": ["Ice", "Rock", "Fairy"],
+      "notVeryEffective": ["Fire", "Water", "Electric", "Steel"],
+      "noEffect": []
+    },
+    "Fairy": {
+      "superEffective": ["Fighting", "Dragon", "Dark"],
+      "notVeryEffective": ["Fire", "Poison", "Steel"],
+      "noEffect": []
+    }
+  },
+  "pokemonSpecies": [
+    {
+      "id": "pikachu",
+      "name": "Pikachu",
+      "type1": "Electric",
+      "type2": null,
+      "baseStats": {
+        "hp": 35,
+        "attack": 55,
+        "defense": 40,
+        "spAttack": 50,
+        "spDefense": 50,
+        "speed": 90
+      },
+      "baseEnergy": 80,
+      "abilities": ["Static", "Lightning Rod"],
+      "levelUpMoves": {
+        "1": ["Thunder Shock", "Growl"],
+        "5": ["Quick Attack"],
+        "10": ["Double Team"],
+        "15": ["Thunder Wave"],
+        "20": ["Thunderbolt"],
+        "25": ["Agility"],
+        "30": ["Thunder"]
+      },
+      "evolution": {
+        "method": "item",
+        "requirement": "Thunder Stone",
+        "result": "raichu"
+      }
+    },
+    {
+      "id": "raichu",
+      "name": "Raichu",
+      "type1": "Electric",
+      "type2": null,
+      "baseStats": {
+        "hp": 60,
+        "attack": 90,
+        "defense": 55,
+        "spAttack": 90,
+        "spDefense": 80,
+        "speed": 110
+      },
+      "baseEnergy": 100,
+      "abilities": ["Static", "Lightning Rod"]
+    },
+    {
+      "id": "charmander",
+      "name": "Charmander",
+      "type1": "Fire",
+      "type2": null,
+      "baseStats": {
+        "hp": 39,
+        "attack": 52,
+        "defense": 43,
+        "spAttack": 60,
+        "spDefense": 50,
+        "speed": 65
+      },
+      "baseEnergy": 70,
+      "abilities": ["Blaze", "Solar Power"],
+      "levelUpMoves": {
+        "1": ["Scratch", "Growl"],
+        "7": ["Ember"],
+        "13": ["Dragon Rage"],
+        "19": ["Scary Face"],
+        "25": ["Fire Fang"],
+        "31": ["Flame Burst"],
+        "37": ["Flamethrower"]
+      },
+      "evolution": {
+        "method": "level",
+        "requirement": 16,
+        "result": "charmeleon"
+      }
+    },
+    {
+      "id": "charmeleon",
+      "name": "Charmeleon",
+      "type1": "Fire",
+      "type2": null,
+      "baseStats": {
+        "hp": 58,
+        "attack": 64,
+        "defense": 58,
+        "spAttack": 80,
+        "spDefense": 65,
+        "speed": 80
+      },
+      "baseEnergy": 85,
+      "abilities": ["Blaze", "Solar Power"],
+      "evolution": {
+        "method": "level",
+        "requirement": 36,
+        "result": "charizard"
+      }
+    },
+    {
+      "id": "charizard",
+      "name": "Charizard",
+      "type1": "Fire",
+      "type2": "Flying",
+      "baseStats": {
+        "hp": 78,
+        "attack": 84,
+        "defense": 78,
+        "spAttack": 109,
+        "spDefense": 85,
+        "speed": 100
+      },
+      "baseEnergy": 120,
+      "abilities": ["Blaze", "Solar Power"]
+    },
+    {
+      "id": "squirtle",
+      "name": "Squirtle",
+      "type1": "Water",
+      "type2": null,
+      "baseStats": {
+        "hp": 44,
+        "attack": 48,
+        "defense": 65,
+        "spAttack": 50,
+        "spDefense": 64,
+        "speed": 43
+      },
+      "baseEnergy": 75,
+      "abilities": ["Torrent", "Rain Dish"],
+      "levelUpMoves": {
+        "1": ["Tackle", "Tail Whip"],
+        "4": ["Water Gun"],
+        "7": ["Withdraw"],
+        "10": ["Rapid Spin"],
+        "13": ["Bubble"],
+        "16": ["Bite"],
+        "19": ["Water Pulse"]
+      },
+      "evolution": {
+        "method": "level",
+        "requirement": 16,
+        "result": "wartortle"
+      }
+    },
+    {
+      "id": "wartortle",
+      "name": "Wartortle",
+      "type1": "Water",
+      "type2": null,
+      "baseStats": {
+        "hp": 59,
+        "attack": 63,
+        "defense": 80,
+        "spAttack": 65,
+        "spDefense": 80,
+        "speed": 58
+      },
+      "baseEnergy": 90,
+      "abilities": ["Torrent", "Rain Dish"],
+      "evolution": {
+        "method": "level",
+        "requirement": 36,
+        "result": "blastoise"
+      }
+    },
+    {
+      "id": "blastoise",
+      "name": "Blastoise",
+      "type1": "Water",
+      "type2": null,
+      "baseStats": {
+        "hp": 79,
+        "attack": 83,
+        "defense": 100,
+        "spAttack": 85,
+        "spDefense": 105,
+        "speed": 78
+      },
+      "baseEnergy": 110,
+      "abilities": ["Torrent", "Rain Dish"]
+    }
+  ],
+  "moves": [
+    {
+      "id": "thunder_shock",
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "power": 40,
+      "energyCost": 15,
+      "accuracy": 100,
+      "effects": [
+        {
+          "type": "damage",
+          "formula": "power * (attack/defense) * typeEffectiveness * random(0.85, 1.0)"
+        },
+        {
+          "type": "statusChance",
+          "status": "paralyzed",
+          "chance": 10
+        }
+      ]
+    },
+    {
+      "id": "thunderbolt",
+      "name": "Thunderbolt",
+      "type": "Electric",
+      "category": "Special",
+      "power": 90,
+      "energyCost": 35,
+      "accuracy": 100,
+      "effects": [
+        {
+          "type": "damage",
+          "formula": "power * (spAttack/spDefense) * typeEffectiveness * random(0.85, 1.0)"
+        },
+        {
+          "type": "statusChance",
+          "status": "paralyzed",
+          "chance": 10
+        }
+      ]
+    },
+    {
+      "id": "flamethrower",
+      "name": "Flamethrower",
+      "type": "Fire",
+      "category": "Special",
+      "power": 90,
+      "energyCost": 35,
+      "accuracy": 100,
+      "effects": [
+        {
+          "type": "damage",
+          "formula": "power * (spAttack/spDefense) * typeEffectiveness * random(0.85, 1.0)"
+        },
+        {
+          "type": "statusChance",
+          "status": "burned",
+          "chance": 10
+        }
+      ]
+    },
+    {
+      "id": "water_gun",
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "power": 40,
+      "energyCost": 15,
+      "accuracy": 100,
+      "effects": [
+        {
+          "type": "damage",
+          "formula": "power * (spAttack/spDefense) * typeEffectiveness * random(0.85, 1.0)"
+        }
+      ]
+    },
+    {
+      "id": "tackle",
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "power": 35,
+      "energyCost": 10,
+      "accuracy": 95,
+      "effects": [
+        {
+          "type": "damage",
+          "formula": "power * (attack/defense) * typeEffectiveness * random(0.85, 1.0)"
+        }
+      ]
+    },
+    {
+      "id": "quick_attack",
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "power": 40,
+      "energyCost": 12,
+      "accuracy": 100,
+      "priority": 1,
+      "effects": [
+        {
+          "type": "damage",
+          "formula": "power * (attack/defense) * typeEffectiveness * random(0.85, 1.0)"
+        }
+      ]
+    }
+  ],
+  "statusEffects": [
+    {
+      "id": "paralyzed",
+      "name": "Paralyzed",
+      "description": "Pokemon may be unable to move (25% chance)",
+      "effects": [
+        {
+          "type": "speedModifier",
+          "value": 0.5
+        },
+        {
+          "type": "moveBlockChance",
+          "chance": 25
+        }
+      ],
+      "duration": "permanent",
+      "curedBy": ["Paralyze Heal", "Full Heal", "rest"]
+    },
+    {
+      "id": "burned",
+      "name": "Burned",
+      "description": "Pokemon loses HP each turn and attack is reduced",
+      "effects": [
+        {
+          "type": "endTurnDamage",
+          "formula": "maxHP / 16"
+        },
+        {
+          "type": "attackModifier",
+          "value": 0.5
+        }
+      ],
+      "duration": "permanent",
+      "curedBy": ["Burn Heal", "Full Heal", "rest"]
+    },
+    {
+      "id": "poisoned",
+      "name": "Poisoned",
+      "description": "Pokemon loses HP each turn",
+      "effects": [
+        {
+          "type": "endTurnDamage",
+          "formula": "maxHP / 8"
+        }
+      ],
+      "duration": "permanent",
+      "curedBy": ["Antidote", "Full Heal", "rest"]
+    },
+    {
+      "id": "sleeping",
+      "name": "Sleeping",
+      "description": "Pokemon cannot move until it wakes up",
+      "effects": [
+        {
+          "type": "moveBlock",
+          "value": true
+        },
+        {
+          "type": "wakeUpChance",
+          "chance": 33
+        }
+      ],
+      "duration": "1-3 turns",
+      "curedBy": ["Awakening", "Full Heal", "taking damage"]
+    }
+  ],
+  "abilities": [
+    {
+      "id": "static",
+      "name": "Static",
+      "description": "Contact with this Pokemon may cause paralysis",
+      "trigger": "onContact",
+      "effect": {
+        "type": "statusInflict",
+        "status": "paralyzed",
+        "chance": 30
+      }
+    },
+    {
+      "id": "blaze",
+      "name": "Blaze",
+      "description": "Powers up Fire-type moves when HP is low",
+      "trigger": "onAttack",
+      "condition": "hp < 33%",
+      "effect": {
+        "type": "moveTypeBoost",
+        "moveType": "Fire",
+        "multiplier": 1.5
+      }
+    },
+    {
+      "id": "torrent",
+      "name": "Torrent",
+      "description": "Powers up Water-type moves when HP is low",
+      "trigger": "onAttack",
+      "condition": "hp < 33%",
+      "effect": {
+        "type": "moveTypeBoost",
+        "moveType": "Water",
+        "multiplier": 1.5
+      }
+    }
+  ],
+  "experienceSystem": {
+    "trainerLevelChart": {
+      "1": 0,
+      "2": 100,
+      "3": 300,
+      "4": 600,
+      "5": 1000,
+      "10": 4500,
+      "15": 12000,
+      "20": 25000
+    },
+    "expSources": {
+      "wildPokemonCapture": 50,
+      "trainerBattleWin": 200,
+      "gymLeaderDefeat": 1000,
+      "explorationChallenge": 100,
+      "questCompletion": 500
+    }
+  },
+  "functionDefinitions": {
+    "GameSetup": [
+      {
+        "id": "select_trainer_class",
+        "name": "select_trainer_class",
+        "description": "Select a trainer class that determines starting stats and abilities",
+        "parameters": [
+          {
+            "name": "classId",
+            "type": "string",
+            "description": "ID of the trainer class to select",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.trainerClass == null || character.trainerClass == ''",
+          "rulesetData.trainerClasses.hasOwnProperty({{classId}})"
+        ],
+        "effects": [
+          {
+            "target": "character.trainerClass",
+            "operation": "set",
+            "value": "{{classId}}"
+          },
+          {
+            "target": "character.stats",
+            "operation": "setFromRuleset",
+            "source": "trainerClasses.{{classId}}.baseStats"
+          },
+          {
+            "target": "character.abilities",
+            "operation": "addFromRuleset",
+            "source": "trainerClasses.{{classId}}.startingAbilities"
+          }
+        ]
+      },
+      {
+        "id": "choose_starter_pokemon",
+        "name": "choose_starter_pokemon",
+        "description": "Choose a starter Pokemon from available options",
+        "parameters": [
+          {
+            "name": "speciesId",
+            "type": "string",
+            "description": "Species ID of the starter Pokemon",
+            "required": true
+          },
+          {
+            "name": "nickname",
+            "type": "string",
+            "description": "Optional nickname for the Pokemon",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "character.pokemonTeam.length == 0",
+          "rulesetData.pokemonSpecies.hasOwnProperty({{speciesId}})"
+        ],
+        "effects": [
+          {
+            "target": "gameState.player.pokemonTeam",
+            "operation": "addPokemon",
+            "value": {
+              "speciesId": "{{speciesId}}",
+              "nickname": "{{nickname}}",
+              "level": 5,
+              "experience": 0
+            }
+          }
+        ]
+      }
+    ],
+    "WorldGeneration": [
+      {
+        "id": "generate_wild_pokemon",
+        "name": "generate_wild_pokemon",
+        "description": "Generate wild Pokemon in a location based on habitat",
+        "parameters": [
+          {
+            "name": "locationId",
+            "type": "string",
+            "description": "Location where Pokemon will be generated",
+            "required": true
+          },
+          {
+            "name": "habitat",
+            "type": "string",
+            "description": "Habitat type (forest, cave, water, etc.)",
+            "required": true
+          },
+          {
+            "name": "count",
+            "type": "int",
+            "description": "Number of Pokemon to generate",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "{{count}} > 0 && {{count}} <= 10"
+        ],
+        "effects": [
+          {
+            "target": "gameState.wildPokemon",
+            "operation": "generatePokemon",
+            "value": {
+              "locationId": "{{locationId}}",
+              "habitat": "{{habitat}}",
+              "count": "{{count}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "create_gym",
+        "name": "create_gym",
+        "description": "Create a gym with a leader and theme",
+        "parameters": [
+          {
+            "name": "gymId",
+            "type": "string",
+            "description": "Unique identifier for the gym",
+            "required": true
+          },
+          {
+            "name": "leaderName",
+            "type": "string",
+            "description": "Name of the gym leader",
+            "required": true
+          },
+          {
+            "name": "type",
+            "type": "string",
+            "description": "Pokemon type specialty of the gym",
+            "required": true
+          },
+          {
+            "name": "level",
+            "type": "int",
+            "description": "Challenge level of the gym (1-8)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "{{level}} >= 1 && {{level}} <= 8",
+          "rulesetData.pokemonTypes.includes({{type}})"
+        ],
+        "effects": [
+          {
+            "target": "gameState.gyms",
+            "operation": "addGym",
+            "value": {
+              "id": "{{gymId}}",
+              "leader": "{{leaderName}}",
+              "type": "{{type}}",
+              "level": "{{level}}"
+            }
+          }
+        ]
+      }
+    ],
+    "Exploration": [
+      {
+        "id": "attempt_capture",
+        "name": "attempt_capture",
+        "description": "Attempt to capture a wild Pokemon using a Pokeball",
+        "parameters": [
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "ID of the wild Pokemon to capture",
+            "required": true
+          },
+          {
+            "name": "pokeballType",
+            "type": "string",
+            "description": "Type of Pokeball to use",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.inventory[{{pokeballType}}] > 0",
+          "character.pokemonTeam.length < 6",
+          "gameState.wildPokemon.hasOwnProperty({{pokemonId}})"
+        ],
+        "effects": [
+          {
+            "target": "character.inventory[{{pokeballType}}]",
+            "operation": "subtract",
+            "value": 1
+          },
+          {
+            "target": "gameState.player.pokemonTeam",
+            "operation": "addPokemon",
+            "value": "{{pokemonId}}"
+          },
+          {
+            "target": "gameState.wildPokemon",
+            "operation": "removePokemon",
+            "value": "{{pokemonId}}"
+          },
+          {
+            "target": "character.experience",
+            "operation": "add",
+            "value": 50
+          }
+        ]
+      },
+      {
+        "id": "use_item",
+        "name": "use_item",
+        "description": "Use an item from inventory",
+        "parameters": [
+          {
+            "name": "itemId",
+            "type": "string",
+            "description": "ID of the item to use",
+            "required": true
+          },
+          {
+            "name": "targetId",
+            "type": "string",
+            "description": "Target Pokemon ID (if applicable)",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "character.inventory[{{itemId}}] > 0"
+        ],
+        "effects": [
+          {
+            "target": "character.inventory[{{itemId}}]",
+            "operation": "subtract",
+            "value": 1
+          },
+          {
+            "target": "gameState.player.pokemonTeam",
+            "operation": "applyItem",
+            "value": {
+              "itemId": "{{itemId}}",
+              "targetId": "{{targetId}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "rest_at_pokemon_center",
+        "name": "rest_at_pokemon_center",
+        "description": "Rest at a Pokemon Center to heal Pokemon and restore energy",
+        "parameters": [],
+        "ruleValidations": [
+          "gameState.currentLocation.hasPokemonCenter == true"
+        ],
+        "effects": [
+          {
+            "target": "gameState.player.pokemonTeam",
+            "operation": "fullHeal",
+            "value": "all"
+          },
+          {
+            "target": "character.energy",
+            "operation": "restore",
+            "value": "full"
+          }
+        ]
+      }
+    ],
+    "Combat": [
+      {
+        "id": "use_move",
+        "name": "use_move",
+        "description": "Have active Pokemon use a move in battle",
+        "parameters": [
+          {
+            "name": "moveId",
+            "type": "string",
+            "description": "ID of the move to use",
+            "required": true
+          },
+          {
+            "name": "targetId",
+            "type": "string",
+            "description": "ID of the target Pokemon",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "battleState.activePokemon.moves.includes({{moveId}})",
+          "battleState.activePokemon.energy >= moves[{{moveId}}].energyCost",
+          "battleState.activePokemon.status != 'fainted'"
+        ],
+        "effects": [
+          {
+            "target": "battleState.activePokemon.energy",
+            "operation": "subtract",
+            "value": "moves[{{moveId}}].energyCost"
+          },
+          {
+            "target": "battleState.targets",
+            "operation": "applyMove",
+            "value": {
+              "moveId": "{{moveId}}",
+              "user": "battleState.activePokemon",
+              "target": "{{targetId}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "switch_pokemon",
+        "name": "switch_pokemon",
+        "description": "Switch to a different Pokemon",
+        "parameters": [
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "ID of Pokemon to switch to",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.pokemonTeam.find(p => p.id == {{pokemonId}}).status != 'fainted'",
+          "battleState.activePokemon.id != {{pokemonId}}"
+        ],
+        "effects": [
+          {
+            "target": "battleState.activePokemon",
+            "operation": "switch",
+            "value": "{{pokemonId}}"
+          }
+        ]
+      },
+      {
+        "id": "use_item_in_battle",
+        "name": "use_item_in_battle",
+        "description": "Use an item during battle",
+        "parameters": [
+          {
+            "name": "itemId",
+            "type": "string",
+            "description": "ID of the item to use",
+            "required": true
+          },
+          {
+            "name": "targetId",
+            "type": "string",
+            "description": "Target Pokemon ID",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "character.inventory[{{itemId}}] > 0",
+          "items[{{itemId}}].usableInBattle == true"
+        ],
+        "effects": [
+          {
+            "target": "character.inventory[{{itemId}}]",
+            "operation": "subtract",
+            "value": 1
+          },
+          {
+            "target": "battleState.pokemon",
+            "operation": "applyItem",
+            "value": {
+              "itemId": "{{itemId}}",
+              "targetId": "{{targetId}}"
+            }
+          }
+        ]
+      }
+    ],
+    "LevelUp": [
+      {
+        "id": "level_up_pokemon",
+        "name": "level_up_pokemon",
+        "description": "Level up a Pokemon and potentially learn new moves",
+        "parameters": [
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "ID of the Pokemon to level up",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.pokemonTeam.find(p => p.id == {{pokemonId}}).experience >= getExpForNextLevel(pokemon.level)"
+        ],
+        "effects": [
+          {
+            "target": "character.pokemonTeam[{{pokemonId}}].level",
+            "operation": "add",
+            "value": 1
+          },
+          {
+            "target": "character.pokemonTeam[{{pokemonId}}].stats",
+            "operation": "recalculate",
+            "value": "levelUp"
+          },
+          {
+            "target": "character.pokemonTeam[{{pokemonId}}].moves",
+            "operation": "checkNewMoves",
+            "value": "currentLevel"
+          }
+        ]
+      },
+      {
+        "id": "learn_move",
+        "name": "learn_move",
+        "description": "Have a Pokemon learn a new move",
+        "parameters": [
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "ID of the Pokemon learning the move",
+            "required": true
+          },
+          {
+            "name": "moveId",
+            "type": "string",
+            "description": "ID of the move to learn",
+            "required": true
+          },
+          {
+            "name": "forgetMoveId",
+            "type": "string",
+            "description": "ID of move to forget if Pokemon knows 4 moves",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "rulesetData.moves.hasOwnProperty({{moveId}})",
+          "character.pokemonTeam.find(p => p.id == {{pokemonId}}).moves.length < 4 || {{forgetMoveId}} != null"
+        ],
+        "effects": [
+          {
+            "target": "character.pokemonTeam[{{pokemonId}}].moves",
+            "operation": "learnMove",
+            "value": {
+              "newMove": "{{moveId}}",
+              "forgetMove": "{{forgetMoveId}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "evolve_pokemon",
+        "name": "evolve_pokemon",
+        "description": "Evolve a Pokemon if evolution conditions are met",
+        "parameters": [
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "ID of the Pokemon to evolve",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.pokemonTeam.find(p => p.id == {{pokemonId}}).canEvolve == true"
+        ],
+        "effects": [
+          {
+            "target": "character.pokemonTeam[{{pokemonId}}]",
+            "operation": "evolve",
+            "value": "nextEvolution"
+          }
+        ]
+      }
+    ]
+  },
+  "promptTemplates": {
+    "GameSetup": {
+      "systemPrompt": "You are helping create a Pokemon trainer character for an adventure campaign. The trainer will explore the world, capture Pokemon, battle other trainers, and challenge gym leaders in a D&D-style RPG setting.",
+      "phaseObjective": "Complete trainer setup by selecting a class and choosing a starter Pokemon",
+      "availableFunctions": ["select_trainer_class", "choose_starter_pokemon"],
+      "contextElements": [
+        "Available trainer classes with their specializations",
+        "Starter Pokemon options with basic stats",
+        "World background and adventure premise"
+      ]
+    },
+    "WorldGeneration": {
+      "systemPrompt": "You are the Game Master creating a Pokemon adventure world. Generate diverse locations with appropriate wild Pokemon, establish gyms with themed leaders, and create interesting exploration opportunities.",
+      "phaseObjective": "Build a complete adventure world with locations, wild Pokemon, gyms, and NPCs",
+      "availableFunctions": ["generate_wild_pokemon", "create_gym", "establish_location"],
+      "contextElements": [
+        "Regional geography and climate",
+        "Pokemon habitats and spawn rates",
+        "Gym progression difficulty curve",
+        "Story themes and major NPCs"
+      ]
+    },
+    "Exploration": {
+      "systemPrompt": "You are guiding a Pokemon trainer's adventure through the world. Manage encounters with wild Pokemon, interactions with NPCs, exploration challenges, and progression toward gym battles.",
+      "phaseObjective": "Facilitate exploration, Pokemon capture, trainer battles, and story progression",
+      "availableFunctions": ["attempt_capture", "use_item", "rest_at_pokemon_center", "challenge_trainer"],
+      "contextElements": [
+        "Current location and available activities",
+        "Wild Pokemon in the area",
+        "Trainer's current team and status",
+        "Available items and resources",
+        "Story progress and objectives"
+      ]
+    },
+    "Combat": {
+      "systemPrompt": "You are managing Pokemon battle encounters. Handle turn-based combat with multiple Pokemon, apply type effectiveness, manage status effects, and determine battle outcomes.",
+      "phaseObjective": "Execute tactical Pokemon battles with proper rule enforcement",
+      "availableFunctions": ["use_move", "switch_pokemon", "use_item_in_battle", "attempt_escape"],
+      "contextElements": [
+        "Active Pokemon on both sides",
+        "Available moves and energy costs",
+        "Type effectiveness chart",
+        "Current status effects",
+        "Battle environment factors"
+      ]
+    },
+    "LevelUp": {
+      "systemPrompt": "You are managing Pokemon and trainer progression. Handle level ups, move learning, evolution, and stat growth for both Pokemon and trainers.",
+      "phaseObjective": "Process experience gains, level ups, and evolution opportunities",
+      "availableFunctions": ["level_up_pokemon", "learn_move", "evolve_pokemon", "level_up_trainer"],
+      "contextElements": [
+        "Pokemon ready to level up",
+        "Available moves to learn",
+        "Evolution requirements and options",
+        "Trainer experience and progression",
+        "Stat growth calculations"
+      ]
+    }
+  },
+  "items": [
+    {
+      "id": "pokeball",
+      "name": "Poke Ball",
+      "description": "A standard ball for catching Pokemon",
+      "category": "pokeball",
+      "catchRate": 1.0,
+      "usableInBattle": true
+    },
+    {
+      "id": "great_ball",
+      "name": "Great Ball",
+      "description": "A ball with higher catch rate than a Poke Ball",
+      "category": "pokeball",
+      "catchRate": 1.5,
+      "usableInBattle": true
+    },
+    {
+      "id": "ultra_ball",
+      "name": "Ultra Ball",
+      "description": "A ball with very high catch rate",
+      "category": "pokeball",
+      "catchRate": 2.0,
+      "usableInBattle": true
+    },
+    {
+      "id": "potion",
+      "name": "Potion",
+      "description": "Restores 20 HP to a Pokemon",
+      "category": "healing",
+      "effect": {
+        "type": "heal",
+        "amount": 20
+      },
+      "usableInBattle": true
+    },
+    {
+      "id": "super_potion",
+      "name": "Super Potion",
+      "description": "Restores 50 HP to a Pokemon",
+      "category": "healing",
+      "effect": {
+        "type": "heal",
+        "amount": 50
+      },
+      "usableInBattle": true
+    },
+    {
+      "id": "full_heal",
+      "name": "Full Heal",
+      "description": "Cures all status conditions",
+      "category": "medicine",
+      "effect": {
+        "type": "cureStatus",
+        "conditions": "all"
+      },
+      "usableInBattle": true
+    }
+  ]
+}

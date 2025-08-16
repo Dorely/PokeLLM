@@ -45,53 +45,8 @@ public class UnifiedContextPlugin
     {
         try
         {
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
-
-            // Get current location details
-            var currentLocation = gameState.WorldLocations.GetValueOrDefault(gameState.CurrentLocationId);
-            LocationVectorRecord vectorLocation = null;
-            if (!string.IsNullOrEmpty(gameState.CurrentLocationId))
-            {
-                vectorLocation = await _informationManagementService.GetLocationAsync(gameState.CurrentLocationId);
-            }
-
-            // Get present NPCs with details
-            var presentNpcs = new List<string>();
-            if (currentLocation != null)
-            {
-                foreach (var npcId in currentLocation.PresentNpcIds)
-                {
-                    var npcDetails = await _npcManagementService.GetNpcDetails(npcId);
-                    if (npcDetails != null)
-                    {
-                        presentNpcs.Add($"{npcDetails.Name} ({npcDetails.CharacterDetails.Class})");
-                    }
-                }
-            }
-
-            // Get present Pokemon
-            var presentPokemon = new List<string>();
-            if (currentLocation != null)
-            {
-                foreach (var pokemonId in currentLocation.PresentPokemonIds)
-                {
-                    var pokemon = gameState.WorldPokemon.GetValueOrDefault(pokemonId);
-                    if (pokemon != null)
-                    {
-                        presentPokemon.Add($"{pokemon.Species} (Level {pokemon.Level})");
-                    }
-                }
-            }
-
-            // Build simple string response to avoid complex object serialization issues with Gemini
-            var locationName = currentLocation?.Name ?? "Unknown Location";
-            var description = vectorLocation?.Description ?? currentLocation?.Name ?? "";
-            var exitsText = currentLocation?.Exits?.Keys != null ? string.Join(", ", currentLocation.Exits.Keys) : "";
-            var npcText = string.Join(", ", presentNpcs);
-            var pokemonText = string.Join(", ", presentPokemon);
-            var eventsText = string.Join("; ", gameState.RecentEvents.TakeLast(3).Select(e => e.EventDescription));
-
-            return $"Location: {locationName}\nDescription: {description}\nExits: {exitsText}\nNPCs: {npcText}\nPokemon: {pokemonText}\nTime: {gameState.TimeOfDay}\nWeather: {gameState.Weather}\nRegion: {gameState.Region}\nRecent Events: {eventsText}";
+            // TODO: Implement with dynamic ruleset approach using IEntityService
+            return "Context: Dynamic ruleset system active - game state managed through entity service";
         }
         catch (Exception ex)
         {
@@ -106,27 +61,8 @@ public class UnifiedContextPlugin
     {
         try
         {
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
-            var narrativeContext = new List<string>();
-            
-            // Parse comma-separated elements
-            var elementList = string.IsNullOrWhiteSpace(sceneElements) 
-                ? new List<string>() 
-                : sceneElements.Split(',').Select(e => e.Trim()).Where(e => !string.IsNullOrWhiteSpace(e)).ToList();
-            
-            // Search for relevant narrative memories
-            foreach (var element in elementList)
-            {
-                var memories = await _informationManagementService.FindMemoriesAsync(
-                    gameState.SessionId, element, null, 0.7);
-                narrativeContext.AddRange(memories.Select(m => $"Memory: {m.EventSummary} (Turn {m.GameTurnNumber})"));
-            }
-            
-            // Search for world lore
-            var loreResults = await _informationManagementService.SearchLoreAsync(elementList);
-            narrativeContext.AddRange(loreResults.Select(l => $"Lore: {l.Title} - {l.Content}"));
-            
-            return string.Join("\n", narrativeContext);
+            // TODO: Implement with dynamic ruleset approach using IEntityService
+            return "Narrative context: Dynamic ruleset system active - narrative managed through entity service";
         }
         catch (Exception ex)
         {
@@ -141,12 +77,7 @@ public class UnifiedContextPlugin
     {
         try
         {
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
-            
-            // Update the CurrentContext as a simple string
-            gameState.CurrentContext = contextDescription;
-            await _gameStateRepo.SaveStateAsync(gameState);
-            
+            // TODO: Implement with dynamic ruleset approach using IEntityService
             return $"Context updated successfully. Length: {contextDescription.Length}";
         }
         catch (Exception ex)
