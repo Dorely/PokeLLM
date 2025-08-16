@@ -882,6 +882,24 @@
       "toolProficiencies": ["Gaming Set", "Vehicles (Land)"],
       "equipment": ["Insignia of Rank", "Trophy", "Deck of Cards"],
       "feature": "Military Rank"
+    },
+    {
+      "id": "charlatan",
+      "name": "Charlatan",
+      "description": "You have always had a way with people and know what makes them tick",
+      "skillProficiencies": ["Deception", "Sleight of Hand"],
+      "toolProficiencies": ["Forgery Kit", "Disguise Kit"],
+      "equipment": ["Forgery Kit", "Disguise Kit", "Signet Ring"],
+      "feature": "False Identity"
+    },
+    {
+      "id": "entertainer",
+      "name": "Entertainer",
+      "description": "You thrive in front of an audience and know how to entrance them",
+      "skillProficiencies": ["Acrobatics", "Performance"],
+      "toolProficiencies": ["Disguise Kit", "Musical Instrument"],
+      "equipment": ["Musical Instrument", "Costume", "Belt Pouch"],
+      "feature": "By Popular Demand"
     }
   ],
   "spells": [
@@ -1338,6 +1356,69 @@
       "damageType": "lightning",
       "classes": ["sorcerer", "wizard"],
       "savingThrow": "Dexterity"
+    },
+    {
+      "id": "haste",
+      "name": "Haste",
+      "level": 3,
+      "school": "Transmutation",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": ["V", "S", "M"],
+      "duration": "Concentration, up to 1 minute",
+      "description": "Target gains double speed, +2 AC, advantage on Dex saves, and an additional action",
+      "classes": ["sorcerer", "wizard"]
+    },
+    {
+      "id": "slow",
+      "name": "Slow",
+      "level": 3,
+      "school": "Transmutation",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "components": ["V", "S", "M"],
+      "duration": "Concentration, up to 1 minute",
+      "description": "Up to 6 creatures have their speed halved and limited actions",
+      "classes": ["sorcerer", "wizard"],
+      "savingThrow": "Wisdom"
+    },
+    {
+      "id": "dispel_magic",
+      "name": "Dispel Magic",
+      "level": 3,
+      "school": "Abjuration",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "components": ["V", "S"],
+      "duration": "Instantaneous",
+      "description": "End one spell of 3rd level or lower, or attempt to end higher level spells",
+      "classes": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]
+    },
+    {
+      "id": "magic_weapon",
+      "name": "Magic Weapon",
+      "level": 2,
+      "school": "Transmutation",
+      "castingTime": "1 bonus action",
+      "range": "Touch",
+      "components": ["V", "S"],
+      "duration": "Concentration, up to 1 hour",
+      "description": "A nonmagical weapon becomes a +1 magic weapon",
+      "classes": ["paladin", "ranger", "sorcerer", "wizard"]
+    },
+    {
+      "id": "spiritual_weapon",
+      "name": "Spiritual Weapon",
+      "level": 2,
+      "school": "Evocation",
+      "castingTime": "1 bonus action",
+      "range": "60 feet",
+      "components": ["V", "S"],
+      "duration": "1 minute",
+      "description": "Create a floating spectral weapon that can attack independently",
+      "damage": "1d8",
+      "damageType": "force",
+      "classes": ["cleric"]
     }
   ],
   "equipment": {
@@ -1512,6 +1593,92 @@
         "range": "150/600",
         "weight": 2,
         "cost": "50 gp"
+      },
+      {
+        "id": "scimitar",
+        "name": "Scimitar",
+        "category": "Martial Melee",
+        "damage": "1d6",
+        "damageType": "slashing",
+        "properties": ["finesse", "light"],
+        "weight": 3,
+        "cost": "25 gp"
+      },
+      {
+        "id": "warhammer",
+        "name": "Warhammer",
+        "category": "Martial Melee",
+        "damage": "1d8",
+        "damageType": "bludgeoning",
+        "properties": ["versatile"],
+        "versatileDamage": "1d10",
+        "weight": 2,
+        "cost": "15 gp"
+      },
+      {
+        "id": "trident",
+        "name": "Trident",
+        "category": "Martial Melee",
+        "damage": "1d6",
+        "damageType": "piercing",
+        "properties": ["thrown", "versatile"],
+        "versatileDamage": "1d8",
+        "range": "20/60",
+        "weight": 4,
+        "cost": "5 gp"
+      },
+      {
+        "id": "war_pick",
+        "name": "War Pick",
+        "category": "Martial Melee",
+        "damage": "1d8",
+        "damageType": "piercing",
+        "properties": [],
+        "weight": 2,
+        "cost": "5 gp"
+      },
+      {
+        "id": "whip",
+        "name": "Whip",
+        "category": "Martial Melee",
+        "damage": "1d4",
+        "damageType": "slashing",
+        "properties": ["finesse", "reach"],
+        "weight": 3,
+        "cost": "2 gp"
+      },
+      {
+        "id": "heavy_crossbow",
+        "name": "Heavy Crossbow",
+        "category": "Martial Ranged",
+        "damage": "1d10",
+        "damageType": "piercing",
+        "properties": ["ammunition", "heavy", "loading", "two-handed"],
+        "range": "100/400",
+        "weight": 18,
+        "cost": "50 gp"
+      },
+      {
+        "id": "net",
+        "name": "Net",
+        "category": "Martial Ranged",
+        "damage": "0",
+        "damageType": "none",
+        "properties": ["special", "thrown"],
+        "range": "5/15",
+        "weight": 3,
+        "cost": "1 gp"
+      },
+      {
+        "id": "blowgun",
+        "name": "Blowgun",
+        "category": "Martial Ranged",
+        "damage": "1",
+        "damageType": "piercing",
+        "properties": ["ammunition", "loading"],
+        "range": "25/100",
+        "weight": 1,
+        "cost": "10 gp"
       }
     ],
     "armor": [
@@ -1598,6 +1765,25 @@
         "armorClass": 2,
         "weight": 6,
         "cost": "10 gp"
+      },
+      {
+        "id": "padded",
+        "name": "Padded",
+        "category": "Light Armor",
+        "armorClass": 11,
+        "dexBonus": "full",
+        "disadvantage": "stealth",
+        "weight": 8,
+        "cost": "5 gp"
+      },
+      {
+        "id": "breastplate",
+        "name": "Breastplate",
+        "category": "Medium Armor",
+        "armorClass": 14,
+        "dexBonus": "max2",
+        "weight": 20,
+        "cost": "400 gp"
       }
     ],
     "adventuringGear": [
@@ -1666,6 +1852,120 @@
         "name": "Thieves' tools",
         "weight": 1,
         "cost": "25 gp"
+      },
+      {
+        "id": "oil_flask",
+        "name": "Oil (flask)",
+        "weight": 1,
+        "cost": "1 sp"
+      },
+      {
+        "id": "lantern_hooded",
+        "name": "Lantern, hooded",
+        "weight": 2,
+        "cost": "5 gp"
+      },
+      {
+        "id": "caltrops",
+        "name": "Caltrops (bag of 20)",
+        "weight": 2,
+        "cost": "1 gp"
+      },
+      {
+        "id": "candle",
+        "name": "Candle",
+        "weight": 0,
+        "cost": "1 cp"
+      },
+      {
+        "id": "chain",
+        "name": "Chain (10 feet)",
+        "weight": 10,
+        "cost": "5 gp"
+      },
+      {
+        "id": "fishing_tackle",
+        "name": "Fishing tackle",
+        "weight": 4,
+        "cost": "2 gp"
+      },
+      {
+        "id": "hammer",
+        "name": "Hammer",
+        "weight": 3,
+        "cost": "2 gp"
+      },
+      {
+        "id": "piton",
+        "name": "Piton",
+        "weight": 0.25,
+        "cost": "5 cp"
+      },
+      {
+        "id": "pouch",
+        "name": "Pouch",
+        "weight": 1,
+        "cost": "5 sp"
+      },
+      {
+        "id": "manacles",
+        "name": "Manacles",
+        "weight": 6,
+        "cost": "15 gp"
+      },
+      {
+        "id": "mirror_steel",
+        "name": "Mirror, steel",
+        "weight": 0.5,
+        "cost": "5 gp"
+      },
+      {
+        "id": "lock",
+        "name": "Lock",
+        "weight": 1,
+        "cost": "10 gp"
+      },
+      {
+        "id": "ladder",
+        "name": "Ladder (10-foot)",
+        "weight": 25,
+        "cost": "1 sp"
+      },
+      {
+        "id": "hunting_trap",
+        "name": "Hunting trap",
+        "weight": 25,
+        "cost": "5 gp"
+      },
+      {
+        "id": "spyglass",
+        "name": "Spyglass",
+        "weight": 1,
+        "cost": "1000 gp"
+      },
+      {
+        "id": "tent",
+        "name": "Tent, two-person",
+        "weight": 20,
+        "cost": "2 gp"
+      },
+      {
+        "id": "shovel",
+        "name": "Shovel",
+        "weight": 5,
+        "cost": "2 gp"
+      },
+      {
+        "id": "net",
+        "name": "Net",
+        "weight": 3,
+        "cost": "1 gp"
+      },
+      {
+        "id": "ball_bearings",
+        "name": "Ball bearings (bag of 1,000)",
+        "weight": 2,
+        "cost": "1 gp"
       }
     ]
   },
@@ -2020,6 +2320,68 @@
             "value": 2
           }
         ]
+      },
+      {
+        "id": "create_character",
+        "name": "create_character",
+        "description": "Create a complete character by combining all setup steps",
+        "parameters": [
+          {
+            "name": "raceId",
+            "type": "string",
+            "description": "ID of the character's race",
+            "required": true
+          },
+          {
+            "name": "classId",
+            "type": "string",
+            "description": "ID of the character's class",
+            "required": true
+          },
+          {
+            "name": "backgroundId",
+            "type": "string",
+            "description": "ID of the character's background",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.race == null || character.race == ''",
+          "character.characterClass == null || character.characterClass == ''",
+          "character.background == null || character.background == ''"
+        ],
+        "effects": [
+          {
+            "target": "character.race",
+            "operation": "set",
+            "value": "{{raceId}}"
+          },
+          {
+            "target": "character.characterClass",
+            "operation": "set",
+            "value": "{{classId}}"
+          },
+          {
+            "target": "character.background",
+            "operation": "set",
+            "value": "{{backgroundId}}"
+          },
+          {
+            "target": "character.level",
+            "operation": "set",
+            "value": 1
+          },
+          {
+            "target": "character.hitPoints",
+            "operation": "calculateMaxHP",
+            "value": "level1"
+          },
+          {
+            "target": "character.proficiencyBonus",
+            "operation": "set",
+            "value": 2
+          }
+        ]
       }
     ],
     "WorldGeneration": [
@@ -2273,6 +2635,36 @@
         "id": "investigation",
         "name": "investigation",
         "description": "Investigate an area, object, or situation for clues",
+        "parameters": [
+          {
+            "name": "target",
+            "type": "string",
+            "description": "What is being investigated",
+            "required": true
+          },
+          {
+            "name": "method",
+            "type": "string",
+            "description": "Investigation method (visual, physical, magical, etc.)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [],
+        "effects": [
+          {
+            "target": "gameState.investigation",
+            "operation": "performInvestigation",
+            "value": {
+              "target": "{{target}}",
+              "method": "{{method}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "investigation_check",
+        "name": "investigation_check",
+        "description": "Make an investigation check (alias for investigation)",
         "parameters": [
           {
             "name": "target",
@@ -2585,6 +2977,36 @@
             "value": "conditional"
           }
         ]
+      },
+      {
+        "id": "make_attack",
+        "name": "make_attack",
+        "description": "Make a complete attack against a target including attack roll and damage",
+        "parameters": [
+          {
+            "name": "weapon",
+            "type": "string",
+            "description": "Weapon or attack type used",
+            "required": true
+          },
+          {
+            "name": "targetId",
+            "type": "string",
+            "description": "ID of the target",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.combat.active == true",
+          "character.currentTurn == true"
+        ],
+        "effects": [
+          {
+            "target": "gameState.combat.lastAttack",
+            "operation": "rollAttack",
+            "value": "{{weapon}}_{{targetId}}"
+          }
+        ]
       }
     ],
     "LevelUp": [
@@ -2657,6 +3079,45 @@
           {
             "target": "character.proficiencyBonus",
             "operation": "calculateProficiency",
+            "value": "character.level"
+          },
+          {
+            "target": "character.features",
+            "operation": "addLevelFeatures",
+            "value": "character.level"
+          }
+        ]
+      },
+      {
+        "id": "gain_level",
+        "name": "gain_level",
+        "description": "Gain a character level (alias for level_up)",
+        "parameters": [
+          {
+            "name": "hitPointIncrease",
+            "type": "int",
+            "description": "Hit point increase (rolled or average)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.experience >= getExperienceForLevel(character.level + 1)",
+          "character.level < 20"
+        ],
+        "effects": [
+          {
+            "target": "character.level",
+            "operation": "add",
+            "value": 1
+          },
+          {
+            "target": "character.hitPoints",
+            "operation": "add",
+            "value": "{{hitPointIncrease}}"
+          },
+          {
+            "target": "character.proficiencyBonus",
+            "operation": "setProficiencyBonus",
             "value": "character.level"
           },
           {
@@ -2792,6 +3253,29 @@
         "Spell progression for spellcasters",
         "Ability score improvement opportunities"
       ]
+    }
+  },
+  "validationRules": {
+    "characterCreation": {
+      "raceSelected": "character.race != null && character.race != ''",
+      "classSelected": "character.characterClass != null && character.characterClass != ''",
+      "backgroundSelected": "character.background != null && character.background != ''",
+      "abilityScoresAllocated": "character.abilityScores != null",
+      "hitPointsCalculated": "character.hitPoints > 0",
+      "validLevel": "character.level >= 1 && character.level <= 20"
+    },
+    "spellCasting": {
+      "hasSpellcastingAbility": "character.spellcasting != null || character.characterClass in ['cleric', 'druid', 'paladin', 'ranger', 'sorcerer', 'warlock', 'wizard', 'bard']",
+      "spellSlotsValid": "character.spellSlots != null || character.level < getFirstSpellLevel(character.characterClass)",
+      "knownSpellsValid": "character.knownSpells.length <= getMaxSpellsKnown(character.level, character.characterClass)",
+      "spellLevelsValid": "all(character.knownSpells, spell => spell.level <= getMaxSpellLevel(character.level, character.characterClass))"
+    },
+    "combatActions": {
+      "validWeaponAttack": "weapon in character.equipment || weapon in getClassWeaponProficiencies(character.characterClass)",
+      "validSpellCast": "spell in character.knownSpells && hasSpellSlot(character, spell.level)",
+      "actionEconomyRespected": "gameState.combat.actionsUsed.action + gameState.combat.actionsUsed.bonusAction + gameState.combat.actionsUsed.reaction <= getMaxActions(character)",
+      "validTarget": "target.id in gameState.combat.participants || target.type == 'area'",
+      "withinRange": "distance(character.position, target.position) <= getActionRange(action, character)"
     }
   }
 }

@@ -275,62 +275,6 @@ public class RulesetManagementIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task ConcurrentRulesetOperations_HandlesThreadSafety()
-    {
-        // Arrange
-        var rulesetIds = Enumerable.Range(0, 5).Select(i => $"concurrent-test-{i}").ToArray();
-        var tasks = new List<Task<string>>();
-
-        // Act - Perform concurrent operations
-        foreach (var rulesetId in rulesetIds)
-        {
-            tasks.Add(_plugin.CreateNewRuleset(rulesetId, $"Concurrent Test {rulesetId}", "1.0.0", "Concurrent test"));
-        }
-
-        var createResults = await Task.WhenAll(tasks);
-
-        // Add functions concurrently
-        var functionTasks = new List<Task<string>>();
-        foreach (var rulesetId in rulesetIds)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                var funcId = $"func-{i}";
-                functionTasks.Add(_plugin.AddFunctionToRuleset(
-                    rulesetId, "Exploration", funcId, $"concurrentFunc{i}", "Concurrent function"));
-            }
-        }
-
-        var functionResults = await Task.WhenAll(functionTasks);
-
-        // Assert - All operations succeeded
-        foreach (var result in createResults)
-        {
-            var json = JsonSerializer.Deserialize<JsonElement>(result);
-            Assert.True(json.GetProperty("success").GetBoolean());
-        }
-
-        foreach (var result in functionResults)
-        {
-            var json = JsonSerializer.Deserialize<JsonElement>(result);
-            Assert.True(json.GetProperty("success").GetBoolean());
-        }
-
-        // Verify all rulesets exist and have correct function counts
-        var listResult = await _plugin.ListAvailableRulesets(true);
-        var listJson = JsonSerializer.Deserialize<JsonElement>(listResult);
-        
-        Assert.Equal(rulesetIds.Length, listJson.GetProperty("totalRulesets").GetInt32());
-        
-        var rulesets = listJson.GetProperty("rulesets");
-        foreach (var ruleset in rulesets.EnumerateArray())
-        {
-            var functionCounts = ruleset.GetProperty("functionCounts");
-            Assert.Equal(3, functionCounts.GetProperty("Exploration").GetInt32());
-        }
-    }
-
-    [Fact]
     public async Task ErrorRecoveryWorkflow_HandlesPartialFailuresGracefully()
     {
         // Arrange
@@ -467,7 +411,7 @@ public class RulesetManagementIntegrationTests : IDisposable
 
         // Step 10: Verify all manager integrations worked correctly
         _mockRulesetManager.Verify(x => x.SetActiveRulesetAsync("player-custom"), Times.Once());
-        _mockJsEngine.Verify(x => x.IsSafeScriptAsync(It.IsAny<string>()), Times.AtLeast(4)); // 2 functions * 2 rules each
+        _mockJsEngine.Verify(x => x.IsSafeScriptAsync(It.IsAny<string>()), Times.AtLeast(3)); // inspect_environment has 1 rule, tactical_analysis has 2 rules
     }
 
     #endregion

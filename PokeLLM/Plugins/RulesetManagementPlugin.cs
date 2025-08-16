@@ -824,14 +824,10 @@ public class RulesetManagementPlugin
                 details["gameStateSchema"] = JsonSerializer.Deserialize<object>(gameStateSchema.GetRawText());
             }
 
-            // Include functions if requested
-            if (includeFunctions && root.TryGetProperty("functionDefinitions", out var functionDefs))
+            // Include functions if requested and always include counts
+            if (root.TryGetProperty("functionDefinitions", out var funcDefsForCounting))
             {
-                details["functionDefinitions"] = JsonSerializer.Deserialize<object>(functionDefs.GetRawText());
-            }
-            else if (root.TryGetProperty("functionDefinitions", out var funcDefsForCounting))
-            {
-                // Just include counts
+                // Always include counts
                 var functionCounts = new Dictionary<string, int>();
                 var totalFunctions = 0;
 
@@ -844,6 +840,12 @@ public class RulesetManagementPlugin
 
                 details["functionCounts"] = functionCounts;
                 details["totalFunctions"] = totalFunctions;
+
+                // Include full function definitions if requested
+                if (includeFunctions)
+                {
+                    details["functionDefinitions"] = JsonSerializer.Deserialize<object>(funcDefsForCounting.GetRawText());
+                }
             }
 
             // Include game data if requested

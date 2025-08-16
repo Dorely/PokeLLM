@@ -119,7 +119,7 @@ public class DnD5eRulesetValidationTests
         Assert.True(firstClass.TryGetProperty("id", out _), "Class must have id");
         Assert.True(firstClass.TryGetProperty("name", out _), "Class must have name");
         Assert.True(firstClass.TryGetProperty("hitDie", out _), "Class must have hitDie");
-        Assert.True(firstClass.TryGetProperty("primaryAbilities", out _), "Class must have primaryAbilities");
+        Assert.True(firstClass.TryGetProperty("primaryAbility", out _), "Class must have primaryAbility");
         Assert.True(firstClass.TryGetProperty("savingThrowProficiencies", out _), 
             "Class must have savingThrowProficiencies");
     }

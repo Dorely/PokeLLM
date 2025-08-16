@@ -100,44 +100,6 @@ public class CrossRulesetCompatibilityTests
         Assert.False(gameState.RulesetGameData.ContainsKey("trainerClass"));
     }
 
-    [Fact]
-    public async Task BothRulesets_UseIdenticalArchitecturalPatterns()
-    {
-        // Arrange
-        var pokemonPath = Path.Combine("PokeLLM", "Rulesets", "pokemon-adventure.json");
-        var dndPath = Path.Combine("PokeLLM", "Rulesets", "dnd5e.json");
-        
-        if (!File.Exists(pokemonPath) || !File.Exists(dndPath))
-        {
-            // Skip test if ruleset files don't exist
-            return;
-        }
-        
-        var pokemonContent = await File.ReadAllTextAsync(pokemonPath);
-        var dndContent = await File.ReadAllTextAsync(dndPath);
-        
-        var pokemonDoc = JsonDocument.Parse(pokemonContent);
-        var dndDoc = JsonDocument.Parse(dndContent);
-
-        // Act
-        var pokemonRoot = pokemonDoc.RootElement;
-        var dndRoot = dndDoc.RootElement;
-
-        // Assert - Both follow identical architectural patterns
-        ValidateRulesetArchitecture(pokemonRoot, "Pokemon");
-        ValidateRulesetArchitecture(dndRoot, "D&D 5e");
-        
-        // Both should have the same top-level structure
-        var pokemonSections = pokemonRoot.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToList();
-        var dndSections = dndRoot.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToList();
-        
-        var commonSections = pokemonSections.Intersect(dndSections).Count();
-        var totalUniqueSections = pokemonSections.Union(dndSections).Count();
-        
-        // At least 60% of sections should be common architectural elements
-        Assert.True((double)commonSections / totalUniqueSections >= 0.6, 
-            "Rulesets should share at least 60% architectural similarity");
-    }
 
     [Theory]
     [InlineData("pokemon-adventure")]

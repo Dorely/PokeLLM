@@ -16,7 +16,7 @@ dotnet run --project PokeLLM/PokeLLM.Game.csproj
 
 ### Testing
 ```cmd
-dotnet test Tests/Tests.csproj
+dotnet test Tests/PokeLLM.Tests.csproj
 ```
 
 ### Clean and Rebuild

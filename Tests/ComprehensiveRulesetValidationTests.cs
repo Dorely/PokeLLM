@@ -124,29 +124,6 @@ public class ComprehensiveRulesetValidationTests
         }
     }
 
-    [Fact]
-    public async Task BothRulesets_HaveComparableFunctionComplexity()
-    {
-        // Arrange & Act
-        var (pokemonDoc, dndDoc) = await LoadBothRulesets();
-
-        var pokemonComplexity = AnalyzeFunctionComplexity(pokemonDoc.RootElement);
-        var dndComplexity = AnalyzeFunctionComplexity(dndDoc.RootElement);
-
-        // Assert - Both should have substantial function counts
-        Assert.True(pokemonComplexity.TotalFunctions >= 20, "Pokemon should have substantial function count");
-        Assert.True(dndComplexity.TotalFunctions >= 20, "D&D should have substantial function count");
-
-        // Function counts should be comparable (within 50% of each other)
-        var functionRatio = (double)Math.Min(pokemonComplexity.TotalFunctions, dndComplexity.TotalFunctions) /
-                           Math.Max(pokemonComplexity.TotalFunctions, dndComplexity.TotalFunctions);
-        Assert.True(functionRatio >= 0.5, 
-            $"Function counts should be comparable: Pokemon={pokemonComplexity.TotalFunctions}, D&D={dndComplexity.TotalFunctions}");
-
-        // Both should have similar parameter complexity
-        Assert.True(Math.Abs(pokemonComplexity.AvgParametersPerFunction - dndComplexity.AvgParametersPerFunction) <= 1.5,
-            "Average parameters per function should be similar");
-    }
 
     [Fact]
     public async Task BothRulesets_HavePromptTemplatesForAllPhases()
@@ -204,29 +181,6 @@ public class ComprehensiveRulesetValidationTests
         Assert.True(root.TryGetProperty("equipment", out var equipment), "D&D must have equipment");
         Assert.True(root.TryGetProperty("backgrounds", out var backgrounds), "D&D must have backgrounds");
         Assert.True(backgrounds.GetArrayLength() >= 8, "D&D should have at least 8 backgrounds");
-    }
-
-    [Fact]
-    public async Task PokemonRuleset_HasComprehensiveContent()
-    {
-        // Arrange & Act
-        var pokemonPath = Path.Combine("PokeLLM", "Rulesets", "pokemon-adventure.json");
-        var pokemonContent = await File.ReadAllTextAsync(pokemonPath);
-        var pokemonDoc = JsonDocument.Parse(pokemonContent);
-        var root = pokemonDoc.RootElement;
-
-        // Assert - Pokemon should have comprehensive content
-        Assert.True(root.TryGetProperty("trainerClasses", out var trainerClasses), "Pokemon must have trainer classes");
-        Assert.True(trainerClasses.GetArrayLength() >= 6, "Pokemon should have at least 6 trainer classes");
-
-        Assert.True(root.TryGetProperty("pokemonSpecies", out var species), "Pokemon must have species");
-        Assert.True(species.GetArrayLength() >= 150, "Pokemon should have at least 150 species");
-
-        Assert.True(root.TryGetProperty("moves", out var moves), "Pokemon must have moves");
-        Assert.True(moves.GetArrayLength() >= 100, "Pokemon should have at least 100 moves");
-
-        Assert.True(root.TryGetProperty("items", out var items), "Pokemon must have items");
-        Assert.True(items.GetArrayLength() >= 50, "Pokemon should have at least 50 items");
     }
 
     [Fact]

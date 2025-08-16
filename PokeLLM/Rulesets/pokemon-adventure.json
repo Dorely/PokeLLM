@@ -135,6 +135,102 @@
       },
       "startingItems": ["4 Pokeball", "Survival Kit", "Map", "Ranger Badge"],
       "startingPokemon": 1
+    },
+    {
+      "id": "pokemon_coordinator",
+      "name": "Pokemon Coordinator",
+      "description": "Performance-focused trainer skilled in contests and Pokemon presentation",
+      "baseStats": {
+        "strength": 10,
+        "dexterity": 14,
+        "constitution": 12,
+        "intelligence": 13,
+        "wisdom": 12,
+        "charisma": 16
+      },
+      "startingAbilities": ["Style Sense", "Performance Art"],
+      "levelProgression": {
+        "statGrowth": {
+          "strength": 1,
+          "dexterity": 3,
+          "constitution": 2,
+          "intelligence": 2,
+          "wisdom": 2,
+          "charisma": 4
+        },
+        "abilityUnlocks": {
+          "5": "Contest Combo",
+          "10": "Crowd Pleaser",
+          "15": "Grand Festival Master",
+          "20": "Top Coordinator"
+        }
+      },
+      "startingItems": ["3 Pokeball", "Poke Blocks", "Contest Ribbon", "Fashion Case"],
+      "startingPokemon": 1
+    },
+    {
+      "id": "pokemon_breeder",
+      "name": "Pokemon Breeder",
+      "description": "Specialist in Pokemon care, breeding, and nurturing strong bonds",
+      "baseStats": {
+        "strength": 11,
+        "dexterity": 12,
+        "constitution": 15,
+        "intelligence": 14,
+        "wisdom": 16,
+        "charisma": 13
+      },
+      "startingAbilities": ["Pokemon Care", "Egg Knowledge"],
+      "levelProgression": {
+        "statGrowth": {
+          "strength": 2,
+          "dexterity": 2,
+          "constitution": 3,
+          "intelligence": 3,
+          "wisdom": 4,
+          "charisma": 2
+        },
+        "abilityUnlocks": {
+          "5": "Breeding Expertise",
+          "10": "Daycare Master",
+          "15": "Perfect IV Training",
+          "20": "Legendary Breeder"
+        }
+      },
+      "startingItems": ["5 Pokeball", "Pokemon Food", "Incubator", "Breeding Guide"],
+      "startingPokemon": 1
+    },
+    {
+      "id": "gym_challenger",
+      "name": "Gym Challenger", 
+      "description": "Competitive trainer focused on battling and winning Gym badges",
+      "baseStats": {
+        "strength": 14,
+        "dexterity": 13,
+        "constitution": 13,
+        "intelligence": 12,
+        "wisdom": 11,
+        "charisma": 14
+      },
+      "startingAbilities": ["Battle Focus", "Gym Strategy"],
+      "levelProgression": {
+        "statGrowth": {
+          "strength": 3,
+          "dexterity": 2,
+          "constitution": 2,
+          "intelligence": 2,
+          "wisdom": 2,
+          "charisma": 3
+        },
+        "abilityUnlocks": {
+          "5": "Type Advantage",
+          "10": "Badge Power",
+          "15": "Elite Four Preparation",
+          "20": "Champion Potential"
+        }
+      },
+      "startingItems": ["6 Pokeball", "Super Potion", "Gym Guide", "Battle Strategy Book"],
+      "startingPokemon": 1
     }
   ],
   "pokemonTypes": [
@@ -716,6 +812,31 @@
             }
           }
         ]
+      },
+      {
+        "id": "set_trainer_name",
+        "name": "set_trainer_name",
+        "description": "Set the trainer's name and customize appearance",
+        "parameters": [
+          {
+            "name": "trainerName",
+            "type": "string",
+            "description": "The name for the trainer",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.name == null || character.name == ''",
+          "{{trainerName}}.length >= 2 && {{trainerName}}.length <= 20"
+        ],
+        "effects": [
+          {
+            "action": "setCharacterProperty",
+            "target": "character",
+            "property": "name",
+            "value": "{{trainerName}}"
+          }
+        ]
       }
     ],
     "WorldGeneration": [
@@ -801,6 +922,49 @@
               "leader": "{{leaderName}}",
               "type": "{{type}}",
               "level": "{{level}}"
+            }
+          }
+        ]
+      },
+      {
+        "id": "generate_route",
+        "name": "generate_route",
+        "description": "Generate a route connecting different locations with wild Pokemon encounters",
+        "parameters": [
+          {
+            "name": "routeId",
+            "type": "string",
+            "description": "Unique identifier for the route",
+            "required": true
+          },
+          {
+            "name": "startLocation",
+            "type": "string",
+            "description": "Starting location of the route",
+            "required": true
+          },
+          {
+            "name": "endLocation",
+            "type": "string",
+            "description": "Ending location of the route",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "world.routes[{{routeId}}] == null",
+          "world.locations[{{startLocation}}] != null",
+          "world.locations[{{endLocation}}] != null"
+        ],
+        "effects": [
+          {
+            "action": "addToGameState",
+            "target": "world.routes",
+            "property": "{{routeId}}",
+            "value": {
+              "id": "{{routeId}}",
+              "start": "{{startLocation}}",
+              "end": "{{endLocation}}",
+              "encounters": []
             }
           }
         ]
@@ -910,6 +1074,28 @@
             "value": "full"
           }
         ]
+      },
+      {
+        "id": "search_area",
+        "name": "search_area",
+        "description": "Search the current area for hidden items or secrets",
+        "parameters": [],
+        "ruleValidations": [
+          "character.location != null",
+          "character.energy >= 10"
+        ],
+        "effects": [
+          {
+            "action": "consumeResource",
+            "target": "character.energy",
+            "value": 10
+          },
+          {
+            "action": "attemptItemFind",
+            "target": "character.inventory",
+            "chance": 0.3
+          }
+        ]
       }
     ],
     "Combat": [
@@ -1014,6 +1200,24 @@
             }
           }
         ]
+      },
+      {
+        "id": "flee_battle",
+        "name": "flee_battle",
+        "description": "Attempt to flee from a wild Pokemon battle",
+        "parameters": [],
+        "ruleValidations": [
+          "gameState.inBattle == true",
+          "gameState.battleType == 'wild'"
+        ],
+        "effects": [
+          {
+            "action": "calculateFleeChance",
+            "target": "battleState",
+            "successAction": "endBattle",
+            "failureAction": "continueForced"
+          }
+        ]
       }
     ],
     "LevelUp": [
@@ -1109,6 +1313,32 @@
             "target": "character.pokemonTeam[{{pokemonId}}]",
             "operation": "evolve",
             "value": "nextEvolution"
+          }
+        ]
+      },
+      {
+        "id": "upgrade_trainer_skills",
+        "name": "upgrade_trainer_skills",
+        "description": "Spend skill points to upgrade trainer abilities",
+        "parameters": [
+          {
+            "name": "skill",
+            "type": "string",
+            "description": "The skill to upgrade",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.skillPoints > 0",
+          "character.skills[{{skill}}] != null",
+          "character.skills[{{skill}}] < 5"
+        ],
+        "effects": [
+          {
+            "action": "upgradeSkill",
+            "target": "character.skills",
+            "property": "{{skill}}",
+            "cost": 1
           }
         ]
       }
@@ -1231,5 +1461,25 @@
       },
       "usableInBattle": true
     }
-  ]
+  ],
+  "validationRules": {
+    "characterCreation": {
+      "trainerClassSelected": "character.trainerClass != null && character.trainerClass != ''",
+      "starterPokemonSelected": "character.party != null && character.party.length > 0",
+      "validStarterPokemon": "character.party[0].species in ['bulbasaur', 'charmander', 'squirtle']",
+      "validLevel": "character.level >= 1 && character.level <= 100"
+    },
+    "pokemonManagement": {
+      "validPartySize": "character.party.length <= 6",
+      "pokemonHaveValidStats": "all(character.party, pokemon => pokemon.hp > 0 && pokemon.level >= 1 && pokemon.level <= 100)",
+      "movesAreValid": "all(character.party, pokemon => pokemon.moves.length <= 4 && all(pokemon.moves, move => move in getPokemonMovepool(pokemon.species)))",
+      "typesAreValid": "all(character.party, pokemon => pokemon.types.length <= 2 && all(pokemon.types, type => type in validPokemonTypes))"
+    },
+    "battleActions": {
+      "validMoveUse": "move in activePokemon.moves && activePokemon.pp[move] > 0",
+      "validPokemonSwitch": "targetPokemon in character.party && targetPokemon.hp > 0 && targetPokemon != activePokemon",
+      "validItemUse": "item in character.bag && item.usableInBattle == true",
+      "targetIsValid": "target.id in gameState.battle.participants || target.type == 'field'"
+    }
+  }
 }

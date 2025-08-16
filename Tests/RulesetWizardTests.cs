@@ -331,6 +331,28 @@ public class RulesetWizardTests
                     };
                 }
                 
+                // Check for special characters
+                if (input.Any(c => !char.IsLetterOrDigit(c) && c != ' ' && c != '-'))
+                {
+                    return new WizardStepResult
+                    {
+                        Success = false,
+                        ValidationErrors = new List<string> { "Ruleset name contains invalid characters" },
+                        LLMGuidance = "Please use only letters, numbers, spaces, and hyphens in the ruleset name."
+                    };
+                }
+                
+                // Check for extremely long input
+                if (input.Length > 100)
+                {
+                    return new WizardStepResult
+                    {
+                        Success = false,
+                        ValidationErrors = new List<string> { "Ruleset name is too long" },
+                        LLMGuidance = "Please keep the ruleset name under 100 characters."
+                    };
+                }
+                
                 session.CompletedSteps = Math.Max(session.CompletedSteps, 1);
                 session.CurrentStep = 2;
                 session.UserInputs[1] = input;
@@ -345,7 +367,38 @@ public class RulesetWizardTests
 
         // Setup remaining steps with similar patterns
         SetupWizardStep(mockWizard, 2, "world setting", "character classes");
-        SetupWizardStep(mockWizard, 3, "character classes", "game phases");
+        
+        // Setup step 3 with context-aware suggestions
+        mockWizard.Setup(w => w.ExecuteStepAsync(3, It.IsAny<string>(), It.IsAny<RulesetWizardSession>()))
+            .ReturnsAsync((int step, string input, RulesetWizardSession session) =>
+            {
+                session.CompletedSteps = Math.Max(session.CompletedSteps, 3);
+                session.CurrentStep = 4;
+                session.UserInputs[3] = input;
+                
+                // Context-aware suggestions based on step 1 theme
+                var suggestions = new List<string> { "Warrior", "Mage", "Rogue", "Cleric", "Ranger" };
+                if (session.UserInputs.ContainsKey(1))
+                {
+                    var theme = session.UserInputs[1].ToLower();
+                    if (theme.Contains("cyberpunk"))
+                    {
+                        suggestions = new List<string> { "Hacker", "Netrunner", "Corpo", "Street Samurai", "Decker" };
+                    }
+                    else if (theme.Contains("sci-fi") || theme.Contains("space"))
+                    {
+                        suggestions = new List<string> { "Pilot", "Engineer", "Soldier", "Scientist", "Smuggler" };
+                    }
+                }
+
+                return new WizardStepResult
+                {
+                    Success = true,
+                    LLMGuidance = "Excellent choice for character classes! Now let's work on game phases.",
+                    Suggestions = suggestions
+                };
+            });
+        
         SetupWizardStep(mockWizard, 4, "game phases", "core concepts");
         SetupWizardStep(mockWizard, 5, "core concepts", "validation");
         
@@ -491,12 +544,12 @@ public class RulesetWizardTests
 
     #region Data Models
 
-    private interface IRulesetWizard
+    public interface IRulesetWizard
     {
         Task<WizardStepResult> ExecuteStepAsync(int stepNumber, string userInput, RulesetWizardSession session);
     }
 
-    private class RulesetWizardSession
+    public class RulesetWizardSession
     {
         public int CompletedSteps { get; set; }
         public int CurrentStep { get; set; } = 1;
@@ -505,7 +558,7 @@ public class RulesetWizardTests
         public bool IsEditMode { get; set; }
     }
 
-    private class WizardStepResult
+    public class WizardStepResult
     {
         public bool Success { get; set; }
         public string? LLMGuidance { get; set; }
@@ -513,7 +566,7 @@ public class RulesetWizardTests
         public List<string> ValidationErrors { get; set; } = new();
     }
 
-    private class ValidationResult
+    public class ValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> ValidationErrors { get; set; } = new();
