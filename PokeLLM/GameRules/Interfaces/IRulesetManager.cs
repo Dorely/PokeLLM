@@ -28,6 +28,12 @@ public interface IRulesetManager : IDisposable
     /// Set the active ruleset for the game
     /// </summary>
     Task SetActiveRulesetAsync(string rulesetId);
+
+    
+    /// <summary>
+    /// Set the active ruleset from a JsonDocument (for local ruleset copies)
+    /// </summary>
+    Task SetActiveRulesetFromDocumentAsync(JsonDocument document, string rulesetId);
     
     /// <summary>
     /// Initialize game state schema based on active ruleset

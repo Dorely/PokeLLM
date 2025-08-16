@@ -122,6 +122,19 @@ public class RulesetManager : IRulesetManager
         }
     }
 
+    public async Task SetActiveRulesetFromDocumentAsync(JsonDocument document, string rulesetId)
+    {
+        await Task.Yield();
+        
+        if (_activeRulesetId != rulesetId || _activeRuleset != document)
+        {
+            _activeRuleset?.Dispose();
+            _activeRuleset = document;
+            _activeRulesetId = rulesetId;
+            _cachedFunctions.Clear(); // Clear cached functions when ruleset changes
+        }
+    }
+
     public void InitializeGameStateFromRuleset(GameStateModel gameState, JsonDocument ruleset)
     {
         if (!ruleset.RootElement.TryGetProperty("gameStateSchema", out var schema))

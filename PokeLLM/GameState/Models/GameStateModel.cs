@@ -12,6 +12,9 @@ public class GameStateModel
 {
     [JsonPropertyName("sessionId")]
     public string SessionId { get; set; } = Guid.NewGuid().ToString();
+    [JsonPropertyName("gameId")]
+    [Description("Unique identifier for this game instance, used for organizing save files")]
+    public string GameId { get; set; } = string.Empty;
 
     [JsonPropertyName("gameTurnNumber")]
     public int GameTurnNumber { get; set; } = 0;
