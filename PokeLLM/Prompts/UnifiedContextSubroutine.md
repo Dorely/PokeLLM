@@ -22,14 +22,14 @@ YOU MUST CALL THE FUNCTIONS ABOVE. Do not provide text responses without calling
 ## Context Description Format
 
 Create a detailed narrative description including:
-- Current location with vivid environmental details
-- All present NPCs and Pokemon with relevant details
-- Time, weather, and regional atmosphere
-- Recent significant events that impact the current scene
-- Relevant world knowledge, lore, or historical context
-- Any ongoing mysteries, relationships, or story threads
+- Current location with vivid environmental details and creative embellishments
+- All present NPCs and entities with engaging personalities and motivations
+- Time, weather, and regional atmosphere that enhances the story
+- Recent significant events that impact the current scene emotionally
+- Relevant world knowledge, expanding lore, and historical context that adds depth
+- Any ongoing mysteries, relationships, or story threads with dramatic potential
 
-Write this as flowing narrative text that provides rich context for storytelling continuity.
+Write this as flowing narrative text that provides rich context for storytelling continuity. **CREATIVE ENHANCEMENT MANDATE**: If database searches return limited information, creatively expand upon it to create a more engaging scene. Never let sparse data result in sparse context - always embellish with thematic details that enhance the adventure.
 
 ## Important Notes
 

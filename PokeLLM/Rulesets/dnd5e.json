@@ -3277,5 +3277,19 @@
       "validTarget": "target.id in gameState.combat.participants || target.type == 'area'",
       "withinRange": "distance(character.position, target.position) <= getActionRange(action, character)"
     }
+  },
+  "settingRequirements": {
+    "canonCompliance": "Adhere to D&D 5e mechanics, spell descriptions, monster stats, and established lore unless the DM explicitly requests homebrew content.",
+    "worldConsistency": "Maintain consistency with the established campaign world, NPC relationships, and ongoing storylines throughout adventures.",
+    "mechanicalAccuracy": "Follow D&D 5e rules for combat, spellcasting, skill checks, and ability score mechanics accurately.",
+    "playerAgency": "Respect player choices and character builds - avoid railroading and allow creative problem-solving approaches to challenges.",
+    "balanceRespect": "Maintain game balance by following established challenge ratings, encounter guidelines, and level-appropriate rewards."
+  },
+  "storytellingDirective": {
+    "tone": "Epic fantasy adventure with heroic themes",
+    "style": "Classic fantasy storytelling with rich descriptions, meaningful character moments, and collaborative narrative building",
+    "pacing": "Balanced pacing between exploration, roleplay, and combat encounters with dramatic tension and satisfying resolutions",
+    "themes": "Heroism, camaraderie, moral choices, personal growth, and the triumph of good over evil in a world of magic and wonder",
+    "atmosphere": "Immersive fantasy world where player choices matter, magic feels wondrous, and epic adventures await around every corner"
   }
 }

@@ -246,6 +246,32 @@ public class RulesetManager : IRulesetManager
         return string.Empty;
     }
 
+    public string GetPhaseObjectiveTemplate(GamePhase phase)
+    {
+        if (_activeRuleset == null)
+        {
+            return string.Empty;
+        }
+
+        if (!_activeRuleset.RootElement.TryGetProperty("promptTemplates", out var templates))
+        {
+            return string.Empty;
+        }
+
+        var phaseKey = phase.ToString();
+        if (!templates.TryGetProperty(phaseKey, out var phaseTemplate))
+        {
+            return string.Empty;
+        }
+
+        if (phaseTemplate.TryGetProperty("phaseObjective", out var phaseObjective))
+        {
+            return phaseObjective.GetString() ?? string.Empty;
+        }
+
+        return string.Empty;
+    }
+
     public List<string> GetPhaseContextElements(GamePhase phase)
     {
         if (_activeRuleset == null)
@@ -279,6 +305,56 @@ public class RulesetManager : IRulesetManager
         }
 
         return new List<string>();
+    }
+
+    public string GetSettingRequirements()
+    {
+        if (_activeRuleset == null)
+        {
+            return string.Empty;
+        }
+
+        if (!_activeRuleset.RootElement.TryGetProperty("settingRequirements", out var settingRequirements))
+        {
+            return string.Empty;
+        }
+
+        var requirements = new List<string>();
+        foreach (var requirement in settingRequirements.EnumerateObject())
+        {
+            var value = requirement.Value.GetString();
+            if (!string.IsNullOrEmpty(value))
+            {
+                requirements.Add($"• {requirement.Name}: {value}");
+            }
+        }
+
+        return string.Join("\n", requirements);
+    }
+
+    public string GetStorytellingDirective()
+    {
+        if (_activeRuleset == null)
+        {
+            return string.Empty;
+        }
+
+        if (!_activeRuleset.RootElement.TryGetProperty("storytellingDirective", out var storytellingDirective))
+        {
+            return string.Empty;
+        }
+
+        var directives = new List<string>();
+        foreach (var directive in storytellingDirective.EnumerateObject())
+        {
+            var value = directive.Value.GetString();
+            if (!string.IsNullOrEmpty(value))
+            {
+                directives.Add($"• {directive.Name}: {value}");
+            }
+        }
+
+        return string.Join("\n", directives);
     }
 
     public void Dispose()

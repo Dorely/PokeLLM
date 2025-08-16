@@ -97,7 +97,7 @@ public class Program
             }
 
             // Create new game state with selected ruleset
-            await gameStateRepository.CreateNewGameStateAsync();
+            await gameStateRepository.CreateNewGameStateAsync(selectedRulesetId);
             Console.WriteLine($"New game created with {selectedRulesetId} ruleset.");
         }
 

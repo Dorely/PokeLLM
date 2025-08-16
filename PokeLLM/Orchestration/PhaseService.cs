@@ -386,23 +386,34 @@ public class PhaseService : IPhaseService
     {
         try
         {
-            // For GameSetup phase, use traditional file-based prompts
-            if (_phase == GamePhase.GameSetup)
-            {
-                return await LoadFileBasedPrompt(promptName);
-            }
+            // Always start with the file-based prompt as the template
+            var templatePrompt = await LoadFileBasedPrompt(promptName);
             
-            // For other phases, try to load prompt from ruleset first
-            var rulesetPrompt = _rulesetManager.GetPhasePromptTemplate(_phase);
-            if (!string.IsNullOrEmpty(rulesetPrompt))
-            {
-                Debug.WriteLine($"[{_phase}PhaseService] Using ruleset prompt template");
-                return rulesetPrompt;
-            }
+            // Inject ruleset prompt templates if available for any phase
+            var rulesetSystemPrompt = _rulesetManager.GetPhasePromptTemplate(_phase);
+            var rulesetPhaseObjective = _rulesetManager.GetPhaseObjectiveTemplate(_phase);
+            var settingRequirements = _rulesetManager.GetSettingRequirements();
+            var storytellingDirective = _rulesetManager.GetStorytellingDirective();
             
-            // Fallback to file-based prompt
-            Debug.WriteLine($"[{_phase}PhaseService] No ruleset prompt found, falling back to file-based prompt");
-            return await LoadFileBasedPrompt(promptName);
+            // Inject ruleset system prompt or fall back to empty string
+            templatePrompt = templatePrompt.Replace("{{rulesetSystemPrompt}}", 
+                !string.IsNullOrEmpty(rulesetSystemPrompt) ? rulesetSystemPrompt : "No specific ruleset guidelines available.");
+                
+            // Inject ruleset phase objective or fall back to empty string
+            templatePrompt = templatePrompt.Replace("{{rulesetPhaseObjective}}", 
+                !string.IsNullOrEmpty(rulesetPhaseObjective) ? rulesetPhaseObjective : "Follow the default phase objective below.");
+                
+            // Inject setting requirements
+            templatePrompt = templatePrompt.Replace("{{settingRequirements}}", 
+                !string.IsNullOrEmpty(settingRequirements) ? settingRequirements : "No specific setting requirements defined.");
+                
+            // Inject storytelling directive
+            templatePrompt = templatePrompt.Replace("{{storytellingDirective}}", 
+                !string.IsNullOrEmpty(storytellingDirective) ? storytellingDirective : "No specific storytelling directive defined.");
+                
+            Debug.WriteLine($"[{_phase}PhaseService] Using file-based template with ruleset injections");
+            
+            return templatePrompt;
         }
         catch (Exception ex)
         {

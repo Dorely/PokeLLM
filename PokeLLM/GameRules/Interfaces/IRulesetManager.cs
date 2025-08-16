@@ -59,6 +59,21 @@ public interface IRulesetManager : IDisposable
     /// Get context elements for a specific phase from the active ruleset
     /// </summary>
     List<string> GetPhaseContextElements(GamePhase phase);
+    
+    /// <summary>
+    /// Get phase objective template for a specific phase from the active ruleset
+    /// </summary>
+    string GetPhaseObjectiveTemplate(GamePhase phase);
+    
+    /// <summary>
+    /// Get setting requirements from the active ruleset
+    /// </summary>
+    string GetSettingRequirements();
+    
+    /// <summary>
+    /// Get storytelling directive from the active ruleset
+    /// </summary>
+    string GetStorytellingDirective();
 }
 
 /// <summary>

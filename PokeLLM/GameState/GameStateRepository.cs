@@ -210,13 +210,13 @@ public class GameStateRepository : IGameStateRepository
 
     public async Task CopyRulesetToGameDirectoryAsync(string rulesetId, string gameDirectory)
     {
-        // Find the original ruleset file
+        // Find the original ruleset file - prioritize AppContext.BaseDirectory since that's where build outputs are
         var candidatePaths = new[]
         {
-            Path.Combine("Rulesets", $"{rulesetId}.json"),
-            Path.Combine("PokeLLM", "Rulesets", $"{rulesetId}.json"),
             Path.Combine(AppContext.BaseDirectory, "Rulesets", $"{rulesetId}.json"),
-            Path.Combine(AppContext.BaseDirectory, "PokeLLM", "Rulesets", $"{rulesetId}.json")
+            Path.Combine(AppContext.BaseDirectory, "PokeLLM", "Rulesets", $"{rulesetId}.json"),
+            Path.Combine("Rulesets", $"{rulesetId}.json"),
+            Path.Combine("PokeLLM", "Rulesets", $"{rulesetId}.json")
         };
 
         string sourceRulesetPath = null;
@@ -231,7 +231,7 @@ public class GameStateRepository : IGameStateRepository
 
         if (sourceRulesetPath == null)
         {
-            throw new FileNotFoundException($"Could not find ruleset file for {rulesetId}");
+            throw new FileNotFoundException($"Could not find ruleset file for {rulesetId}. Searched paths: {string.Join(", ", candidatePaths)}");
         }
 
         var targetRulesetPath = Path.Combine(gameDirectory, "active_ruleset.json");

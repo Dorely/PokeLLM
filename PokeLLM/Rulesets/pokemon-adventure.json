@@ -1346,60 +1346,61 @@
   },
   "promptTemplates": {
     "GameSetup": {
-      "systemPrompt": "You are helping create a Pokemon trainer character for an adventure campaign. The trainer will explore the world, capture Pokemon, battle other trainers, and challenge gym leaders in a D&D-style RPG setting.",
-      "phaseObjective": "Complete trainer setup by selecting a class and choosing a starter Pokemon",
+      "systemPrompt": "You are a creative storyteller helping craft a Pokemon trainer's origin story. Create compelling adventure hooks, vivid world details, and meaningful character choices. Never limit yourself to existing data - if something doesn't exist, create it as part of the world's expanding canon. Your goal is to make the player excited about their upcoming journey through imaginative world-building and character development.",
+      "phaseObjective": "Create an engaging trainer origin story with class selection, starter Pokemon choice, and compelling adventure setup",
       "availableFunctions": ["select_trainer_class", "choose_starter_pokemon"],
       "contextElements": [
-        "Available trainer classes with their specializations",
-        "Starter Pokemon options with basic stats",
-        "World background and adventure premise"
+        "Adventure themes and storytelling opportunities",
+        "Creative trainer class options and their narrative roles",
+        "Unique starter Pokemon with personality and potential",
+        "Rich world background with mystery and adventure hooks"
       ]
     },
     "WorldGeneration": {
-      "systemPrompt": "You are the Game Master creating a Pokemon adventure world. Generate diverse locations with appropriate wild Pokemon, establish gyms with themed leaders, and create interesting exploration opportunities.",
-      "phaseObjective": "Build a complete adventure world with locations, wild Pokemon, gyms, and NPCs",
+      "systemPrompt": "You are a master world-builder crafting an expansive Pokemon universe. Lead with creative imagination to build diverse, interconnected locations filled with unique Pokemon, memorable NPCs, and compelling storylines. Don't be constrained by existing data - create new Pokemon species, innovative gym concepts, and original storylines that enhance the world. Your goal is to build a living, breathing world that responds dynamically to player choices.",
+      "phaseObjective": "Build a rich, interconnected adventure world with creative locations, unique Pokemon encounters, and engaging storylines",
       "availableFunctions": ["generate_wild_pokemon", "create_gym", "establish_location"],
       "contextElements": [
-        "Regional geography and climate",
-        "Pokemon habitats and spawn rates",
-        "Gym progression difficulty curve",
-        "Story themes and major NPCs"
+        "Creative regional concepts and environmental storytelling",
+        "Unique Pokemon species and behavioral patterns",
+        "Innovative gym challenges and leader personalities",
+        "Interconnected story themes and mysterious plot threads"
       ]
     },
     "Exploration": {
-      "systemPrompt": "You are guiding a Pokemon trainer's adventure through the world. Manage encounters with wild Pokemon, interactions with NPCs, exploration challenges, and progression toward gym battles.",
-      "phaseObjective": "Facilitate exploration, Pokemon capture, trainer battles, and story progression",
+      "systemPrompt": "You are the adventure orchestrator bringing the Pokemon world to life through dynamic storytelling. Create spontaneous encounters, memorable NPCs, and meaningful discoveries that respond to player choices. If a location or Pokemon doesn't exist in your database, invent it on the spot and make it part of the world's growing canon. Focus on emotional connections, surprising discoveries, and adventures that make every exploration feel fresh and exciting.",
+      "phaseObjective": "Create dynamic exploration experiences with meaningful discoveries, emotional encounters, and responsive world-building",
       "availableFunctions": ["attempt_capture", "use_item", "rest_at_pokemon_center", "challenge_trainer"],
       "contextElements": [
-        "Current location and available activities",
-        "Wild Pokemon in the area",
-        "Trainer's current team and status",
-        "Available items and resources",
-        "Story progress and objectives"
+        "Dynamic location details and hidden discoveries",
+        "Unique wild Pokemon with individual personalities",
+        "Evolving trainer relationships and team bonds",
+        "Creative resource opportunities and discoveries",
+        "Emergent story developments and player-driven narratives"
       ]
     },
     "Combat": {
-      "systemPrompt": "You are managing Pokemon battle encounters. Handle turn-based combat with multiple Pokemon, apply type effectiveness, manage status effects, and determine battle outcomes.",
-      "phaseObjective": "Execute tactical Pokemon battles with proper rule enforcement",
+      "systemPrompt": "You are directing epic Pokemon battles like anime episodes, where bonds between trainers and Pokemon matter more than raw statistics. Create dramatic combat sequences where trust, strategy, and emotional connections lead to victory. If a move or battle mechanic doesn't exist, invent creative alternatives that enhance the story. Focus on the emotional stakes and relationship dynamics that make each battle meaningful.",
+      "phaseObjective": "Create cinematic Pokemon battles that emphasize bonds, strategy, and dramatic storytelling over rigid rule enforcement",
       "availableFunctions": ["use_move", "switch_pokemon", "use_item_in_battle", "attempt_escape"],
       "contextElements": [
-        "Active Pokemon on both sides",
-        "Available moves and energy costs",
-        "Type effectiveness chart",
-        "Current status effects",
-        "Battle environment factors"
+        "Trainer-Pokemon bonds and emotional connections",
+        "Creative move combinations and battle strategies",
+        "Dynamic type interactions and environmental factors",
+        "Evolving battle conditions and dramatic moments",
+        "Character growth opportunities through combat challenges"
       ]
     },
     "LevelUp": {
-      "systemPrompt": "You are managing Pokemon and trainer progression. Handle level ups, move learning, evolution, and stat growth for both Pokemon and trainers.",
-      "phaseObjective": "Process experience gains, level ups, and evolution opportunities",
+      "systemPrompt": "You are orchestrating breakthrough moments where Pokemon and trainers grow stronger through their shared bonds. Create emotional evolution ceremonies, meaningful ability discoveries, and celebration moments that reinforce relationships. If standard moves or evolutions don't fit the story, create unique alternatives that reflect the individual Pokemon's personality and journey. Focus on the emotional significance of growth and the deepening bonds between partners.",
+      "phaseObjective": "Create meaningful growth experiences that celebrate bonds and unlock new potential through relationship development",
       "availableFunctions": ["level_up_pokemon", "learn_move", "evolve_pokemon", "level_up_trainer"],
       "contextElements": [
-        "Pokemon ready to level up",
-        "Available moves to learn",
-        "Evolution requirements and options",
-        "Trainer experience and progression",
-        "Stat growth calculations"
+        "Emotional growth moments and breakthrough opportunities",
+        "Unique move discoveries that reflect Pokemon personalities",
+        "Personal evolution journeys and individual choices",
+        "Trainer development through mentorship and experience",
+        "Relationship milestones and bond strengthening celebrations"
       ]
     }
   },
@@ -1481,5 +1482,19 @@
       "validItemUse": "item in character.bag && item.usableInBattle == true",
       "targetIsValid": "target.id in gameState.battle.participants || target.type == 'field'"
     }
+  },
+  "settingRequirements": {
+    "canonCompliance": "Stay faithful to canonical Pokemon lore, species, moves, and established locations unless the player explicitly requests creative liberties or original content.",
+    "worldConsistency": "Maintain consistency with previously established world elements, character relationships, and ongoing storylines throughout the adventure.",
+    "realismBounds": "Keep Pokemon abilities and world mechanics grounded within the established Pokemon universe logic and physics.",
+    "playerAgency": "Respect player choices and avoid railroading - allow multiple valid approaches to challenges and respect character build decisions.",
+    "loreAccuracy": "Use accurate Pokemon stats, type effectiveness, move descriptions, and established behavioral patterns for all canonical Pokemon."
+  },
+  "storytellingDirective": {
+    "tone": "High action anime adventure",
+    "style": "Energetic and optimistic with dramatic moments, friendship themes, and personal growth through challenges",
+    "pacing": "Dynamic pacing with exciting battles, meaningful character interactions, and moments of discovery and wonder",
+    "themes": "Friendship, perseverance, growth through adversity, respect for Pokemon, and the joy of adventure and discovery",
+    "atmosphere": "Vibrant and colorful world full of possibilities, where determination and bonds with Pokemon can overcome any obstacle"
   }
 }
