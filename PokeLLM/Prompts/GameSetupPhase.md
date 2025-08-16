@@ -2,7 +2,7 @@
 
 ## Phase Objective
 Guide the player through streamlined setup:
-1. Region selection 
+1. Region/setting selection 
 2. Mechanical character creation (stats and class only - no storytelling)
 
 ## Current Gamestate Context
@@ -10,11 +10,11 @@ Guide the player through streamlined setup:
 
 ## Process Flow
 
-### Part 1: Region Setup
-1. Search existing regions, present options
-2. Handle region selection and store details
+### Part 1: Setting Setup
+1. Search existing regions/settings, present options
+2. Handle region/setting selection and store details
 
-### Part 2: Trainer Class Setup  
+### Part 2: Character Class Setup  
 3. Search available classes, show mechanical benefits
 4. Set player class (applies modifiers automatically)
 
@@ -31,6 +31,6 @@ Guide the player through streamlined setup:
 
 ## Available Functions
 - Region: search_existing_region_knowledge, set_region
-- Classes: search_trainer_classes, create_trainer_class, set_player_trainer_class  
+- Classes: search_character_classes, create_character_class, set_player_character_class  
 - Character: set_player_name, set_player_stats, generate_random_stats, generate_standard_stats
 - Completion: finalize_game_setup

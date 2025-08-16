@@ -16,9 +16,9 @@ public interface ICombatLogicService
     Task EndCombat();
     Task<int> CalculateAttackRoll(string attackerId, string moveId);
     Task<int> CalculateDamage(string attackerId, string defenderId, string moveId);
-    Task<bool> AttemptPokemonCapture(string pokemonInstanceId, string ballType);
-    Task<List<string>> GetAvailableMoves(string pokemonInstanceId);
-    Task<bool> CanUseMoveVigorCost(string pokemonInstanceId, string moveId);
+    Task<bool> AttemptEntityCapture(string entityInstanceId, string captureItemType);
+    Task<List<string>> GetAvailableActions(string entityInstanceId);
+    Task<bool> CanUseActionCost(string entityInstanceId, string actionId);
     Task ApplyDamage(string targetId, int damage);
     Task ApplyHealing(string targetId, int healing);
     Task ApplyStatusEffect(string targetId, string statusEffect);
@@ -27,13 +27,13 @@ public interface ICombatLogicService
     Task<bool> CheckFaintedStatus(string participantId);
     Task HandleFaintedParticipant(string participantId);
     Task<List<int>> CalculateInitiativeOrder(List<string> participantIds);
-    Task SwitchActivePokemon(string trainerId, string newPokemonId);
-    Task<bool> CanSwitchPokemon(string trainerId);
+    Task SwitchActiveEntity(string controllerId, string newEntityId);
+    Task<bool> CanSwitchEntity(string controllerId);
     Task<double> CalculateTypeEffectiveness(string moveType, string defenderType1, string defenderType2);
     Task<bool> AttemptFlee(string participantId);
     Task<string> GetCombatSummary();
-    Task<bool> IsTrainerBattle();
-    Task<bool> IsWildPokemonBattle();
+    Task<bool> IsControllerBattle();
+    Task<bool> IsWildEntityBattle();
     Task ProcessCombatEndRewards(string winnerId);
 }
 
@@ -88,17 +88,17 @@ public class CombatLogicService : ICombatLogicService
         throw new NotImplementedException();
     }
 
-    public async Task<bool> AttemptPokemonCapture(string pokemonInstanceId, string ballType)
+    public async Task<bool> AttemptEntityCapture(string entityInstanceId, string captureItemType)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<List<string>> GetAvailableMoves(string pokemonInstanceId)
+    public async Task<List<string>> GetAvailableActions(string entityInstanceId)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<bool> CanUseMoveVigorCost(string pokemonInstanceId, string moveId)
+    public async Task<bool> CanUseActionCost(string entityInstanceId, string actionId)
     {
         throw new NotImplementedException();
     }
@@ -143,12 +143,12 @@ public class CombatLogicService : ICombatLogicService
         throw new NotImplementedException();
     }
 
-    public async Task SwitchActivePokemon(string trainerId, string newPokemonId)
+    public async Task SwitchActiveEntity(string controllerId, string newEntityId)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<bool> CanSwitchPokemon(string trainerId)
+    public async Task<bool> CanSwitchEntity(string controllerId)
     {
         throw new NotImplementedException();
     }
@@ -168,12 +168,12 @@ public class CombatLogicService : ICombatLogicService
         throw new NotImplementedException();
     }
 
-    public async Task<bool> IsTrainerBattle()
+    public async Task<bool> IsControllerBattle()
     {
         throw new NotImplementedException();
     }
 
-    public async Task<bool> IsWildPokemonBattle()
+    public async Task<bool> IsWildEntityBattle()
     {
         throw new NotImplementedException();
     }

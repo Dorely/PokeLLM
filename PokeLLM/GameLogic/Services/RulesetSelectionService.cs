@@ -41,8 +41,8 @@ public class RulesetSelectionService : IRulesetSelectionService
         
         if (availableRulesets.Count == 0)
         {
-            Console.WriteLine("No rulesets found. Using default pokemon-adventure ruleset.");
-            return "pokemon-adventure";
+            Console.WriteLine("No rulesets found. Using default ruleset.");
+            return "default";
         }
 
         if (availableRulesets.Count == 1)

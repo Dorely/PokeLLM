@@ -247,7 +247,8 @@ public class RulesetWizardPlugin
 
         if (progressionSystem.ToLowerInvariant().Contains("stat"))
         {
-            playerFields.AddRange(new[] { "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma" });
+            // Suggest generic attribute system - let ruleset define specific stats
+            playerFields.AddRange(new[] { "primaryAttributes", "secondaryAttributes", "derivedStats" });
         }
 
         if (mechanicsList.Any(m => m.Contains("health") || m.Contains("combat")))
@@ -333,6 +334,7 @@ public class RulesetWizardPlugin
         result += "• Player fields track character state and progression\n";
         result += "• Entity types define the structure for objects in collections\n";
         result += "• Consider what data your game mechanics need to access frequently\n";
+        result += "• Use generic attribute fields (primaryAttributes, etc.) rather than hardcoded stats to support any ruleset\n";
 
         return result;
     }

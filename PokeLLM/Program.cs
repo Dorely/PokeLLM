@@ -36,7 +36,7 @@ public class Program
         {
             // Load existing game and get its ruleset
             var existingGameState = await gameStateRepository.LoadLatestStateAsync();
-            selectedRulesetId = existingGameState.ActiveRulesetId ?? "pokemon-adventure";
+            selectedRulesetId = existingGameState.ActiveRulesetId ?? "default";
             
             Console.WriteLine($"Loading existing game with {selectedRulesetId} ruleset...");
             
@@ -81,10 +81,19 @@ public class Program
             catch (Exception ex)
             {
                 Console.WriteLine($"Warning: Error loading {selectedRulesetId} ruleset: {ex.Message}");
-                // Fallback to default ruleset
-                selectedRulesetId = "pokemon-adventure";
-                await rulesetManager.SetActiveRulesetAsync(selectedRulesetId);
-                Console.WriteLine("Falling back to pokemon-adventure ruleset.");
+                // Fallback to first available ruleset or create a generic one
+                var availableRulesets = await rulesetManager.GetAvailableRulesetsAsync();
+                if (availableRulesets.Any())
+                {
+                    selectedRulesetId = availableRulesets.First().Id;
+                    await rulesetManager.SetActiveRulesetAsync(selectedRulesetId);
+                    Console.WriteLine($"Falling back to {selectedRulesetId} ruleset.");
+                }
+                else
+                {
+                    Console.WriteLine("No rulesets available. Game may not function correctly.");
+                    selectedRulesetId = "default";
+                }
             }
 
             // Create new game state with selected ruleset
@@ -92,7 +101,7 @@ public class Program
             Console.WriteLine($"New game created with {selectedRulesetId} ruleset.");
         }
 
-        Console.WriteLine($"PokeLLM: ");
+        Console.WriteLine($"Game Engine: ");
         await foreach (var chunk in gameController.ProcessInputAsync("Game is done loading. Introduce yourself to the player"))
         {
             Console.Write(chunk);
@@ -116,7 +125,7 @@ public class Program
                 break;
 
             // Process player input through the new game controller
-            Console.WriteLine($"PokeLLM: ");
+            Console.WriteLine($"Game Engine: ");
             try
             {
                 await foreach (var chunk in gameController.ProcessInputAsync(input))

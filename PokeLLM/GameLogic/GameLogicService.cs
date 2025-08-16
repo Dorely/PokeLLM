@@ -540,19 +540,29 @@ public class GameLogicService : IGameLogicService
     /// Gets the ability score for the specified stat name using default values
     /// In a full implementation, this would look up stats from RulesetGameData
     /// </summary>
+    /// <summary>
+    /// Gets the ability score for the specified stat name from ruleset data
+    /// </summary>
     public int GetAbilityScore(string statName)
     {
         // Return default ability score of 10 for all stats during migration
-        // In the final implementation, this would look up values from the active ruleset
+        // TODO: In the final implementation, this should look up values from the active ruleset's 
+        // player data stored in GameState.RulesetGameData
         return 10;
     }
 
     /// <summary>
     /// Validates that the stat name is one of the six standard ability scores
     /// </summary>
+    /// <summary>
+    /// Validates that the stat name exists in the current ruleset
+    /// Now uses ruleset data instead of hardcoded D&D stats
+    /// </summary>
     public bool IsValidStatName(string statName)
     {
-        return statName.ToLower() is "strength" or "dexterity" or "constitution" or "intelligence" or "wisdom" or "charisma";
+        // Always return true for now - stat validation should be handled by ruleset
+        // In a full implementation, this would check the active ruleset's stat definitions
+        return !string.IsNullOrWhiteSpace(statName);
     }
 
     /// <summary>

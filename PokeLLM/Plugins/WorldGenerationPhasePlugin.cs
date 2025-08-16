@@ -647,13 +647,13 @@ public class WorldGenerationPhasePlugin
         }
     }
 
-    [KernelFunction("assign_npc_pokemon")]
-    [Description("Assign Pokemon to an NPC's team")]
-    public async Task<string> AssignNpcPokemon(
-        [Description("NPC ID to assign Pokemon to")] string npcId,
-        [Description("Pokemon instance ID to assign")] string pokemonId)
+    [KernelFunction("assign_npc_entity")]
+    [Description("Assign an entity (Pokemon, item, etc.) to an NPC")]
+    public async Task<string> AssignNpcEntity(
+        [Description("NPC ID to assign entity to")] string npcId,
+        [Description("Entity instance ID to assign")] string entityId)
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] AssignNpcPokemon called: {npcId} <- {pokemonId}");
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] AssignNpcEntity called: {npcId} <- {entityId}");
         
         try
         {
@@ -666,27 +666,27 @@ public class WorldGenerationPhasePlugin
                 }, _jsonOptions);
             }
 
-            if (string.IsNullOrWhiteSpace(pokemonId))
+            if (string.IsNullOrWhiteSpace(entityId))
             {
                 return JsonSerializer.Serialize(new { 
                     success = false,
-                    error = "Pokemon ID is required and cannot be null or empty" 
+                    error = "Entity ID is required and cannot be null or empty" 
                 }, _jsonOptions);
             }
 
-            var result = await _npcManagementService.AssignPokemonToNpcAsync(npcId, pokemonId);
+            var result = await _npcManagementService.AssignEntityToNpcAsync(npcId, entityId);
             
             return JsonSerializer.Serialize(new 
             { 
                 success = true,
                 npcId = npcId,
-                pokemonId = pokemonId,
+                entityId = entityId,
                 result = result
             }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in AssignNpcPokemon: {ex.Message}");
+            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in AssignNpcEntity: {ex.Message}");
             return JsonSerializer.Serialize(new { 
                 success = false,
                 error = ex.Message 

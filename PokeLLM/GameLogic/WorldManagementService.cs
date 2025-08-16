@@ -13,9 +13,9 @@ public interface IWorldManagementService
     Task<string> SetRegionAsync(string regionName);
     Task<string> CreateLocationAsync(Dictionary<string, object> locationData);
     Task<string> AddNpcToLocationAsync(string locationId, string npcId);
-    Task<string> AddPokemonToLocationAsync(string locationId, string pokemonId);
+    Task<string> AddEntityToLocationAsync(string locationId, string entityId);
     Task<string> RemoveNpcFromLocationAsync(string locationId, string npcId);
-    Task<string> RemovePokemonFromLocationAsync(string locationId, string pokemonId);
+    Task<string> RemoveEntityFromLocationAsync(string locationId, string entityId);
     Task<string> UpdateAdventureSummaryAsync(string newSummary);
     Task<string> AddRecentEventAsync(string eventDescription);
     Task<string> SetTimeOfDayAsync(string timeOfDay);
@@ -61,10 +61,10 @@ public class WorldManagementService : IWorldManagementService
         return $"NPC {npcId} added to location {locationId}";
     }
 
-    public async Task<string> AddPokemonToLocationAsync(string locationId, string pokemonId)
+    public async Task<string> AddEntityToLocationAsync(string locationId, string entityId)
     {
         // TODO: Implement with dynamic ruleset approach
-        return $"Pokemon {pokemonId} added to location {locationId}";
+        return $"Entity {entityId} added to location {locationId}";
     }
 
     public async Task<string> RemoveNpcFromLocationAsync(string locationId, string npcId)
@@ -73,10 +73,10 @@ public class WorldManagementService : IWorldManagementService
         return $"NPC {npcId} removed from location {locationId}";
     }
 
-    public async Task<string> RemovePokemonFromLocationAsync(string locationId, string pokemonId)
+    public async Task<string> RemoveEntityFromLocationAsync(string locationId, string entityId)
     {
         // TODO: Implement with dynamic ruleset approach
-        return $"Pokemon {pokemonId} removed from location {locationId}";
+        return $"Entity {entityId} removed from location {locationId}";
     }
 
     public async Task<string> UpdateAdventureSummaryAsync(string newSummary)

@@ -11,7 +11,7 @@ namespace PokeLLM.Game.GameLogic;
 public interface INpcManagementService
 {
     Task<string> CreateNpcAsync(Dictionary<string, object> npcData, string locationId = "");
-    Task<string> AssignPokemonToNpcAsync(string npcId, string pokemonId);
+    Task<string> AssignEntityToNpcAsync(string npcId, string entityId);
     Task<string> MoveNpcToLocationAsync(string npcId, string locationId);
     Task<string> RemoveNpcFromLocationAsync(string npcId);
     Task<string> UpdateNpcRelationshipWithPlayerAsync(string npcId, int relationshipValue);
@@ -60,10 +60,10 @@ public class NpcManagementService : INpcManagementService
         return npcId;
     }
 
-    public async Task<string> AssignPokemonToNpcAsync(string npcId, string pokemonId)
+    public async Task<string> AssignEntityToNpcAsync(string npcId, string entityId)
     {
         // TODO: Implement with dynamic ruleset approach
-        return $"Pokemon {pokemonId} assigned to NPC {npcId} successfully";
+        return $"Entity {entityId} assigned to NPC {npcId} successfully";
     }
 
     public async Task<string> MoveNpcToLocationAsync(string npcId, string locationId)
