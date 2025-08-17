@@ -839,36 +839,52 @@
         ]
       },
       {
-        "id": "finalize_game_setup",
-        "name": "finalize_game_setup",
-        "description": "Complete game setup and transition to World Generation phase",
+        "id": "select_region",
+        "name": "select_region",
+        "description": "Select the region where the Pokemon adventure takes place",
         "parameters": [
           {
-            "name": "setupSummary",
+            "name": "regionId",
             "type": "string",
-            "description": "Summary of setup choices made",
+            "description": "ID of the region to select (e.g. 'kanto', 'johto', 'hoenn')",
             "required": true
           }
         ],
         "ruleValidations": [
-          "character.name != null && character.name != ''",
-          "gameState.region != null && gameState.region != ''"
+          "gameState.region == null || gameState.region == ''",
+          "rulesetData.regions.hasOwnProperty({{regionId}})"
         ],
         "effects": [
           {
-            "target": "gameState.currentPhase",
+            "target": "gameState.region",
             "operation": "set",
-            "value": "WorldGeneration"
-          },
+            "value": "{{regionId}}"
+          }
+        ]
+      },
+      {
+        "id": "validate_setup_completion",
+        "name": "validate_setup_completion",
+        "description": "Validate that all required setup steps have been completed before finalizing",
+        "parameters": [
           {
-            "target": "gameState.adventureSummary",
-            "operation": "set",
-            "value": "A new adventure begins with {{character.name}}, a {{character.trainerClass}} in the {{gameState.region}} region. {{setupSummary}}"
-          },
+            "name": "checkOnly",
+            "type": "boolean",
+            "description": "Whether to only validate without making changes",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "character.name != null && character.name != ''",
+          "character.trainerClass != null && character.trainerClass != ''",
+          "gameState.region != null && gameState.region != ''",
+          "character.pokemonTeam.length > 0"
+        ],
+        "effects": [
           {
-            "target": "gameState.phaseChangeSummary", 
+            "target": "gameState.setupValidated",
             "operation": "set",
-            "value": "Game setup completed successfully. {{setupSummary}}"
+            "value": true
           }
         ]
       }
@@ -1000,6 +1016,212 @@
               "end": "{{endLocation}}",
               "encounters": []
             }
+          }
+        ]
+      },
+      {
+        "id": "create_trainer",
+        "name": "create_trainer",
+        "description": "Create a Pokemon trainer NPC with specific Pokemon and abilities",
+        "parameters": [
+          {
+            "name": "trainerId",
+            "type": "string",
+            "description": "Unique identifier for the trainer",
+            "required": true
+          },
+          {
+            "name": "trainerName",
+            "type": "string",
+            "description": "Name of the trainer",
+            "required": true
+          },
+          {
+            "name": "trainerClass",
+            "type": "string",
+            "description": "Type of trainer (gym_leader, elite_four, champion, rival, etc.)",
+            "required": true
+          },
+          {
+            "name": "level",
+            "type": "int",
+            "description": "Trainer's experience level (1-100)",
+            "required": true
+          },
+          {
+            "name": "locationId",
+            "type": "string",
+            "description": "Location where trainer will be placed",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "{{level}} >= 1 && {{level}} <= 100",
+          "rulesetData.trainerClasses.hasOwnProperty({{trainerClass}})"
+        ],
+        "effects": [
+          {
+            "target": "gameState.trainers",
+            "operation": "addTrainer",
+            "value": {
+              "id": "{{trainerId}}",
+              "name": "{{trainerName}}",
+              "class": "{{trainerClass}}",
+              "level": "{{level}}",
+              "location": "{{locationId}}",
+              "pokemon": [],
+              "items": []
+            }
+          }
+        ]
+      },
+      {
+        "id": "create_pokemon",
+        "name": "create_pokemon",
+        "description": "Create a specific Pokemon instance with stats and moves",
+        "parameters": [
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "Unique identifier for this Pokemon instance",
+            "required": true
+          },
+          {
+            "name": "species",
+            "type": "string",
+            "description": "Pokemon species name",
+            "required": true
+          },
+          {
+            "name": "level",
+            "type": "int",
+            "description": "Pokemon level (1-100)",
+            "required": true
+          },
+          {
+            "name": "nature",
+            "type": "string",
+            "description": "Pokemon nature affecting stats",
+            "required": false
+          },
+          {
+            "name": "locationId",
+            "type": "string",
+            "description": "Location where Pokemon will be placed",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "{{level}} >= 1 && {{level}} <= 100",
+          "rulesetData.species.hasOwnProperty({{species}})"
+        ],
+        "effects": [
+          {
+            "target": "gameState.pokemon",
+            "operation": "addPokemon",
+            "value": {
+              "id": "{{pokemonId}}",
+              "species": "{{species}}",
+              "level": "{{level}}",
+              "nature": "{{nature}}",
+              "location": "{{locationId}}",
+              "moves": [],
+              "stats": {}
+            }
+          }
+        ]
+      },
+      {
+        "id": "create_location",
+        "name": "create_location",
+        "description": "Create a new location in the Pokemon world",
+        "parameters": [
+          {
+            "name": "locationId",
+            "type": "string",
+            "description": "Unique identifier for the location",
+            "required": true
+          },
+          {
+            "name": "locationName",
+            "type": "string",
+            "description": "Display name of the location",
+            "required": true
+          },
+          {
+            "name": "locationType",
+            "type": "string",
+            "description": "Type of location (city, route, cave, forest, gym, etc.)",
+            "required": true
+          },
+          {
+            "name": "region",
+            "type": "string",
+            "description": "Which region this location belongs to",
+            "required": true
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "description": "Detailed description of the location",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.locations[{{locationId}}] == null",
+          "rulesetData.regions.hasOwnProperty({{region}})"
+        ],
+        "effects": [
+          {
+            "target": "gameState.locations",
+            "operation": "addLocation",
+            "value": {
+              "id": "{{locationId}}",
+              "name": "{{locationName}}",
+              "type": "{{locationType}}",
+              "region": "{{region}}",
+              "description": "{{description}}",
+              "connectedLocations": [],
+              "trainers": [],
+              "wildPokemon": [],
+              "items": []
+            }
+          }
+        ]
+      },
+      {
+        "id": "assign_pokemon_to_trainer",
+        "name": "assign_pokemon_to_trainer",
+        "description": "Assign a Pokemon to a trainer's team",
+        "parameters": [
+          {
+            "name": "trainerId",
+            "type": "string",
+            "description": "ID of the trainer to receive the Pokemon",
+            "required": true
+          },
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "ID of the Pokemon to assign",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.trainers[{{trainerId}}] != null",
+          "gameState.pokemon[{{pokemonId}}] != null",
+          "gameState.trainers[{{trainerId}}].pokemon.length < 6"
+        ],
+        "effects": [
+          {
+            "target": "gameState.trainers[{{trainerId}}].pokemon",
+            "operation": "addToArray",
+            "value": "{{pokemonId}}"
+          },
+          {
+            "target": "gameState.pokemon[{{pokemonId}}].owner",
+            "operation": "set",
+            "value": "{{trainerId}}"
           }
         ]
       }
@@ -1436,6 +1658,80 @@
         "Trainer development through mentorship and experience",
         "Relationship milestones and bond strengthening celebrations"
       ]
+    }
+  },
+  "regions": {
+    "kanto": {
+      "id": "kanto",
+      "name": "Kanto",
+      "description": "The original Pokemon region, home to Professor Oak and the Pokemon League Elite Four",
+      "startingTown": "Pallet Town",
+      "gymLeaders": 8,
+      "legendaryPokemon": ["articuno", "zapdos", "moltres", "mewtwo", "mew"],
+      "starterPokemon": ["bulbasaur", "charmander", "squirtle"],
+      "professor": "Professor Oak",
+      "climate": "Temperate",
+      "features": ["Viridian Forest", "Mt. Moon", "Safari Zone", "Pokemon Tower", "Indigo Plateau"]
+    },
+    "johto": {
+      "id": "johto",
+      "name": "Johto",
+      "description": "A neighboring region to Kanto, known for its traditional culture and legendary Pokemon",
+      "startingTown": "New Bark Town",
+      "gymLeaders": 8,
+      "legendaryPokemon": ["raikou", "entei", "suicune", "lugia", "ho-oh", "celebi"],
+      "starterPokemon": ["chikorita", "cyndaquil", "totodile"],
+      "professor": "Professor Elm",
+      "climate": "Temperate",
+      "features": ["Ilex Forest", "Bell Tower", "Whirl Islands", "Mt. Silver", "Lake of Rage"]
+    },
+    "hoenn": {
+      "id": "hoenn",
+      "name": "Hoenn",
+      "description": "A tropical region with diverse environments and abundant water routes",
+      "startingTown": "Littleroot Town",
+      "gymLeaders": 8,
+      "legendaryPokemon": ["kyogre", "groudon", "rayquaza", "latios", "latias", "jirachi", "deoxys"],
+      "starterPokemon": ["treecko", "torchic", "mudkip"],
+      "professor": "Professor Birch",
+      "climate": "Tropical",
+      "features": ["Petalburg Woods", "Mt. Chimney", "Sky Pillar", "Meteor Falls", "Ever Grande City"]
+    },
+    "sinnoh": {
+      "id": "sinnoh",
+      "name": "Sinnoh",
+      "description": "A northern region with snowy mountains and ancient mythology",
+      "startingTown": "Twinleaf Town",
+      "gymLeaders": 8,
+      "legendaryPokemon": ["dialga", "palkia", "giratina", "azelf", "mesprit", "uxie", "darkrai", "cresselia", "phione", "manaphy", "shaymin", "arceus"],
+      "starterPokemon": ["turtwig", "chimchar", "piplup"],
+      "professor": "Professor Rowan",
+      "climate": "Continental",
+      "features": ["Mt. Coronet", "Distortion World", "Spear Pillar", "Stark Mountain", "Pokemon League"]
+    },
+    "unova": {
+      "id": "unova",
+      "name": "Unova",
+      "description": "A diverse region with modern cities and unique Pokemon not found elsewhere",
+      "startingTown": "Nuvema Town",
+      "gymLeaders": 8,
+      "legendaryPokemon": ["reshiram", "zekrom", "kyurem", "cobalion", "terrakion", "virizion", "tornadus", "thundurus", "landorus", "victini", "keldeo", "meloetta", "genesect"],
+      "starterPokemon": ["snivy", "tepig", "oshawott"],
+      "professor": "Professor Juniper",
+      "climate": "Varied",
+      "features": ["Pinwheel Forest", "Desert Resort", "Chargestone Cave", "Giant Chasm", "Pokemon League"]
+    },
+    "kalos": {
+      "id": "kalos",
+      "name": "Kalos",
+      "description": "An elegant region inspired by French culture, where Mega Evolution was discovered",
+      "startingTown": "Vaniville Town",
+      "gymLeaders": 8,
+      "legendaryPokemon": ["xerneas", "yveltal", "zygarde", "diancie", "hoopa", "volcanion"],
+      "starterPokemon": ["chespin", "fennekin", "froakie"],
+      "professor": "Professor Sycamore",
+      "climate": "Mediterranean",
+      "features": ["Santalune Forest", "Glittering Cave", "Pokemon Village", "Terminus Cave", "Pokemon League"]
     }
   },
   "items": [

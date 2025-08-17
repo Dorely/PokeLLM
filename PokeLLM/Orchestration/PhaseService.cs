@@ -79,6 +79,7 @@ public class PhaseService : IPhaseService
         LoadHardcodedPlugin();
         LoadRulesetFunctions();
         LoadRulesetManagementPlugin();
+        LoadVectorPlugin();
     }
     
     private void LoadHardcodedPlugin()
@@ -167,6 +168,48 @@ public class PhaseService : IPhaseService
         {
             Debug.WriteLine($"[{_phase}PhaseService] Error loading RulesetManagement plugin: {ex.Message}");
             // Non-critical error - continue without ruleset management
+        }
+    }
+    
+    private void LoadVectorPlugin()
+    {
+        try
+        {
+            var addFromTypeMethod = typeof(KernelExtensions)
+                .GetMethods()
+                .Where(m => m.Name == "AddFromType" && m.IsGenericMethodDefinition)
+                .FirstOrDefault(m => 
+                {
+                    var parameters = m.GetParameters();
+                    return parameters.Length == 4 && 
+                           parameters[0].ParameterType == typeof(ICollection<KernelPlugin>) &&
+                           parameters[3].ParameterType == typeof(IServiceProvider);
+                });
+                
+            if (addFromTypeMethod != null)
+            {
+                // Load VectorPlugin with unique name for proper namespacing
+                // Functions will be named like "Vector-manage_vector_store", etc.
+                var vectorPluginName = "Vector";
+                var vectorPluginMethod = addFromTypeMethod.MakeGenericMethod(typeof(PokeLLM.Plugins.VectorPlugin));
+                var defaultJsonOptions = new System.Text.Json.JsonSerializerOptions();
+                vectorPluginMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, vectorPluginName, _serviceProvider });
+
+                var vectorPlugin = _kernel.Plugins.FirstOrDefault(p => p.Name == vectorPluginName);
+                if (vectorPlugin != null)
+                {
+                    Debug.WriteLine($"[{_phase}PhaseService] Loaded Vector plugin with {vectorPlugin.Count()} functions");
+                    foreach (var function in vectorPlugin)
+                    {
+                        Debug.WriteLine($"[{_phase}PhaseService] - Function: {function.Name} (FQN: {vectorPluginName}-{function.Name})");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[{_phase}PhaseService] Error loading Vector plugin: {ex.Message}");
+            // Non-critical error - continue without vector plugin
         }
     }
     
@@ -580,7 +623,7 @@ public class PhaseServiceProvider : IPhaseServiceProvider
     {
         _phaseServices[GamePhase.GameSetup] = new PhaseService(
             GamePhase.GameSetup,
-            typeof(Game.Plugins.GameSetupPhasePlugin),
+            typeof(PokeLLM.Plugins.GameSetupPhasePlugin),
             "GameSetupPhase",
             "GameSetup",
             _llmProvider,

@@ -52,10 +52,11 @@ public class DynamicFunctionIntegrationTests
         Assert.Contains("select_trainer_class", functionNames);
         Assert.Contains("choose_starter_pokemon", functionNames);
         Assert.Contains("set_trainer_name", functionNames);
-        Assert.Contains("finalize_game_setup", functionNames);
+        Assert.Contains("select_region", functionNames);
+        Assert.Contains("validate_setup_completion", functionNames);
         
         // Verify we have exactly the expected number of functions
-        Assert.Equal(4, functionList.Count);
+        Assert.Equal(5, functionList.Count);
         
         // Verify each function has proper metadata
         foreach (var function in functionList)
@@ -175,11 +176,19 @@ public class DynamicFunctionIntegrationTests
         var functionNames = functionList.Select(f => f.Name).ToList();
 
         Assert.NotEmpty(functionList);
+        
+        // Original functions
         Assert.Contains("generate_wild_pokemon", functionNames);
         Assert.Contains("create_gym", functionNames);
         Assert.Contains("generate_route", functionNames);
         
-        Assert.Equal(3, functionList.Count);
+        // New functions added to replace plugin functions
+        Assert.Contains("create_trainer", functionNames);
+        Assert.Contains("create_pokemon", functionNames);
+        Assert.Contains("create_location", functionNames);
+        Assert.Contains("assign_pokemon_to_trainer", functionNames);
+        
+        Assert.Equal(7, functionList.Count);
     }
 
     [Fact]

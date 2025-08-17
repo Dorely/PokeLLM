@@ -132,6 +132,7 @@ public static class ServiceConfiguration
         services.AddTransient<IRulesetSelectionService, RulesetSelectionService>();
 
         // Register plugins (updated for new architecture)
+        services.AddTransient<VectorPlugin>();
         services.AddTransient<ExplorationPhasePlugin>();
         services.AddTransient<CombatPhasePlugin>();
         services.AddTransient<LevelUpPhasePlugin>();
