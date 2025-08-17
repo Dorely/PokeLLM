@@ -10,14 +10,13 @@ using PokeLLM.GameLogic;
 namespace PokeLLM.Game.Plugins;
 
 /// <summary>
-/// Plugin for handling character level up progression with generic ruleset support
+/// Plugin for handling generic level up utilities and phase management
 /// </summary>
 public class LevelUpPhasePlugin
 {
     private readonly IGameStateRepository _gameStateRepo;
     private readonly ICharacterManagementService _characterManagementService;
     private readonly IEntityService _entityService;
-    private readonly IInformationManagementService _informationManagementService;
     private readonly IGameLogicService _gameLogicService;
     private readonly JsonSerializerOptions _jsonOptions;
 
@@ -25,13 +24,11 @@ public class LevelUpPhasePlugin
         IGameStateRepository gameStateRepo,
         ICharacterManagementService characterManagementService,
         IEntityService entityService,
-        IInformationManagementService informationManagementService,
         IGameLogicService gameLogicService)
     {
         _gameStateRepo = gameStateRepo;
         _characterManagementService = characterManagementService;
         _entityService = entityService;
-        _informationManagementService = informationManagementService;
         _gameLogicService = gameLogicService;
         _jsonOptions = new JsonSerializerOptions
         {
@@ -42,13 +39,14 @@ public class LevelUpPhasePlugin
         };
     }
 
-    [KernelFunction("manage_player_advancement")]
-    [Description("Handle player character level ups and stat improvements")]
-    public async Task<string> ManagePlayerAdvancement(
-        [Description("Action: 'level_up', 'check_advancement_eligibility'")] string action,
-        [Description("Reason or context for the advancement")] string advancementReason = "")
+    [KernelFunction("manage_generic_advancement")]
+    [Description("Handle generic character advancement operations")]
+    public async Task<string> ManageGenericAdvancement(
+        [Description("Action: 'get_player_status', 'add_experience'")] string action,
+        [Description("Amount of experience to add (for add_experience action)")] int experiencePoints = 0,
+        [Description("Reason or context for the advancement")] string reason = "")
     {
-        Debug.WriteLine($"[LevelUpPhasePlugin] ManagePlayerAdvancement called: {action}");
+        Debug.WriteLine($"[LevelUpPhasePlugin] ManageGenericAdvancement called: {action}");
         
         try
         {
@@ -56,57 +54,39 @@ public class LevelUpPhasePlugin
             
             switch (action.ToLower())
             {
-                case "level_up":
-                    var currentPlayer = await _characterManagementService.GetPlayerDetails();
-                    var newLevel = currentPlayer.Level + 1;
+                case "get_player_status":
+                    var playerDetails = await _characterManagementService.GetPlayerDetails();
+                    return JsonSerializer.Serialize(new 
+                    { 
+                        success = true,
+                        playerLevel = playerDetails.Level,
+                        playerExperience = playerDetails.Experience,
+                        playerConditions = playerDetails.Conditions,
+                        action = action
+                    }, _jsonOptions);
                     
-                    // Update player level directly by adding experience
-                    var expNeeded = (newLevel * 1000) - currentPlayer.Experience;
-                    await _characterManagementService.AddPlayerExperiencePoints(expNeeded);
+                case "add_experience":
+                    if (experiencePoints <= 0)
+                    {
+                        return JsonSerializer.Serialize(new { error = "Experience points must be greater than 0" }, _jsonOptions);
+                    }
                     
-                    // Log the level up as a narrative event
-                    await _informationManagementService.LogNarrativeEventAsync(
-                        "player_level_up",
-                        $"Player advanced to level {newLevel}",
-                        $"Through {advancementReason}, the player has grown stronger and reached level {newLevel}.",
-                        new List<string> { "player" },
-                        gameState.CurrentLocationId,
-                        null,
-                        gameState.GameTurnNumber
-                    );
+                    await _characterManagementService.AddPlayerExperiencePoints(experiencePoints);
                     
                     // Add to recent events
                     gameState.RecentEvents.Add(new EventLog 
                     { 
                         TurnNumber = gameState.GameTurnNumber, 
-                        EventDescription = $"Player Level Up: Reached level {newLevel} - {advancementReason}" 
+                        EventDescription = $"Player gained {experiencePoints} experience - {reason}" 
                     });
                     await _gameStateRepo.SaveStateAsync(gameState);
                     
                     return JsonSerializer.Serialize(new 
                     { 
                         success = true,
-                        message = $"Player advanced to level {newLevel}!",
-                        newLevel = newLevel,
-                        previousLevel = newLevel - 1,
-                        reason = advancementReason,
-                        action = action
-                    }, _jsonOptions);
-                    
-                case "check_advancement_eligibility":
-                    var playerDetails = await _characterManagementService.GetPlayerDetails();
-                    var eligibilityInfo = new
-                    {
-                        currentLevel = playerDetails.Level,
-                        currentExperience = playerDetails.Experience,
-                        experienceToNextLevel = ((playerDetails.Level + 1) * 1000) - playerDetails.Experience,
-                        canLevelUp = playerDetails.Experience >= ((playerDetails.Level + 1) * 1000),
-                        conditions = playerDetails.Conditions
-                    };
-                    
-                    return JsonSerializer.Serialize(new 
-                    { 
-                        eligibility = eligibilityInfo,
+                        message = $"Added {experiencePoints} experience points",
+                        experiencePoints = experiencePoints,
+                        reason = reason,
                         action = action
                     }, _jsonOptions);
                     
@@ -116,92 +96,70 @@ public class LevelUpPhasePlugin
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[LevelUpPhasePlugin] Error in ManagePlayerAdvancement: {ex.Message}");
+            Debug.WriteLine($"[LevelUpPhasePlugin] Error in ManageGenericAdvancement: {ex.Message}");
             return JsonSerializer.Serialize(new { error = ex.Message, action = action }, _jsonOptions);
         }
     }
 
-    [KernelFunction("manage_experience_and_rewards")]
-    [Description("Handle experience point distribution and rewards from adventures")]
-    public async Task<string> ManageExperienceAndRewards(
-        [Description("Action: 'award_experience', 'calculate_exp_gain'")] string action,
-        [Description("Amount of experience points")] int experiencePoints = 0,
-        [Description("Reason for the experience/reward")] string reason = "",
-        [Description("Type of accomplishment: 'battle_victory', 'quest_completion', 'discovery', 'training', 'bonding'")] string accomplishmentType = "battle_victory")
+    [KernelFunction("generate_random_values")]
+    [Description("Generate random values for level up rewards and calculations")]
+    public async Task<string> GenerateRandomValues(
+        [Description("Type of random generation: 'experience_bonus', 'skill_improvement', 'random_range'")] string randomType,
+        [Description("Base value for calculations")] int baseValue = 0,
+        [Description("Minimum value for range generation")] int minValue = 1,
+        [Description("Maximum value for range generation")] int maxValue = 100)
     {
-        Debug.WriteLine($"[LevelUpPhasePlugin] ManageExperienceAndRewards called: {action}");
+        Debug.WriteLine($"[LevelUpPhasePlugin] GenerateRandomValues called: {randomType}");
         
         try
         {
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
+            var random = new Random();
             
-            switch (action.ToLower())
+            switch (randomType.ToLower())
             {
-                case "award_experience":
-                    if (experiencePoints <= 0)
-                    {
-                        return JsonSerializer.Serialize(new { error = "Experience points must be greater than 0" }, _jsonOptions);
-                    }
-                    
-                    // Award experience to player
-                    await _characterManagementService.AddPlayerExperiencePoints(experiencePoints);
-                    
-                    // Log the experience gain
-                    await _informationManagementService.LogNarrativeEventAsync(
-                        "experience_gained",
-                        $"Player gained {experiencePoints} experience",
-                        $"Through {accomplishmentType}, the player has gained {experiencePoints} experience points. {reason}",
-                        new List<string> { "player" },
-                        gameState.CurrentLocationId,
-                        null,
-                        gameState.GameTurnNumber
-                    );
-                    
+                case "experience_bonus":
+                    var expBonus = random.Next(1, 21) * 5; // 1d20 * 5
                     return JsonSerializer.Serialize(new 
                     { 
                         success = true,
-                        message = $"Gained {experiencePoints} experience!",
-                        experiencePoints = experiencePoints,
-                        accomplishmentType = accomplishmentType,
-                        reason = reason,
-                        action = action
+                        randomValue = expBonus,
+                        baseValue = baseValue,
+                        totalValue = baseValue + expBonus,
+                        randomType = randomType
                     }, _jsonOptions);
                     
-                case "calculate_exp_gain":
-                    // Simplified experience calculation
-                    var baseExp = accomplishmentType switch
-                    {
-                        "battle_victory" => 100,
-                        "quest_completion" => 200,
-                        "discovery" => 50,
-                        "training" => 25,
-                        "bonding" => 30,
-                        _ => 50
-                    };
-                    
-                    // Add some randomness
-                    var random = new Random();
-                    var randomBonus = random.Next(1, 21) * 5; // Simulate 1d20 * 5
-                    var calculatedExp = baseExp + randomBonus;
-                    
+                case "skill_improvement":
+                    var skillBonus = random.Next(1, 7); // 1d6
                     return JsonSerializer.Serialize(new 
                     { 
                         success = true,
-                        calculatedExperience = calculatedExp,
-                        baseExperience = baseExp,
-                        randomBonus = randomBonus,
-                        accomplishmentType = accomplishmentType,
-                        action = action
+                        randomValue = skillBonus,
+                        randomType = randomType
+                    }, _jsonOptions);
+                    
+                case "random_range":
+                    if (minValue >= maxValue)
+                    {
+                        return JsonSerializer.Serialize(new { error = "Maximum value must be greater than minimum value" }, _jsonOptions);
+                    }
+                    var rangeValue = random.Next(minValue, maxValue + 1);
+                    return JsonSerializer.Serialize(new 
+                    { 
+                        success = true,
+                        randomValue = rangeValue,
+                        minValue = minValue,
+                        maxValue = maxValue,
+                        randomType = randomType
                     }, _jsonOptions);
                     
                 default:
-                    return JsonSerializer.Serialize(new { error = $"Unknown experience action: {action}" }, _jsonOptions);
+                    return JsonSerializer.Serialize(new { error = $"Unknown random type: {randomType}" }, _jsonOptions);
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[LevelUpPhasePlugin] Error in ManageExperienceAndRewards: {ex.Message}");
-            return JsonSerializer.Serialize(new { error = ex.Message, action = action }, _jsonOptions);
+            Debug.WriteLine($"[LevelUpPhasePlugin] Error in GenerateRandomValues: {ex.Message}");
+            return JsonSerializer.Serialize(new { error = ex.Message, randomType = randomType }, _jsonOptions);
         }
     }
 
@@ -235,16 +193,7 @@ public class LevelUpPhasePlugin
             // Save the state
             await _gameStateRepo.SaveStateAsync(gameState);
             
-            // Log the completion
-            await _informationManagementService.LogNarrativeEventAsync(
-                "level_up_phase_completed",
-                "Level up phase completed successfully",
-                $"The level up phase has been completed with the following advancements: {levelUpSummary}",
-                new List<string> { "player" },
-                gameState.CurrentLocationId,
-                null,
-                gameState.GameTurnNumber
-            );
+            // Note: Event logging is now handled through VectorPlugin's manage_vector_store function
             
             return JsonSerializer.Serialize(new 
             { 

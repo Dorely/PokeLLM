@@ -93,8 +93,11 @@ public class DynamicFunctionIntegrationTests
         Assert.Contains("use_item", functionNames);
         Assert.Contains("rest_at_pokemon_center", functionNames);
         Assert.Contains("search_area", functionNames);
+        Assert.Contains("get_pokemon_team_status", functionNames);
+        Assert.Contains("switch_pokemon_party", functionNames);
+        Assert.Contains("release_pokemon", functionNames);
         
-        Assert.Equal(4, functionList.Count);
+        Assert.Equal(7, functionList.Count);
     }
 
     [Fact]
@@ -151,8 +154,9 @@ public class DynamicFunctionIntegrationTests
         Assert.Contains("learn_move", functionNames);
         Assert.Contains("evolve_pokemon", functionNames);
         Assert.Contains("upgrade_trainer_skills", functionNames);
+        Assert.Contains("level_up_trainer", functionNames);
         
-        Assert.Equal(4, functionList.Count);
+        Assert.Equal(5, functionList.Count);
     }
 
     [Fact]

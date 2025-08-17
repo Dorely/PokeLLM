@@ -1352,6 +1352,101 @@
             "chance": 0.3
           }
         ]
+      },
+      {
+        "id": "get_pokemon_team_status",
+        "name": "get_pokemon_team_status",
+        "description": "Get current Pokemon team composition and status",
+        "parameters": [],
+        "ruleValidations": [],
+        "effects": [
+          {
+            "target": "returnValue",
+            "operation": "set",
+            "value": {
+              "teamPokemon": "character.pokemonTeam",
+              "boxedPokemon": "character.boxedPokemon",
+              "totalPokemon": "character.pokemonTeam.length + character.boxedPokemon.length"
+            }
+          }
+        ]
+      },
+      {
+        "id": "switch_pokemon_party",
+        "name": "switch_pokemon_party",
+        "description": "Switch Pokemon between party and PC box",
+        "parameters": [
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "ID of Pokemon to move",
+            "required": true
+          },
+          {
+            "name": "action",
+            "type": "string",
+            "description": "Action: 'box' (move to box) or 'party' (move to party)",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "{{action}} in ['box', 'party']",
+          "{{action}} == 'box' ? character.pokemonTeam.length > 1 : character.pokemonTeam.length < 6",
+          "{{action}} == 'box' ? character.pokemonTeam.find(p => p.id == {{pokemonId}}) != null : character.boxedPokemon.find(p => p.id == {{pokemonId}}) != null"
+        ],
+        "effects": [
+          {
+            "target": "character.pokemonTeam",
+            "operation": "{{action}} == 'box' ? 'removeFromArray' : 'addToArray'",
+            "value": "{{pokemonId}}"
+          },
+          {
+            "target": "character.boxedPokemon",
+            "operation": "{{action}} == 'party' ? 'removeFromArray' : 'addToArray'",
+            "value": "{{pokemonId}}"
+          }
+        ]
+      },
+      {
+        "id": "release_pokemon",
+        "name": "release_pokemon",
+        "description": "Release a Pokemon back to the wild",
+        "parameters": [
+          {
+            "name": "pokemonId",
+            "type": "string",
+            "description": "ID of Pokemon to release",
+            "required": true
+          },
+          {
+            "name": "confirmed",
+            "type": "boolean",
+            "description": "Confirmation that player wants to release",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "{{confirmed}} == true",
+          "character.pokemonTeam.length > 1 || character.boxedPokemon.find(p => p.id == {{pokemonId}}) != null",
+          "character.pokemonTeam.find(p => p.id == {{pokemonId}}) != null || character.boxedPokemon.find(p => p.id == {{pokemonId}}) != null"
+        ],
+        "effects": [
+          {
+            "target": "character.pokemonTeam",
+            "operation": "removeFromArray",
+            "value": "{{pokemonId}}"
+          },
+          {
+            "target": "character.boxedPokemon",
+            "operation": "removeFromArray",
+            "value": "{{pokemonId}}"
+          },
+          {
+            "target": "gameState.releasedPokemon",
+            "operation": "addToArray",
+            "value": "{{pokemonId}}"
+          }
+        ]
       }
     ],
     "Combat": [
@@ -1597,6 +1692,39 @@
             "cost": 1
           }
         ]
+      },
+      {
+        "id": "level_up_trainer",
+        "name": "level_up_trainer",
+        "description": "Level up the trainer character with experience-based advancement",
+        "parameters": [
+          {
+            "name": "reason",
+            "type": "string",
+            "description": "Reason for the level up",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.experience >= (character.level + 1) * 1000"
+        ],
+        "effects": [
+          {
+            "target": "character.level",
+            "operation": "add",
+            "value": 1
+          },
+          {
+            "target": "character.skillPoints",
+            "operation": "add",
+            "value": 2
+          },
+          {
+            "target": "character.experience",
+            "operation": "subtract",
+            "value": "character.level * 1000"
+          }
+        ]
       }
     ]
   },
@@ -1626,7 +1754,7 @@
     "Exploration": {
       "systemPrompt": "You are the adventure orchestrator bringing the Pokemon world to life through dynamic storytelling. Create spontaneous encounters, memorable NPCs, and meaningful discoveries that respond to player choices. If a location or Pokemon doesn't exist in your database, invent it on the spot and make it part of the world's growing canon. Focus on emotional connections, surprising discoveries, and adventures that make every exploration feel fresh and exciting.",
       "phaseObjective": "Create dynamic exploration experiences with meaningful discoveries, emotional encounters, and responsive world-building",
-      "availableFunctions": ["attempt_capture", "use_item", "rest_at_pokemon_center", "challenge_trainer"],
+      "availableFunctions": ["attempt_capture", "use_item", "rest_at_pokemon_center", "search_area", "get_pokemon_team_status", "switch_pokemon_party", "release_pokemon"],
       "contextElements": [
         "Dynamic location details and hidden discoveries",
         "Unique wild Pokemon with individual personalities",
@@ -1638,7 +1766,7 @@
     "Combat": {
       "systemPrompt": "You are directing epic Pokemon battles like anime episodes, where bonds between trainers and Pokemon matter more than raw statistics. Create dramatic combat sequences where trust, strategy, and emotional connections lead to victory. If a move or battle mechanic doesn't exist, invent creative alternatives that enhance the story. Focus on the emotional stakes and relationship dynamics that make each battle meaningful.",
       "phaseObjective": "Create cinematic Pokemon battles that emphasize bonds, strategy, and dramatic storytelling over rigid rule enforcement",
-      "availableFunctions": ["use_move", "switch_pokemon", "use_item_in_battle", "attempt_escape"],
+      "availableFunctions": ["use_move", "switch_pokemon", "use_item_in_battle", "flee_battle"],
       "contextElements": [
         "Trainer-Pokemon bonds and emotional connections",
         "Creative move combinations and battle strategies",
@@ -1650,7 +1778,7 @@
     "LevelUp": {
       "systemPrompt": "You are orchestrating breakthrough moments where Pokemon and trainers grow stronger through their shared bonds. Create emotional evolution ceremonies, meaningful ability discoveries, and celebration moments that reinforce relationships. If standard moves or evolutions don't fit the story, create unique alternatives that reflect the individual Pokemon's personality and journey. Focus on the emotional significance of growth and the deepening bonds between partners.",
       "phaseObjective": "Create meaningful growth experiences that celebrate bonds and unlock new potential through relationship development",
-      "availableFunctions": ["level_up_pokemon", "learn_move", "evolve_pokemon", "level_up_trainer"],
+      "availableFunctions": ["level_up_pokemon", "learn_move", "evolve_pokemon", "upgrade_trainer_skills", "level_up_trainer"],
       "contextElements": [
         "Emotional growth moments and breakthrough opportunities",
         "Unique move discoveries that reflect Pokemon personalities",
