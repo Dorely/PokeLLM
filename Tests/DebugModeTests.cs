@@ -76,28 +76,28 @@ public class DebugModeTests : IDisposable
     }
 
     [Fact]
-    public void DebugLogger_LogsToFile_WhenDebugEnabled()
-    {
-        // Arrange
-        var logger = _serviceProvider.GetRequiredService<IDebugLogger>();
+public void DebugLogger_LogsToFile_WhenDebugEnabled()
+{
+    // Arrange
+    var logger = _serviceProvider.GetRequiredService<IDebugLogger>();
 
-        // Act
-        logger.LogDebug("Test debug message");
-        logger.LogUserInput("Test user input");
-        logger.LogSystemOutput("Test system output");
-        logger.Flush();
-        
-        // Dispose the logger to release the file handle
-        logger.Dispose();
+    // Act
+    logger.LogDebug("Test debug message");
+    logger.LogUserInput("Test user input");
+    logger.LogLLMResponse("Test LLM response");
+    logger.Flush();
+    
+    // Dispose the logger to release the file handle
+    logger.Dispose();
 
-        // Assert
-        Assert.True(File.Exists(_tempLogFile));
-        var logContent = File.ReadAllText(_tempLogFile);
-        Assert.Contains("Test debug message", logContent);
-        Assert.Contains("Test user input", logContent);
-        Assert.Contains("Test system output", logContent);
-        Assert.Contains("PokeLLM Debug Session Started", logContent);
-    }
+    // Assert
+    Assert.True(File.Exists(_tempLogFile));
+    var logContent = File.ReadAllText(_tempLogFile);
+    Assert.Contains("Test debug message", logContent);
+    Assert.Contains("Test user input", logContent);
+    Assert.Contains("Test LLM response", logContent);
+    Assert.Contains("PokeLLM Session Started", logContent);
+}
 
     [Fact]
     public void DebugLogger_LogsFunctionCalls_WithParametersAndResults()

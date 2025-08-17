@@ -10,7 +10,6 @@ namespace PokeLLM.Logging;
 public interface IDebugLogger : IDisposable
 {
     void LogUserInput(string input);
-    void LogSystemOutput(string output);
     void LogLLMResponse(string response);
     void LogFunctionCall(string functionName, string parameters, string result);
     void LogPhaseTransition(string fromPhase, string toPhase, string reason);
@@ -50,21 +49,15 @@ public class DebugLogger : IDebugLogger, IDisposable
             // Set up periodic flush timer (every 5 seconds)
             _flushTimer = new Timer(FlushPeriodically, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
             
-            if (_debugConfig.IsDebugModeEnabled)
-            {
-                Console.WriteLine($"[DEBUG] Debug mode enabled. Enhanced prompts and verbose logging active. Log file: {logPath}");
-            }
-            else
-            {
-                Console.WriteLine($"[INFO] Logging enabled. Log file: {logPath}");
-            }
+            // Only show a simple startup message
+            Console.WriteLine($"Logging to: {logPath}");
         }
         else
         {
             // Logging is explicitly disabled
             _logWriter = StreamWriter.Null;
             _flushTimer = new Timer(_ => { }, null, Timeout.Infinite, Timeout.Infinite);
-            Console.WriteLine($"[INFO] File logging disabled. To enable, set POKELLM_LOGGING=true or Debug:Logging=true in appsettings.json");
+            Console.WriteLine($"File logging disabled.");
         }
     }
 
@@ -106,30 +99,7 @@ public class DebugLogger : IDebugLogger, IDisposable
             _logQueue.Enqueue(entry);
         }
         
-        if (_debugConfig.IsVerboseLoggingEnabled)
-        {
-            Console.WriteLine($"[USER INPUT] {input}");
-        }
-    }
-
-    public void LogSystemOutput(string output)
-    {
-        if (_debugConfig.IsLoggingEnabled)
-        {
-            var entry = new LogEntry
-            {
-                Timestamp = DateTime.Now,
-                Level = LogLevel.SystemOutput,
-                Message = output
-            };
-            
-            _logQueue.Enqueue(entry);
-        }
-        
-        if (_debugConfig.IsVerboseLoggingEnabled)
-        {
-            Console.WriteLine($"[SYSTEM] {output}");
-        }
+        // No console output - keep game screen clean
     }
 
     public void LogLLMResponse(string response)
@@ -146,10 +116,7 @@ public class DebugLogger : IDebugLogger, IDisposable
             _logQueue.Enqueue(entry);
         }
         
-        if (_debugConfig.IsVerboseLoggingEnabled)
-        {
-            Console.WriteLine($"[LLM] Response length: {response.Length} characters");
-        }
+        // No console output - keep game screen clean
     }
 
     public void LogFunctionCall(string functionName, string parameters, string result)
@@ -166,10 +133,7 @@ public class DebugLogger : IDebugLogger, IDisposable
             _logQueue.Enqueue(entry);
         }
         
-        if (_debugConfig.IsVerboseLoggingEnabled)
-        {
-            Console.WriteLine($"[FUNCTION] {functionName}({parameters}) -> {result}");
-        }
+        // No console output - this is debug info, not user-facing
     }
 
     public void LogPhaseTransition(string fromPhase, string toPhase, string reason)
@@ -186,8 +150,8 @@ public class DebugLogger : IDebugLogger, IDisposable
             _logQueue.Enqueue(entry);
         }
         
-        // Phase transitions are always shown in console (important for user feedback)
-        Console.WriteLine($"[PHASE] {fromPhase} -> {toPhase}: {reason}");
+        // No console output - keep game screen clean
+        // Phase transitions will be visible through the game narrative itself
     }
 
     public void LogGameState(string gameStateJson)
@@ -204,10 +168,7 @@ public class DebugLogger : IDebugLogger, IDisposable
             _logQueue.Enqueue(entry);
         }
         
-        if (_debugConfig.IsVerboseLoggingEnabled)
-        {
-            Console.WriteLine($"[GAMESTATE] Updated (JSON length: {gameStateJson.Length})");
-        }
+        // No console output - this is debug info, not user-facing
     }
 
     public void LogPrompt(string promptType, string prompt)
@@ -224,10 +185,7 @@ public class DebugLogger : IDebugLogger, IDisposable
             _logQueue.Enqueue(entry);
         }
         
-        if (_debugConfig.IsVerboseLoggingEnabled)
-        {
-            Console.WriteLine($"[PROMPT] {promptType} (length: {prompt.Length})");
-        }
+        // No console output - this is debug info, not user-facing
     }
 
     public void LogError(string error, Exception? exception = null)
@@ -245,7 +203,7 @@ public class DebugLogger : IDebugLogger, IDisposable
             _logQueue.Enqueue(entry);
         }
         
-        // Always show errors in console
+        // Still show errors in console as they're critical
         Console.WriteLine($"[ERROR] {error}");
         if (exception != null)
         {
@@ -267,10 +225,7 @@ public class DebugLogger : IDebugLogger, IDisposable
             _logQueue.Enqueue(entry);
         }
         
-        if (_debugConfig.IsVerboseLoggingEnabled)
-        {
-            Console.WriteLine($"[DEBUG] {message}");
-        }
+        // No console output - this is debug info, not user-facing
     }
 
     public void Flush()
@@ -344,7 +299,8 @@ public class DebugLogger : IDebugLogger, IDisposable
                 _logWriter?.Dispose();
             }
             
-            Console.WriteLine($"[INFO] Session ended. Log file closed.");
+            // Minimal shutdown message
+            Console.WriteLine($"Session logged.");
         }
     }
 
@@ -359,7 +315,6 @@ public class DebugLogger : IDebugLogger, IDisposable
     {
         Debug,
         UserInput,
-        SystemOutput,
         LLMResponse,
         FunctionCall,
         PhaseTransition,

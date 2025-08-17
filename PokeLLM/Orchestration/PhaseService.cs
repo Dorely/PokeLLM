@@ -170,30 +170,30 @@ public class PhaseService : IPhaseService
     }
 
     public async IAsyncEnumerable<string> ProcessPhaseAsync(string inputMessage, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        _debugLogger.LogUserInput(inputMessage);
-        _debugLogger.LogDebug($"[{_phase}PhaseService] Processing user input: {inputMessage}");
-        
-        var responseBuilder = new StringBuilder();
-        
-        // Load current game state and increment turn number
-        var gameState = await _gameStateRepository.LoadLatestStateAsync();
-        gameState.GameTurnNumber++;
-        await _gameStateRepository.SaveStateAsync(gameState);
-        
-        _debugLogger.LogGameState(JsonSerializer.Serialize(gameState, new JsonSerializerOptions { WriteIndented = true }));
-        _debugLogger.LogDebug($"[{_phase}PhaseService] Game turn incremented to: {gameState.GameTurnNumber}");
+{
+    _debugLogger.LogUserInput(inputMessage);
+    _debugLogger.LogDebug($"[{_phase}PhaseService] Processing user input: {inputMessage}");
+    
+    var responseBuilder = new StringBuilder();
+    
+    // Load current game state and increment turn number
+    var gameState = await _gameStateRepository.LoadLatestStateAsync();
+    gameState.GameTurnNumber++;
+    await _gameStateRepository.SaveStateAsync(gameState);
+    
+    _debugLogger.LogGameState(JsonSerializer.Serialize(gameState, new JsonSerializerOptions { WriteIndented = true }));
+    _debugLogger.LogDebug($"[{_phase}PhaseService] Game turn incremented to: {gameState.GameTurnNumber}");
 
-        await foreach (var chunk in StreamResponseAsync(gameState, inputMessage, responseBuilder, cancellationToken))
-        {
-            _debugLogger.LogSystemOutput(chunk);
-            yield return chunk;
-        }
-        
-        var fullResponse = responseBuilder.ToString();
-        _debugLogger.LogLLMResponse(fullResponse);
-        _debugLogger.LogDebug($"[{_phase}PhaseService] Complete response generated. Length: {fullResponse.Length}");
+    await foreach (var chunk in StreamResponseAsync(gameState, inputMessage, responseBuilder, cancellationToken))
+    {
+        // Removed redundant LogSystemOutput - the complete response is logged in LogLLMResponse
+        yield return chunk;
     }
+    
+    var fullResponse = responseBuilder.ToString();
+    _debugLogger.LogLLMResponse(fullResponse);
+    _debugLogger.LogDebug($"[{_phase}PhaseService] Complete response generated. Length: {fullResponse.Length}");
+}
 
     public async IAsyncEnumerable<string> ProcessInputWithSpecialPromptAsync(string specialPrompt, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
