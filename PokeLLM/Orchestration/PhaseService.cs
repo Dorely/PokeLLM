@@ -75,82 +75,98 @@ public class PhaseService : IPhaseService
     {
         _kernel = _llmProvider.CreateKernelAsync().GetAwaiter().GetResult();
         
-        
-        LoadRulesetFunctions();
+        // Load plugins with proper namespacing - no conflicts possible due to unique plugin names
         LoadHardcodedPlugin();
-
-
+        LoadRulesetFunctions();
+        LoadRulesetManagementPlugin();
     }
     
     private void LoadHardcodedPlugin()
     {
-        // Use reflection to call AddFromType<T> with the dynamic type
-        var addFromTypeMethod = typeof(KernelExtensions)
-            .GetMethods()
-            .Where(m => m.Name == "AddFromType" && m.IsGenericMethodDefinition)
-            .FirstOrDefault(m => 
-            {
-                var parameters = m.GetParameters();
-                return parameters.Length == 4 && 
-                       parameters[0].ParameterType == typeof(ICollection<KernelPlugin>) &&
-                       parameters[3].ParameterType == typeof(IServiceProvider);
-            });
-            
-        if (addFromTypeMethod != null)
-        {
-            // Load the phase-specific plugin with a unique name to avoid conflicts
-            var uniquePluginName = $"{_pluginRegistrationName}_{Guid.NewGuid():N}";
-            var genericMethod = addFromTypeMethod.MakeGenericMethod(_pluginType);
-            var defaultJsonOptions = new System.Text.Json.JsonSerializerOptions();
-            genericMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, uniquePluginName, _serviceProvider });
-            
-            // Also load the RulesetManagementPlugin for all phases (for LLM access to ruleset management)
-            var rulesetPluginName = $"RulesetManagement_{Guid.NewGuid():N}";
-            var rulesetPluginMethod = addFromTypeMethod.MakeGenericMethod(typeof(Game.Plugins.RulesetManagementPlugin));
-            rulesetPluginMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, rulesetPluginName, _serviceProvider });
-        }
-        else
-        {
-            throw new InvalidOperationException($"Could not find AddFromType method for plugin type {_pluginType}");
-        }
-        
-        // ADDITIONAL: Also try to load ruleset functions if available
-        // This is especially important for debug mode where we want to see what functions are available
         try
         {
-            // Check if we have an active ruleset
-            var activeRuleset = _rulesetManager.GetActiveRuleset();
-            if (activeRuleset != null)
-            {
-                // Load functions from the active ruleset
-                var rulesetFunctions = _rulesetManager.GetPhaseFunctionsAsync(_phase).GetAwaiter().GetResult();
+            // Use reflection to call AddFromType<T> with the dynamic type
+            var addFromTypeMethod = typeof(KernelExtensions)
+                .GetMethods()
+                .Where(m => m.Name == "AddFromType" && m.IsGenericMethodDefinition)
+                .FirstOrDefault(m => 
+                {
+                    var parameters = m.GetParameters();
+                    return parameters.Length == 4 && 
+                           parameters[0].ParameterType == typeof(ICollection<KernelPlugin>) &&
+                           parameters[3].ParameterType == typeof(IServiceProvider);
+                });
                 
-                if (rulesetFunctions.Any())
+            if (addFromTypeMethod != null)
+            {
+                // Load the phase-specific plugin with descriptive name for proper namespacing
+                // Functions will be named like "GameSetup-function_name", "Exploration-function_name", etc.
+                var phasePluginName = _pluginRegistrationName; // Simple, descriptive name
+                var genericMethod = addFromTypeMethod.MakeGenericMethod(_pluginType);
+                var defaultJsonOptions = new System.Text.Json.JsonSerializerOptions();
+                genericMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, phasePluginName, _serviceProvider });
+
+                var addedPlugin = _kernel.Plugins.FirstOrDefault(p => p.Name == phasePluginName);
+                if (addedPlugin != null)
                 {
-                    // Add ruleset functions to the kernel with a distinct name to avoid conflicts
-                    var rulesetPluginName = $"{_pluginRegistrationName}_Ruleset_{Guid.NewGuid():N}";
-                    var rulesetPlugin = KernelPluginFactory.CreateFromFunctions(rulesetPluginName, null, rulesetFunctions);
-                    _kernel.Plugins.Add(rulesetPlugin);
-                    
-                    // Debug: List all the ruleset functions that were loaded
-                    foreach (var func in rulesetFunctions)
+                    Debug.WriteLine($"[{_phase}PhaseService] Loaded hardcoded plugin '{phasePluginName}' with {addedPlugin.Count()} functions");
+                    foreach (var function in addedPlugin)
                     {
-                        Debug.WriteLine($"[{_phase}PhaseService] Ruleset function available: {func.Name} - {func.Description}");
+                        Debug.WriteLine($"[{_phase}PhaseService] - Function: {function.Name} (FQN: {phasePluginName}-{function.Name})");
                     }
-                }
-                else
-                {
-                    Debug.WriteLine($"[{_phase}PhaseService] No ruleset functions found for phase {_phase}");
                 }
             }
             else
             {
-                Debug.WriteLine($"[{_phase}PhaseService] No active ruleset available for additional function loading");
+                throw new InvalidOperationException($"Could not find AddFromType method for plugin type {_pluginType}");
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[{_phase}PhaseService] Could not load additional ruleset functions: {ex.Message} (This is non-critical - hardcoded plugin is still available)");
+            Debug.WriteLine($"[{_phase}PhaseService] Error loading hardcoded plugin: {ex.Message}");
+            throw;
+        }
+    }
+
+    private void LoadRulesetManagementPlugin()
+    {
+        try
+        {
+            var addFromTypeMethod = typeof(KernelExtensions)
+                .GetMethods()
+                .Where(m => m.Name == "AddFromType" && m.IsGenericMethodDefinition)
+                .FirstOrDefault(m => 
+                {
+                    var parameters = m.GetParameters();
+                    return parameters.Length == 4 && 
+                           parameters[0].ParameterType == typeof(ICollection<KernelPlugin>) &&
+                           parameters[3].ParameterType == typeof(IServiceProvider);
+                });
+                
+            if (addFromTypeMethod != null)
+            {
+                // Load RulesetManagementPlugin with unique name for proper namespacing
+                // Functions will be named like "RulesetManagement-create_ruleset", etc.
+                var rulesetPluginName = "RulesetManagement";
+                var rulesetPluginMethod = addFromTypeMethod.MakeGenericMethod(typeof(Game.Plugins.RulesetManagementPlugin));
+                var defaultJsonOptions = new System.Text.Json.JsonSerializerOptions();
+                rulesetPluginMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, rulesetPluginName, _serviceProvider });
+
+                var rulesetPlugin = _kernel.Plugins.FirstOrDefault(p => p.Name == rulesetPluginName);
+                if (rulesetPlugin != null)
+                {
+                    Debug.WriteLine($"[{_phase}PhaseService] Loaded RulesetManagement plugin with {rulesetPlugin.Count()} functions");
+                    foreach (var function in rulesetPlugin)
+                    {
+                        Debug.WriteLine($"[{_phase}PhaseService] - Function: {function.Name} (FQN: {rulesetPluginName}-{function.Name})");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[{_phase}PhaseService] Error loading RulesetManagement plugin: {ex.Message}");
+            // Non-critical error - continue without ruleset management
         }
     }
     
@@ -163,7 +179,6 @@ public class PhaseService : IPhaseService
             if (activeRuleset == null)
             {
                 Debug.WriteLine($"[{_phase}PhaseService] No active ruleset found, attempting to load default ruleset");
-                // Try to load the pokemon-adventure ruleset as default
                 try
                 {
                     _rulesetManager.SetActiveRulesetAsync("pokemon-adventure").GetAwaiter().GetResult();
@@ -172,8 +187,7 @@ public class PhaseService : IPhaseService
                 catch (Exception rulesetEx)
                 {
                     Debug.WriteLine($"[{_phase}PhaseService] Failed to load default ruleset: {rulesetEx.Message}");
-                    Debug.WriteLine($"[{_phase}PhaseService] Falling back to hardcoded plugin");
-                    LoadHardcodedPlugin();
+                    Debug.WriteLine($"[{_phase}PhaseService] Will proceed with hardcoded plugin only");
                     return;
                 }
             }
@@ -183,73 +197,55 @@ public class PhaseService : IPhaseService
             
             if (rulesetFunctions.Any())
             {
-                // Add ruleset functions to the kernel with unique name to avoid conflicts
-                var rulesetPluginName = $"{_pluginRegistrationName}_{Guid.NewGuid():N}";
+                // Create ruleset plugin with unique name for proper namespacing
+                // Functions will be named like "GameSetupRuleset-function_name", "ExplorationRuleset-function_name", etc.
+                var rulesetPluginName = $"{_pluginRegistrationName}Ruleset";
                 var rulesetPlugin = KernelPluginFactory.CreateFromFunctions(rulesetPluginName, null, rulesetFunctions);
                 _kernel.Plugins.Add(rulesetPlugin);
                 
-                Debug.WriteLine($"[{_phase}PhaseService] Loaded {rulesetFunctions.Count()} functions from ruleset");
+                Debug.WriteLine($"[{_phase}PhaseService] Loaded ruleset plugin '{rulesetPluginName}' with {rulesetFunctions.Count()} functions");
                 
-                // Also add the RulesetManagementPlugin for LLM access to ruleset management
-                var addFromTypeMethod = typeof(KernelExtensions)
-                    .GetMethods()
-                    .Where(m => m.Name == "AddFromType" && m.IsGenericMethodDefinition)
-                    .FirstOrDefault(m => 
-                    {
-                        var parameters = m.GetParameters();
-                        return parameters.Length == 4 && 
-                               parameters[0].ParameterType == typeof(ICollection<KernelPlugin>) &&
-                               parameters[3].ParameterType == typeof(IServiceProvider);
-                    });
-                    
-                if (addFromTypeMethod != null)
+                // Debug: List all the ruleset functions that were loaded
+                foreach (var func in rulesetFunctions)
                 {
-                    var rulesetManagementPluginName = $"RulesetManagement_{Guid.NewGuid():N}";
-                    var rulesetPluginMethod = addFromTypeMethod.MakeGenericMethod(typeof(Game.Plugins.RulesetManagementPlugin));
-                    var defaultJsonOptions = new System.Text.Json.JsonSerializerOptions();
-                    rulesetPluginMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, rulesetManagementPluginName, _serviceProvider });
-                    
-                    Debug.WriteLine($"[{_phase}PhaseService] Also loaded RulesetManagementPlugin as '{rulesetManagementPluginName}' alongside ruleset functions");
+                    Debug.WriteLine($"[{_phase}PhaseService] - Function: {func.Name} (FQN: {rulesetPluginName}-{func.Name})");
                 }
             }
             else
             {
-                Debug.WriteLine($"[{_phase}PhaseService] No ruleset functions found, falling back to hardcoded plugin");
-                LoadHardcodedPlugin();
+                Debug.WriteLine($"[{_phase}PhaseService] No ruleset functions found for phase {_phase}");
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[{_phase}PhaseService] Error loading ruleset functions: {ex.Message}, falling back to hardcoded plugin");
-            LoadHardcodedPlugin();
+            Debug.WriteLine($"[{_phase}PhaseService] Error loading ruleset functions: {ex.Message}, proceeding with hardcoded plugin only");
         }
     }
 
     public async IAsyncEnumerable<string> ProcessPhaseAsync(string inputMessage, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-{
-    _debugLogger.LogUserInput(inputMessage);
-    _debugLogger.LogDebug($"[{_phase}PhaseService] Processing user input: {inputMessage}");
-    
-    var responseBuilder = new StringBuilder();
-    
-    // Load current game state and increment turn number
-    var gameState = await _gameStateRepository.LoadLatestStateAsync();
-    gameState.GameTurnNumber++;
-    await _gameStateRepository.SaveStateAsync(gameState);
-    
-    _debugLogger.LogGameState(JsonSerializer.Serialize(gameState, new JsonSerializerOptions { WriteIndented = true }));
-    _debugLogger.LogDebug($"[{_phase}PhaseService] Game turn incremented to: {gameState.GameTurnNumber}");
-
-    await foreach (var chunk in StreamResponseAsync(gameState, inputMessage, responseBuilder, cancellationToken))
     {
-        // Removed redundant LogSystemOutput - the complete response is logged in LogLLMResponse
-        yield return chunk;
+        _debugLogger.LogUserInput(inputMessage);
+        _debugLogger.LogDebug($"[{_phase}PhaseService] Processing user input: {inputMessage}");
+        
+        var responseBuilder = new StringBuilder();
+        
+        // Load current game state and increment turn number
+        var gameState = await _gameStateRepository.LoadLatestStateAsync();
+        gameState.GameTurnNumber++;
+        await _gameStateRepository.SaveStateAsync(gameState);
+        
+        _debugLogger.LogGameState(JsonSerializer.Serialize(gameState, new JsonSerializerOptions { WriteIndented = true }));
+        _debugLogger.LogDebug($"[{_phase}PhaseService] Game turn incremented to: {gameState.GameTurnNumber}");
+
+        await foreach (var chunk in StreamResponseAsync(gameState, inputMessage, responseBuilder, cancellationToken))
+        {
+            yield return chunk;
+        }
+        
+        var fullResponse = responseBuilder.ToString();
+        _debugLogger.LogLLMResponse(fullResponse);
+        _debugLogger.LogDebug($"[{_phase}PhaseService] Complete response generated. Length: {fullResponse.Length}");
     }
-    
-    var fullResponse = responseBuilder.ToString();
-    _debugLogger.LogLLMResponse(fullResponse);
-    _debugLogger.LogDebug($"[{_phase}PhaseService] Complete response generated. Length: {fullResponse.Length}");
-}
 
     public async IAsyncEnumerable<string> ProcessInputWithSpecialPromptAsync(string specialPrompt, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -357,6 +353,32 @@ public class PhaseService : IPhaseService
             
             // If we get here, the history is valid
             return history;
+        }
+        catch (Exception ex) when (ex.Message.Contains("string_above_max_length") && ex.Message.Contains("tools"))
+        {
+            Debug.WriteLine($"[{_phase}PhaseService] Function name length error detected: {ex.Message}");
+            Debug.WriteLine($"[{_phase}PhaseService] This indicates plugin function names are too long for OpenAI API");
+            
+            // For now, return a clean history with just the system message and latest user message
+            // This prevents the error while we investigate the specific function name issue
+            var cleanHistory = new ChatHistory();
+            var systemMessages = history.Where(m => m.Role == AuthorRole.System).ToList();
+            var userMessages = history.Where(m => m.Role == AuthorRole.User).ToList();
+            
+            // Add the latest system message if available
+            if (systemMessages.Any())
+            {
+                cleanHistory.Add(systemMessages.Last());
+            }
+            
+            // Add the latest user message if available
+            if (userMessages.Any())
+            {
+                cleanHistory.Add(userMessages.Last());
+            }
+            
+            Debug.WriteLine($"[{_phase}PhaseService] Created minimal history to avoid function name length error");
+            return cleanHistory;
         }
         catch (Exception ex) when (ex.Message.Contains("tool") && ex.Message.Contains("must be a response to a preceeding message"))
         {
@@ -504,28 +526,28 @@ public class PhaseService : IPhaseService
     }
     
     private async Task<string> LoadFileBasedPrompt(string promptName)
-{
-    string promptPath;
-    
-    // Use debug prompts if debug mode is enabled
-    if (_debugConfig.IsDebugPromptsEnabled)
     {
-        promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "Debug", $"{promptName}.md");
-        _debugLogger.LogDebug($"Loading DEBUG prompt from: {promptPath}");
+        string promptPath;
+        
+        // Use debug prompts if debug mode is enabled
+        if (_debugConfig.IsDebugPromptsEnabled)
+        {
+            promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "Debug", $"{promptName}.md");
+            _debugLogger.LogDebug($"Loading DEBUG prompt from: {promptPath}");
+        }
+        else
+        {
+            promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", $"{promptName}.md");
+            _debugLogger.LogDebug($"Loading standard prompt from: {promptPath}");
+        }
+        
+        var systemPrompt = await File.ReadAllTextAsync(promptPath);
+        
+        // Log the prompt content in debug mode
+        _debugLogger.LogPrompt($"{promptName} ({(_debugConfig.IsDebugPromptsEnabled ? "DEBUG" : "STANDARD")})", systemPrompt);
+        
+        return systemPrompt;
     }
-    else
-    {
-        promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", $"{promptName}.md");
-        _debugLogger.LogDebug($"Loading standard prompt from: {promptPath}");
-    }
-    
-    var systemPrompt = await File.ReadAllTextAsync(promptPath);
-    
-    // Log the prompt content in debug mode
-    _debugLogger.LogPrompt($"{promptName} ({(_debugConfig.IsDebugPromptsEnabled ? "DEBUG" : "STANDARD")})", systemPrompt);
-    
-    return systemPrompt;
-}
 }
 
 public class PhaseServiceProvider : IPhaseServiceProvider
