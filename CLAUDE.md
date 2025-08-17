@@ -25,6 +25,18 @@ dotnet clean
 dotnet build --no-restore
 ```
 
+### Debug Mode
+Enable comprehensive debug logging and enhanced prompts:
+```cmd
+set POKELLM_DEBUG=true
+dotnet run --project PokeLLM/PokeLLM.Game.csproj
+```
+
+**Debug Logs Location**: `Logs/pokellm-debug-{timestamp}.log` in the application directory
+- Contains all user input, LLM responses, function calls, and game state changes
+- Debug prompts force LLM to list all available functions and be verbose with explanations
+- See `DEBUG_MODE.md` for complete documentation
+
 ## Architecture Overview
 
 ### Core Components

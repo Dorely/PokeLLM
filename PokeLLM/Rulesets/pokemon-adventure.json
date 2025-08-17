@@ -837,6 +837,40 @@
             "value": "{{trainerName}}"
           }
         ]
+      },
+      {
+        "id": "finalize_game_setup",
+        "name": "finalize_game_setup",
+        "description": "Complete game setup and transition to World Generation phase",
+        "parameters": [
+          {
+            "name": "setupSummary",
+            "type": "string",
+            "description": "Summary of setup choices made",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "character.name != null && character.name != ''",
+          "gameState.region != null && gameState.region != ''"
+        ],
+        "effects": [
+          {
+            "target": "gameState.currentPhase",
+            "operation": "set",
+            "value": "WorldGeneration"
+          },
+          {
+            "target": "gameState.adventureSummary",
+            "operation": "set",
+            "value": "A new adventure begins with {{character.name}}, a {{character.trainerClass}} in the {{gameState.region}} region. {{setupSummary}}"
+          },
+          {
+            "target": "gameState.phaseChangeSummary", 
+            "operation": "set",
+            "value": "Game setup completed successfully. {{setupSummary}}"
+          }
+        ]
       }
     ],
     "WorldGeneration": [

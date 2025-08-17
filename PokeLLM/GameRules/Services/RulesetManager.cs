@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Linq;
 using PokeLLM.GameRules.Interfaces;
@@ -202,20 +203,30 @@ public class RulesetManager : IRulesetManager
 
     public async Task<IEnumerable<KernelFunction>> GetPhaseFunctionsAsync(GamePhase phase)
     {
+        Debug.WriteLine($"[RulesetManager] GetPhaseFunctionsAsync called for phase: {phase}");
+        
         if (_activeRuleset == null)
         {
+            Debug.WriteLine($"[RulesetManager] No active ruleset, returning empty functions");
             return Enumerable.Empty<KernelFunction>();
         }
+        
+        Debug.WriteLine($"[RulesetManager] Active ruleset found: {_activeRulesetId}");
 
         // Return cached functions if available
         if (_cachedFunctions.TryGetValue(phase, out var cachedFunctions))
         {
+            Debug.WriteLine($"[RulesetManager] Using cached functions for phase {phase}: {cachedFunctions.Count()} functions");
             return cachedFunctions;
         }
 
+        Debug.WriteLine($"[RulesetManager] No cached functions for phase {phase}, generating from ruleset");
+        
         // Generate functions from ruleset
         var functions = await _dynamicFunctionFactory.GenerateFunctionsFromRulesetAsync(_activeRuleset, phase);
         _cachedFunctions[phase] = functions;
+        
+        Debug.WriteLine($"[RulesetManager] Generated and cached {functions.Count()} functions for phase {phase}");
         
         return functions;
     }
