@@ -16,6 +16,8 @@ using PokeLLM.GameRules.Interfaces;
 using PokeLLM.GameLogic;
 using PokeLLM.GameLogic.Services;
 using PokeLLM.Plugins;
+using PokeLLM.Configuration;
+using PokeLLM.Logging;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -107,6 +109,10 @@ public static class ServiceConfiguration
             return CreateEmbeddingGenerator(flexConfig);
         });
 
+        // Add debug services
+        services.AddSingleton<IDebugConfiguration, DebugConfiguration>();
+        services.AddSingleton<IDebugLogger, DebugLogger>();
+        
         // Add core services (order matters to avoid circular dependencies)
         services.AddSingleton<IGameStateRepository, GameStateRepository>();
         services.AddTransient<IVectorStoreService, QdrantVectorStoreService>();

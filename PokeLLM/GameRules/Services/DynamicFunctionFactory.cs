@@ -4,6 +4,7 @@ using PokeLLM.GameRules.Interfaces;
 using PokeLLM.GameState.Models;
 using PokeLLM.Game.GameLogic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Reflection;
 
@@ -22,21 +23,43 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
 
     public async Task<IEnumerable<KernelFunction>> GenerateFunctionsFromRulesetAsync(JsonDocument ruleset, GamePhase phase)
     {
+        Debug.WriteLine($"[DynamicFunctionFactory] GenerateFunctionsFromRulesetAsync called for phase: {phase}");
+        
         var functionDefinitions = await GetFunctionsForPhaseAsync(ruleset, phase);
+        Debug.WriteLine($"[DynamicFunctionFactory] Found {functionDefinitions.Count} function definitions for phase {phase}");
+        
         var functions = new List<KernelFunction>();
 
         foreach (var definition in functionDefinitions)
         {
-            var function = await CreateRulesetFunctionAsync(definition);
-            functions.Add(function);
+            Debug.WriteLine($"[DynamicFunctionFactory] Creating function: {definition.Name} (ID: {definition.Id})");
+            try
+            {
+                var function = await CreateRulesetFunctionAsync(definition);
+                functions.Add(function);
+                Debug.WriteLine($"[DynamicFunctionFactory] Successfully created function: {definition.Name}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[DynamicFunctionFactory] ERROR creating function {definition.Name}: {ex.Message}");
+                Debug.WriteLine($"[DynamicFunctionFactory] Exception details: {ex}");
+            }
         }
 
+        Debug.WriteLine($"[DynamicFunctionFactory] Generated {functions.Count} functions total for phase {phase}");
         return functions;
     }
 
     public async Task<KernelFunction> CreateRulesetFunctionAsync(FunctionDefinition definition)
     {
         await Task.Delay(0); // Make async
+        
+        Debug.WriteLine($"[DynamicFunctionFactory] CreateRulesetFunctionAsync: {definition.Name}");
+        Debug.WriteLine($"[DynamicFunctionFactory] Function ID: {definition.Id}");
+        Debug.WriteLine($"[DynamicFunctionFactory] Function Description: {definition.Description}");
+        Debug.WriteLine($"[DynamicFunctionFactory] Parameters Count: {definition.Parameters?.Count ?? 0}");
+        Debug.WriteLine($"[DynamicFunctionFactory] Rule Validations Count: {definition.RuleValidations?.Count ?? 0}");
+        Debug.WriteLine($"[DynamicFunctionFactory] Effects Count: {definition.Effects?.Count ?? 0}");
 
         // Create parameter metadata
         var parameters = definition.Parameters.Select(p => new KernelParameterMetadata(p.Name)
@@ -45,15 +68,23 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
             IsRequired = p.Required,
             ParameterType = GetParameterType(p.Type)
         }).ToList();
+        
+        Debug.WriteLine($"[DynamicFunctionFactory] Created {parameters.Count} parameter metadata objects");
 
         // Create the function delegate
         Func<KernelArguments, Task<string>> functionDelegate = async (args) =>
         {
+            Debug.WriteLine($"[DynamicFunctionFactory] Executing function: {definition.Name}");
+            Debug.WriteLine($"[DynamicFunctionFactory] Function arguments: {string.Join(", ", args.Select(a => $"{a.Key}={a.Value}"))}");
+            
             try
             {
                 // Validate all rule validations using simple C# logic for now
+                Debug.WriteLine($"[DynamicFunctionFactory] Validating {definition.RuleValidations.Count} rule validations");
                 foreach (var validation in definition.RuleValidations)
                 {
+                    Debug.WriteLine($"[DynamicFunctionFactory] Processing validation rule: {validation}");
+                    
                     // Apply template replacement to rule validation
                     var processedValidation = validation;
                     foreach (var arg in args)
@@ -63,25 +94,45 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
                         processedValidation = processedValidation.Replace(templateKey, replacement);
                     }
                     
+                    Debug.WriteLine($"[DynamicFunctionFactory] Processed validation rule: {processedValidation}");
+                    
                     var isValid = await ValidateRuleSimpleAsync(processedValidation, args);
+                    Debug.WriteLine($"[DynamicFunctionFactory] Validation result: {isValid}");
+                    
                     if (!isValid)
                     {
+                        Debug.WriteLine($"[DynamicFunctionFactory] Validation FAILED for rule: {processedValidation}");
                         return $"Rule validation failed: {processedValidation}";
                     }
                 }
 
                 // Apply effects to character and/or game state
+                Debug.WriteLine($"[DynamicFunctionFactory] Applying {definition.Effects.Count} effects");
                 var appliedEffects = new List<string>();
                 foreach (var effect in definition.Effects)
                 {
-                    var effectResult = await ApplyEffectAsync(effect, args);
-                    appliedEffects.Add(effectResult);
+                    Debug.WriteLine($"[DynamicFunctionFactory] Applying effect: Target={effect.Target}, Operation={effect.Operation}, Value={effect.Value}");
+                    try
+                    {
+                        var effectResult = await ApplyEffectAsync(effect, args);
+                        appliedEffects.Add(effectResult);
+                        Debug.WriteLine($"[DynamicFunctionFactory] Effect result: {effectResult}");
+                    }
+                    catch (Exception effectEx)
+                    {
+                        Debug.WriteLine($"[DynamicFunctionFactory] Effect application failed: {effectEx.Message}");
+                        appliedEffects.Add($"Effect failed: {effectEx.Message}");
+                    }
                 }
 
-                return $"Function {definition.Name} executed successfully. Effects: {string.Join(", ", appliedEffects)}";
+                var result = $"Function {definition.Name} executed successfully. Effects: {string.Join(", ", appliedEffects)}";
+                Debug.WriteLine($"[DynamicFunctionFactory] Function execution completed: {result}");
+                return result;
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"[DynamicFunctionFactory] Function execution failed for {definition.Name}: {ex.Message}");
+                Debug.WriteLine($"[DynamicFunctionFactory] Exception details: {ex}");
                 return $"Function execution failed: {ex.Message}";
             }
         };
@@ -98,32 +149,71 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
     public async Task<List<FunctionDefinition>> GetFunctionsForPhaseAsync(JsonDocument ruleset, GamePhase phase)
     {
         await Task.Delay(0); // Make async
+        
+        Debug.WriteLine($"[DynamicFunctionFactory] GetFunctionsForPhaseAsync called for phase: {phase}");
+        Console.WriteLine($"[DynamicFunctionFactory] GetFunctionsForPhaseAsync called for phase: {phase}");
 
         try
         {
             var root = ruleset.RootElement;
+            Debug.WriteLine($"[DynamicFunctionFactory] Ruleset root element type: {root.ValueKind}");
+            
             if (!root.TryGetProperty("functionDefinitions", out var functionDefinitions))
+            {
+                Debug.WriteLine($"[DynamicFunctionFactory] No 'functionDefinitions' property found in ruleset");
                 return new List<FunctionDefinition>();
+            }
+            
+            Debug.WriteLine($"[DynamicFunctionFactory] Found functionDefinitions property, type: {functionDefinitions.ValueKind}");
 
             var phaseKey = phase.ToString();
+            Debug.WriteLine($"[DynamicFunctionFactory] Looking for phase key: '{phaseKey}'");
+            
             if (!functionDefinitions.TryGetProperty(phaseKey, out var phaseFunctions))
+            {
+                Debug.WriteLine($"[DynamicFunctionFactory] No functions found for phase '{phaseKey}'");
+                Debug.WriteLine($"[DynamicFunctionFactory] Available phases: {string.Join(", ", functionDefinitions.EnumerateObject().Select(p => p.Name))}");
                 return new List<FunctionDefinition>();
+            }
+            
+            Debug.WriteLine($"[DynamicFunctionFactory] Found phase functions, type: {phaseFunctions.ValueKind}, array length: {phaseFunctions.GetArrayLength()}");
 
             var functions = new List<FunctionDefinition>();
             
             foreach (var functionElement in phaseFunctions.EnumerateArray())
             {
-                var function = JsonSerializer.Deserialize<FunctionDefinition>(functionElement.GetRawText());
-                if (function != null)
+                Debug.WriteLine($"[DynamicFunctionFactory] Processing function element, type: {functionElement.ValueKind}");
+                Debug.WriteLine($"[DynamicFunctionFactory] Function JSON: {functionElement.GetRawText()}");
+                
+                try
                 {
-                    functions.Add(function);
+                    var function = JsonSerializer.Deserialize<FunctionDefinition>(functionElement.GetRawText());
+                    if (function != null)
+                    {
+                        functions.Add(function);
+                        Debug.WriteLine($"[DynamicFunctionFactory] Successfully deserialized function: {function.Name} (ID: {function.Id})");
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"[DynamicFunctionFactory] Function deserialization returned null");
+                    }
+                }
+                catch (Exception deserializationEx)
+                {
+                    Debug.WriteLine($"[DynamicFunctionFactory] ERROR deserializing function: {deserializationEx.Message}");
+                    Debug.WriteLine($"[DynamicFunctionFactory] Function JSON that failed: {functionElement.GetRawText()}");
+                    Console.WriteLine($"[DynamicFunctionFactory] ERROR deserializing function: {deserializationEx.Message}");
+                    Console.WriteLine($"[DynamicFunctionFactory] Function JSON that failed: {functionElement.GetRawText()}");
                 }
             }
 
+            Debug.WriteLine($"[DynamicFunctionFactory] Returning {functions.Count} functions for phase {phase}");
             return functions;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[DynamicFunctionFactory] ERROR in GetFunctionsForPhaseAsync: {ex.Message}");
+            Debug.WriteLine($"[DynamicFunctionFactory] Exception details: {ex}");
             return new List<FunctionDefinition>();
         }
     }

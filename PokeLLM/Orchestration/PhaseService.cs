@@ -4,10 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using PokeLLM.Game.LLM;
 using PokeLLM.GameState.Models;
 using PokeLLM.GameRules.Interfaces;
+using PokeLLM.Configuration;
+using PokeLLM.Logging;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 
 namespace PokeLLM.Game.Orchestration;
 
@@ -31,6 +34,8 @@ public class PhaseService : IPhaseService
     private readonly IGameStateRepository _gameStateRepository;
     private readonly IServiceProvider _serviceProvider;
     private readonly IRulesetManager _rulesetManager;
+    private readonly IDebugConfiguration _debugConfig;
+    private readonly IDebugLogger _debugLogger;
     private readonly GamePhase _phase;
     private readonly Type _pluginType;
     private readonly string _promptName;
@@ -47,7 +52,9 @@ public class PhaseService : IPhaseService
         string pluginRegistrationName,
         ILLMProvider llmProvider,
         IGameStateRepository gameStateRepository,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IDebugConfiguration debugConfig,
+        IDebugLogger debugLogger)
     {
         _phase = phase;
         _pluginType = pluginType;
@@ -57,6 +64,8 @@ public class PhaseService : IPhaseService
         _gameStateRepository = gameStateRepository;
         _serviceProvider = serviceProvider;
         _rulesetManager = serviceProvider.GetRequiredService<IRulesetManager>();
+        _debugConfig = debugConfig;
+        _debugLogger = debugLogger;
         
         InitializeKernel();
         _chatHistory = new ChatHistory();
@@ -162,17 +171,28 @@ public class PhaseService : IPhaseService
 
     public async IAsyncEnumerable<string> ProcessPhaseAsync(string inputMessage, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        _debugLogger.LogUserInput(inputMessage);
+        _debugLogger.LogDebug($"[{_phase}PhaseService] Processing user input: {inputMessage}");
+        
         var responseBuilder = new StringBuilder();
         
         // Load current game state and increment turn number
         var gameState = await _gameStateRepository.LoadLatestStateAsync();
         gameState.GameTurnNumber++;
         await _gameStateRepository.SaveStateAsync(gameState);
+        
+        _debugLogger.LogGameState(JsonSerializer.Serialize(gameState, new JsonSerializerOptions { WriteIndented = true }));
+        _debugLogger.LogDebug($"[{_phase}PhaseService] Game turn incremented to: {gameState.GameTurnNumber}");
 
         await foreach (var chunk in StreamResponseAsync(gameState, inputMessage, responseBuilder, cancellationToken))
         {
+            _debugLogger.LogSystemOutput(chunk);
             yield return chunk;
         }
+        
+        var fullResponse = responseBuilder.ToString();
+        _debugLogger.LogLLMResponse(fullResponse);
+        _debugLogger.LogDebug($"[{_phase}PhaseService] Complete response generated. Length: {fullResponse.Length}");
     }
 
     public async IAsyncEnumerable<string> ProcessInputWithSpecialPromptAsync(string specialPrompt, [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -386,6 +406,8 @@ public class PhaseService : IPhaseService
     {
         try
         {
+            _debugLogger.LogDebug($"[{_phase}PhaseService] Loading system prompt: {promptName}");
+            
             // Always start with the file-based prompt as the template
             var templatePrompt = await LoadFileBasedPrompt(promptName);
             
@@ -394,6 +416,8 @@ public class PhaseService : IPhaseService
             var rulesetPhaseObjective = _rulesetManager.GetPhaseObjectiveTemplate(_phase);
             var settingRequirements = _rulesetManager.GetSettingRequirements();
             var storytellingDirective = _rulesetManager.GetStorytellingDirective();
+            
+            _debugLogger.LogDebug($"[{_phase}PhaseService] Ruleset injections - SystemPrompt: {!string.IsNullOrEmpty(rulesetSystemPrompt)}, Objective: {!string.IsNullOrEmpty(rulesetPhaseObjective)}, Requirements: {!string.IsNullOrEmpty(settingRequirements)}, Directive: {!string.IsNullOrEmpty(storytellingDirective)}");
             
             // Inject ruleset system prompt or fall back to empty string
             templatePrompt = templatePrompt.Replace("{{rulesetSystemPrompt}}", 
@@ -411,23 +435,41 @@ public class PhaseService : IPhaseService
             templatePrompt = templatePrompt.Replace("{{storytellingDirective}}", 
                 !string.IsNullOrEmpty(storytellingDirective) ? storytellingDirective : "No specific storytelling directive defined.");
                 
-            Debug.WriteLine($"[{_phase}PhaseService] Using file-based template with ruleset injections");
+            _debugLogger.LogDebug($"[{_phase}PhaseService] System prompt loaded and processed. Final length: {templatePrompt.Length}");
+            _debugLogger.LogPrompt($"Final {promptName} System Prompt", templatePrompt);
             
             return templatePrompt;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[{_phase}PhaseService] Error loading prompt: {ex.Message}");
+            _debugLogger.LogError($"[{_phase}PhaseService] Error loading prompt: {ex.Message}", ex);
             throw;
         }
     }
     
     private async Task<string> LoadFileBasedPrompt(string promptName)
+{
+    string promptPath;
+    
+    // Use debug prompts if debug mode is enabled
+    if (_debugConfig.IsDebugPromptsEnabled)
     {
-        var promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", $"{promptName}.md");
-        var systemPrompt = await File.ReadAllTextAsync(promptPath);
-        return systemPrompt;
+        promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "Debug", $"{promptName}.md");
+        _debugLogger.LogDebug($"Loading DEBUG prompt from: {promptPath}");
     }
+    else
+    {
+        promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", $"{promptName}.md");
+        _debugLogger.LogDebug($"Loading standard prompt from: {promptPath}");
+    }
+    
+    var systemPrompt = await File.ReadAllTextAsync(promptPath);
+    
+    // Log the prompt content in debug mode
+    _debugLogger.LogPrompt($"{promptName} ({(_debugConfig.IsDebugPromptsEnabled ? "DEBUG" : "STANDARD")})", systemPrompt);
+    
+    return systemPrompt;
+}
 }
 
 public class PhaseServiceProvider : IPhaseServiceProvider
@@ -435,16 +477,22 @@ public class PhaseServiceProvider : IPhaseServiceProvider
     private readonly ILLMProvider _llmProvider;
     private readonly IGameStateRepository _gameStateRepository;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IDebugConfiguration _debugConfig;
+    private readonly IDebugLogger _debugLogger;
     private readonly Dictionary<GamePhase, IPhaseService> _phaseServices;
 
     public PhaseServiceProvider(
         ILLMProvider llmProvider,
         IGameStateRepository gameStateRepository,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IDebugConfiguration debugConfig,
+        IDebugLogger debugLogger)
     {
         _llmProvider = llmProvider;
         _gameStateRepository = gameStateRepository;
         _serviceProvider = serviceProvider;
+        _debugConfig = debugConfig;
+        _debugLogger = debugLogger;
         _phaseServices = new Dictionary<GamePhase, IPhaseService>();
         
         InitializePhaseServices();
@@ -459,7 +507,9 @@ public class PhaseServiceProvider : IPhaseServiceProvider
             "GameSetup",
             _llmProvider,
             _gameStateRepository,
-            _serviceProvider);
+            _serviceProvider,
+            _debugConfig,
+            _debugLogger);
 
         _phaseServices[GamePhase.WorldGeneration] = new PhaseService(
             GamePhase.WorldGeneration,
@@ -468,7 +518,9 @@ public class PhaseServiceProvider : IPhaseServiceProvider
             "WorldGeneration",
             _llmProvider,
             _gameStateRepository,
-            _serviceProvider);
+            _serviceProvider,
+            _debugConfig,
+            _debugLogger);
 
         _phaseServices[GamePhase.Exploration] = new PhaseService(
             GamePhase.Exploration,
@@ -477,7 +529,9 @@ public class PhaseServiceProvider : IPhaseServiceProvider
             "Exploration",
             _llmProvider,
             _gameStateRepository,
-            _serviceProvider);
+            _serviceProvider,
+            _debugConfig,
+            _debugLogger);
 
         _phaseServices[GamePhase.Combat] = new PhaseService(
             GamePhase.Combat,
@@ -486,7 +540,9 @@ public class PhaseServiceProvider : IPhaseServiceProvider
             "Combat",
             _llmProvider,
             _gameStateRepository,
-            _serviceProvider);
+            _serviceProvider,
+            _debugConfig,
+            _debugLogger);
 
         _phaseServices[GamePhase.LevelUp] = new PhaseService(
             GamePhase.LevelUp,
@@ -495,7 +551,9 @@ public class PhaseServiceProvider : IPhaseServiceProvider
             "LevelUp",
             _llmProvider,
             _gameStateRepository,
-            _serviceProvider);
+            _serviceProvider,
+            _debugConfig,
+            _debugLogger);
     }
 
     public IPhaseService GetPhaseService(GamePhase phase)

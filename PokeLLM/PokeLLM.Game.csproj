@@ -10,6 +10,11 @@
   <ItemGroup>
     <None Remove="appsettings.json" />
     <None Remove="Prompts\CombatPhase.md" />
+    <None Remove="Prompts\Debug\CombatPhase.md" />
+    <None Remove="Prompts\Debug\ExplorationPhase.md" />
+    <None Remove="Prompts\Debug\GameSetupPhase.md" />
+    <None Remove="Prompts\Debug\LevelUpPhase.md" />
+    <None Remove="Prompts\Debug\WorldGenerationPhase.md" />
     <None Remove="Prompts\ExplorationPhase.md" />
     <None Remove="Prompts\GameSetupPhase.md" />
     <None Remove="Prompts\LevelUpPhase.md" />
@@ -24,6 +29,21 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Prompts\CombatPhase.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\Debug\CombatPhase.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\Debug\ExplorationPhase.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\Debug\GameSetupPhase.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\Debug\LevelUpPhase.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\Debug\WorldGenerationPhase.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Prompts\ExplorationPhase.md">
