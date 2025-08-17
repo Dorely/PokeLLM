@@ -80,7 +80,8 @@ public class DebugConfiguration : IDebugConfiguration
             Directory.CreateDirectory(logsDirectory);
             
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            return Path.Combine(logsDirectory, $"pokellm-{timestamp}.log");
+            var randomSuffix = Guid.NewGuid().ToString("N")[..8]; // Use first 8 chars of GUID for uniqueness
+            return Path.Combine(logsDirectory, $"pokellm-{timestamp}-{randomSuffix}.log");
         }
     }
 }

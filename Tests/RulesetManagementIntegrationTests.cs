@@ -5,6 +5,8 @@ using PokeLLM.GameRules.Interfaces;
 using PokeLLM.GameState;
 using PokeLLM.GameState.Models;
 using PokeLLM.Tests.TestUtilities;
+using PokeLLM.Configuration;
+using PokeLLM.Logging;
 using System.Diagnostics;
 using System.Text.Json;
 using Xunit;
@@ -19,6 +21,7 @@ public class RulesetManagementIntegrationTests : IDisposable
     private readonly Mock<IRulesetManager> _mockRulesetManager;
     private readonly Mock<IJavaScriptRuleEngine> _mockJsEngine;
     private readonly Mock<IGameStateRepository> _mockGameStateRepo;
+    private readonly Mock<IDebugLogger> _mockDebugLogger;
     private readonly RulesetManagementPlugin _plugin;
     private readonly string _testRulesetsDirectory;
     private readonly GameStateModel _testGameState;
@@ -33,6 +36,19 @@ public class RulesetManagementIntegrationTests : IDisposable
         _mockRulesetManager = new Mock<IRulesetManager>();
         _mockJsEngine = new Mock<IJavaScriptRuleEngine>();
         _mockGameStateRepo = new Mock<IGameStateRepository>();
+        _mockDebugLogger = new Mock<IDebugLogger>();
+
+        // Setup debug logger mock to prevent file creation
+        _mockDebugLogger.Setup(x => x.LogDebug(It.IsAny<string>()));
+        _mockDebugLogger.Setup(x => x.LogError(It.IsAny<string>(), It.IsAny<Exception>()));
+        _mockDebugLogger.Setup(x => x.LogUserInput(It.IsAny<string>()));
+        _mockDebugLogger.Setup(x => x.LogLLMResponse(It.IsAny<string>()));
+        _mockDebugLogger.Setup(x => x.LogFunctionCall(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()));
+        _mockDebugLogger.Setup(x => x.LogPhaseTransition(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()));
+        _mockDebugLogger.Setup(x => x.LogGameState(It.IsAny<string>()));
+        _mockDebugLogger.Setup(x => x.LogPrompt(It.IsAny<string>(), It.IsAny<string>()));
+        _mockDebugLogger.Setup(x => x.Flush());
+        _mockDebugLogger.Setup(x => x.Dispose());
 
         // Setup test game state
         _testGameState = new GameStateModel

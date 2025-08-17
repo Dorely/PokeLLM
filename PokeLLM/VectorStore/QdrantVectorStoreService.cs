@@ -7,6 +7,7 @@ using Qdrant.Client;
 using System.Diagnostics;
 using PokeLLM.Game.Configuration;
 using PokeLLM.Game.VectorStore.Models;
+using PokeLLM.Logging;
 
 namespace PokeLLM.Game.VectorStore;
 
@@ -15,6 +16,7 @@ public class QdrantVectorStoreService : IVectorStoreService
     private readonly QdrantVectorStore _vectorStore;
     private readonly IEmbeddingGenerator _embeddingGenerator;
     private readonly bool _isOllamaEmbeddings;
+    private readonly IDebugLogger _debugLogger;
     
     // Define constants for our collection names
     private const string ENTITIES_COLLECTION = "entities";
@@ -26,11 +28,13 @@ public class QdrantVectorStoreService : IVectorStoreService
     public QdrantVectorStoreService(
         IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, 
         IOptions<QdrantConfig> qdrantOptions,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IDebugLogger debugLogger)
     {
         try
         {
             _embeddingGenerator = embeddingGenerator;
+            _debugLogger = debugLogger;
             
             // Determine if we're using Ollama embeddings (768 dimensions) by checking the available configs
             _isOllamaEmbeddings = DetermineEmbeddingProvider(serviceProvider);
@@ -46,6 +50,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger?.LogError($"[QdrantVectorStoreService] Error in constructor: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in constructor: {ex.Message}");
             throw;
         }
@@ -124,6 +129,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in AddOrUpdateEntityAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in AddOrUpdateEntityAsync: {ex.Message}");
             throw;
         }
@@ -187,6 +193,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in GetEntityByIdAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in GetEntityByIdAsync: {ex.Message}");
             throw;
         }
@@ -233,6 +240,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in AddOrUpdateGameRuleAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in AddOrUpdateGameRuleAsync: {ex.Message}");
             throw;
         }
@@ -295,6 +303,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in GetGameRuleByIdAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in GetGameRuleByIdAsync: {ex.Message}");
             throw;
         }
@@ -350,6 +359,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in SearchGameRulesAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in SearchGameRulesAsync: {ex.Message}");
             throw;
         }
@@ -396,6 +406,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in AddOrUpdateLocationAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in AddOrUpdateLocationAsync: {ex.Message}");
             throw;
         }
@@ -458,6 +469,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in GetLocationByIdAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in GetLocationByIdAsync: {ex.Message}");
             throw;
         }
@@ -502,6 +514,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in AddOrUpdateLoreAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in AddOrUpdateLoreAsync: {ex.Message}");
             throw;
         }
@@ -564,6 +577,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in GetLoreByIdAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in GetLoreByIdAsync: {ex.Message}");
             throw;
         }
@@ -619,6 +633,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in SearchLoreAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in SearchLoreAsync: {ex.Message}");
             throw;
         }
@@ -667,6 +682,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in LogNarrativeEventAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in LogNarrativeEventAsync: {ex.Message}");
             throw;
         }
@@ -731,6 +747,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in GetNarrativeEventAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in GetNarrativeEventAsync: {ex.Message}");
             throw;
         }
@@ -818,6 +835,7 @@ public class QdrantVectorStoreService : IVectorStoreService
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[QdrantVectorStoreService] Error in FindMemoriesAsync: {ex.Message}", ex);
             Debug.WriteLine($"[QdrantVectorStoreService] Error in FindMemoriesAsync: {ex.Message}");
             throw;
         }

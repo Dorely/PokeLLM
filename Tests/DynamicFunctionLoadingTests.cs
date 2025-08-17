@@ -4,6 +4,8 @@ using Moq;
 using PokeLLM.GameRules.Interfaces;
 using PokeLLM.GameRules.Services;
 using PokeLLM.GameState.Models;
+using PokeLLM.Configuration;
+using PokeLLM.Logging;
 using System.Text.Json;
 using Xunit;
 
@@ -17,6 +19,7 @@ public class DynamicFunctionLoadingTests
     private readonly Mock<IJavaScriptRuleEngine> _mockJsEngine;
     private readonly Mock<IServiceProvider> _mockServiceProvider;
     private readonly Mock<IRulesetService> _mockRulesetService;
+    private readonly Mock<IDebugLogger> _mockDebugLogger;
     private readonly DynamicFunctionFactory _functionFactory;
 
     public DynamicFunctionLoadingTests()
@@ -24,6 +27,13 @@ public class DynamicFunctionLoadingTests
         _mockJsEngine = new Mock<IJavaScriptRuleEngine>();
         _mockServiceProvider = new Mock<IServiceProvider>();
         _mockRulesetService = new Mock<IRulesetService>();
+        _mockDebugLogger = new Mock<IDebugLogger>();
+        
+        // Setup debug logger mock to prevent file creation
+        _mockDebugLogger.Setup(x => x.LogDebug(It.IsAny<string>()));
+        _mockDebugLogger.Setup(x => x.LogError(It.IsAny<string>(), It.IsAny<Exception>()));
+        _mockDebugLogger.Setup(x => x.Flush());
+        _mockDebugLogger.Setup(x => x.Dispose());
         
         _functionFactory = new DynamicFunctionFactory(_mockJsEngine.Object, _mockServiceProvider.Object);
     }
@@ -89,11 +99,12 @@ public class DynamicFunctionLoadingTests
 
         var functions = await rulesetManager.GetPhaseFunctionsAsync(GamePhase.GameSetup);
         
-        // Add functions to kernel - create a single plugin with all functions
-        kernel.Plugins.AddFromFunctions("GameSetup", functions);
+        // Add functions to kernel - create a single plugin with all functions using unique name
+        var uniquePluginName = $"GameSetup_{Guid.NewGuid():N}";
+        kernel.Plugins.AddFromFunctions(uniquePluginName, functions);
 
         // Act & Assert - Verify each function is available in the kernel
-        var gameSetupPlugin = kernel.Plugins["GameSetup"];
+        var gameSetupPlugin = kernel.Plugins[uniquePluginName];
         Assert.NotNull(gameSetupPlugin);
 
         var availableFunctions = gameSetupPlugin.Select(f => f.Name).ToList();

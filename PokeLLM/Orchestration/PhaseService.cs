@@ -75,16 +75,11 @@ public class PhaseService : IPhaseService
     {
         _kernel = _llmProvider.CreateKernelAsync().GetAwaiter().GetResult();
         
-        // For GameSetup phase, use hardcoded plugin (no ruleset available yet)
-        if (_phase == GamePhase.GameSetup)
-        {
-            LoadHardcodedPlugin();
-        }
-        else
-        {
-            // For other phases, try to load functions from ruleset
-            LoadRulesetFunctions();
-        }
+        
+        LoadRulesetFunctions();
+        LoadHardcodedPlugin();
+
+
     }
     
     private void LoadHardcodedPlugin()
@@ -103,20 +98,59 @@ public class PhaseService : IPhaseService
             
         if (addFromTypeMethod != null)
         {
-            // Load the phase-specific plugin
+            // Load the phase-specific plugin with a unique name to avoid conflicts
+            var uniquePluginName = $"{_pluginRegistrationName}_{Guid.NewGuid():N}";
             var genericMethod = addFromTypeMethod.MakeGenericMethod(_pluginType);
             var defaultJsonOptions = new System.Text.Json.JsonSerializerOptions();
-            genericMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, _pluginRegistrationName, _serviceProvider });
+            genericMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, uniquePluginName, _serviceProvider });
             
             // Also load the RulesetManagementPlugin for all phases (for LLM access to ruleset management)
+            var rulesetPluginName = $"RulesetManagement_{Guid.NewGuid():N}";
             var rulesetPluginMethod = addFromTypeMethod.MakeGenericMethod(typeof(Game.Plugins.RulesetManagementPlugin));
-            rulesetPluginMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, "RulesetManagement", _serviceProvider });
-            
-            Debug.WriteLine($"[{_phase}PhaseService] Loaded hardcoded plugin {_pluginType.Name} and RulesetManagementPlugin");
+            rulesetPluginMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, rulesetPluginName, _serviceProvider });
         }
         else
         {
             throw new InvalidOperationException($"Could not find AddFromType method for plugin type {_pluginType}");
+        }
+        
+        // ADDITIONAL: Also try to load ruleset functions if available
+        // This is especially important for debug mode where we want to see what functions are available
+        try
+        {
+            // Check if we have an active ruleset
+            var activeRuleset = _rulesetManager.GetActiveRuleset();
+            if (activeRuleset != null)
+            {
+                // Load functions from the active ruleset
+                var rulesetFunctions = _rulesetManager.GetPhaseFunctionsAsync(_phase).GetAwaiter().GetResult();
+                
+                if (rulesetFunctions.Any())
+                {
+                    // Add ruleset functions to the kernel with a distinct name to avoid conflicts
+                    var rulesetPluginName = $"{_pluginRegistrationName}_Ruleset_{Guid.NewGuid():N}";
+                    var rulesetPlugin = KernelPluginFactory.CreateFromFunctions(rulesetPluginName, null, rulesetFunctions);
+                    _kernel.Plugins.Add(rulesetPlugin);
+                    
+                    // Debug: List all the ruleset functions that were loaded
+                    foreach (var func in rulesetFunctions)
+                    {
+                        Debug.WriteLine($"[{_phase}PhaseService] Ruleset function available: {func.Name} - {func.Description}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine($"[{_phase}PhaseService] No ruleset functions found for phase {_phase}");
+                }
+            }
+            else
+            {
+                Debug.WriteLine($"[{_phase}PhaseService] No active ruleset available for additional function loading");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[{_phase}PhaseService] Could not load additional ruleset functions: {ex.Message} (This is non-critical - hardcoded plugin is still available)");
         }
     }
     
@@ -124,13 +158,34 @@ public class PhaseService : IPhaseService
     {
         try
         {
+            // Ensure we have an active ruleset - load default if needed
+            var activeRuleset = _rulesetManager.GetActiveRuleset();
+            if (activeRuleset == null)
+            {
+                Debug.WriteLine($"[{_phase}PhaseService] No active ruleset found, attempting to load default ruleset");
+                // Try to load the pokemon-adventure ruleset as default
+                try
+                {
+                    _rulesetManager.SetActiveRulesetAsync("pokemon-adventure").GetAwaiter().GetResult();
+                    Debug.WriteLine($"[{_phase}PhaseService] Successfully loaded default pokemon-adventure ruleset");
+                }
+                catch (Exception rulesetEx)
+                {
+                    Debug.WriteLine($"[{_phase}PhaseService] Failed to load default ruleset: {rulesetEx.Message}");
+                    Debug.WriteLine($"[{_phase}PhaseService] Falling back to hardcoded plugin");
+                    LoadHardcodedPlugin();
+                    return;
+                }
+            }
+            
             // Load functions from the active ruleset
             var rulesetFunctions = _rulesetManager.GetPhaseFunctionsAsync(_phase).GetAwaiter().GetResult();
             
             if (rulesetFunctions.Any())
             {
-                // Add ruleset functions to the kernel
-                var rulesetPlugin = KernelPluginFactory.CreateFromFunctions(_pluginRegistrationName, null, rulesetFunctions);
+                // Add ruleset functions to the kernel with unique name to avoid conflicts
+                var rulesetPluginName = $"{_pluginRegistrationName}_{Guid.NewGuid():N}";
+                var rulesetPlugin = KernelPluginFactory.CreateFromFunctions(rulesetPluginName, null, rulesetFunctions);
                 _kernel.Plugins.Add(rulesetPlugin);
                 
                 Debug.WriteLine($"[{_phase}PhaseService] Loaded {rulesetFunctions.Count()} functions from ruleset");
@@ -149,11 +204,12 @@ public class PhaseService : IPhaseService
                     
                 if (addFromTypeMethod != null)
                 {
+                    var rulesetManagementPluginName = $"RulesetManagement_{Guid.NewGuid():N}";
                     var rulesetPluginMethod = addFromTypeMethod.MakeGenericMethod(typeof(Game.Plugins.RulesetManagementPlugin));
                     var defaultJsonOptions = new System.Text.Json.JsonSerializerOptions();
-                    rulesetPluginMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, "RulesetManagement", _serviceProvider });
+                    rulesetPluginMethod.Invoke(null, new object[] { _kernel.Plugins, defaultJsonOptions, rulesetManagementPluginName, _serviceProvider });
                     
-                    Debug.WriteLine($"[{_phase}PhaseService] Also loaded RulesetManagementPlugin alongside ruleset functions");
+                    Debug.WriteLine($"[{_phase}PhaseService] Also loaded RulesetManagementPlugin as '{rulesetManagementPluginName}' alongside ruleset functions");
                 }
             }
             else

@@ -180,6 +180,14 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
 
             var functions = new List<FunctionDefinition>();
             
+            // Configure JsonSerializer with proper options for camelCase
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            };
+            
             foreach (var functionElement in phaseFunctions.EnumerateArray())
             {
                 Debug.WriteLine($"[DynamicFunctionFactory] Processing function element, type: {functionElement.ValueKind}");
@@ -187,7 +195,7 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
                 
                 try
                 {
-                    var function = JsonSerializer.Deserialize<FunctionDefinition>(functionElement.GetRawText());
+                    var function = JsonSerializer.Deserialize<FunctionDefinition>(functionElement.GetRawText(), jsonOptions);
                     if (function != null)
                     {
                         functions.Add(function);
@@ -204,6 +212,13 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
                     Debug.WriteLine($"[DynamicFunctionFactory] Function JSON that failed: {functionElement.GetRawText()}");
                     Console.WriteLine($"[DynamicFunctionFactory] ERROR deserializing function: {deserializationEx.Message}");
                     Console.WriteLine($"[DynamicFunctionFactory] Function JSON that failed: {functionElement.GetRawText()}");
+                    
+                    // Additional debugging: show the inner exception details
+                    if (deserializationEx.InnerException != null)
+                    {
+                        Debug.WriteLine($"[DynamicFunctionFactory] Inner exception: {deserializationEx.InnerException.Message}");
+                        Console.WriteLine($"[DynamicFunctionFactory] Inner exception: {deserializationEx.InnerException.Message}");
+                    }
                 }
             }
 
@@ -496,7 +511,7 @@ public class DynamicFunctionFactory : IDynamicFunctionFactory
                         ">" => actualCount > expectedCount,
                         ">=" => actualCount >= expectedCount,
                         "==" or "=" => actualCount == expectedCount,
-                        "!=" => actualCount != expectedCount,
+                        "!" => actualCount != expectedCount,
                         _ => false
                     };
                 }

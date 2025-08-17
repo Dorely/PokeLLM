@@ -3,12 +3,21 @@ using PokeLLM.Tests.TestModels;
 using PokeLLM.GameRules.Services;
 using PokeLLM.GameRules.Interfaces;
 using PokeLLM.GameRules.Models;
+using PokeLLM.Logging;
+using Moq;
 using System.Text.Json;
 
 namespace PokeLLM.Tests;
 
 public class DnD5eBasicTests
 {
+    private readonly Mock<IDebugLogger> _mockDebugLogger;
+
+    public DnD5eBasicTests()
+    {
+        _mockDebugLogger = new Mock<IDebugLogger>();
+    }
+
     [Fact]
     public void DnDCharacter_Creation_SetsBasicProperties()
     {
@@ -95,7 +104,7 @@ public class DnD5eBasicTests
     public async Task JavaScriptRuleEngine_ValidateRule_SimpleExpression_ReturnsCorrect()
     {
         // Arrange
-        var ruleEngine = new JavaScriptRuleEngine();
+        var ruleEngine = new JavaScriptRuleEngine(_mockDebugLogger.Object);
         var character = new DnDCharacter { Level = 5 };
         var context = new { level = 5 };
 
@@ -111,7 +120,7 @@ public class DnD5eBasicTests
     public async Task JavaScriptRuleEngine_IsSafeScript_MaliciousCode_ReturnsFalse()
     {
         // Arrange
-        var ruleEngine = new JavaScriptRuleEngine();
+        var ruleEngine = new JavaScriptRuleEngine(_mockDebugLogger.Object);
 
         // Act
         var isEvalSafe = await ruleEngine.IsSafeScriptAsync("eval('malicious code')");
@@ -126,7 +135,7 @@ public class DnD5eBasicTests
     public async Task JavaScriptRuleEngine_IsSafeScript_ValidCode_ReturnsTrue()
     {
         // Arrange
-        var ruleEngine = new JavaScriptRuleEngine();
+        var ruleEngine = new JavaScriptRuleEngine(_mockDebugLogger.Object);
 
         // Act
         var isSafe = await ruleEngine.IsSafeScriptAsync("character.Level >= 5 && character.HitPoints > 0");

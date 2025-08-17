@@ -1,5 +1,6 @@
 using Microsoft.ClearScript.V8;
 using PokeLLM.GameRules.Interfaces;
+using PokeLLM.Logging;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -7,6 +8,8 @@ namespace PokeLLM.GameRules.Services;
 
 public class JavaScriptRuleEngine : IJavaScriptRuleEngine
 {
+    private readonly IDebugLogger _debugLogger;
+    
     private readonly HashSet<string> _allowedFunctions = new()
     {
         "Math.floor", "Math.ceil", "Math.max", "Math.min", "Math.abs",
@@ -19,6 +22,11 @@ public class JavaScriptRuleEngine : IJavaScriptRuleEngine
         "process", "global", "__dirname", "__filename", "module", "exports"
     };
 
+    public JavaScriptRuleEngine(IDebugLogger debugLogger)
+    {
+        _debugLogger = debugLogger;
+    }
+
     public async Task<bool> ValidateRuleAsync(string ruleScript, object character, object context)
     {
         try
@@ -26,6 +34,7 @@ public class JavaScriptRuleEngine : IJavaScriptRuleEngine
             // First check if the script is safe
             if (!await IsSafeScriptAsync(ruleScript))
             {
+                _debugLogger.LogError($"[JavaScriptRuleEngine] Script not safe: {ruleScript}");
                 return false;
             }
 
@@ -37,10 +46,13 @@ public class JavaScriptRuleEngine : IJavaScriptRuleEngine
             };
 
             var result = await ExecuteAsync(ruleScript, variables);
-            return result is bool boolResult ? boolResult : Convert.ToBoolean(result);
+            var boolResult = result is bool boolValue ? boolValue : Convert.ToBoolean(result);
+            _debugLogger.LogDebug($"[JavaScriptRuleEngine] Script '{ruleScript}' result: {result} -> {boolResult}");
+            return boolResult;
         }
-        catch
+        catch (Exception ex)
         {
+            _debugLogger.LogError($"[JavaScriptRuleEngine] Validation failed for script '{ruleScript}': {ex.Message}", ex);
             return false;
         }
     }
@@ -127,38 +139,23 @@ public class JavaScriptRuleEngine : IJavaScriptRuleEngine
             engine.AddHostObject("dice", new DiceUtilities());
             engine.AddHostObject("utils", new RuleUtilities());
             
-            // Add variables with proper property exposure
+            _debugLogger.LogDebug($"[JavaScriptRuleEngine] Executing script: {script}");
+            
+            // Add variables directly - let V8 handle property access
             foreach (var kvp in variables)
             {
-                if (kvp.Key == "character")
-                {
-                    // For character objects, expose properties in a JavaScript-friendly way
-                    var characterObj = kvp.Value;
-                    var characterType = characterObj.GetType();
-                    var jsObject = new Dictionary<string, object>();
-                    
-                    foreach (var prop in characterType.GetProperties())
-                    {
-                        var value = prop.GetValue(characterObj);
-                        // Add both Pascal and camel case versions
-                        jsObject[prop.Name] = value; // PascalCase (Race)
-                        jsObject[char.ToLower(prop.Name[0]) + prop.Name.Substring(1)] = value; // camelCase (race)
-                    }
-                    
-                    engine.AddHostObject(kvp.Key, jsObject);
-                }
-                else
-                {
-                    engine.AddHostObject(kvp.Key, kvp.Value);
-                }
+                _debugLogger.LogDebug($"[JavaScriptRuleEngine] Adding variable '{kvp.Key}' of type {kvp.Value?.GetType().Name ?? "null"}");
+                engine.AddHostObject(kvp.Key, kvp.Value);
             }
 
             // Execute the script
             var result = engine.Evaluate(script);
+            _debugLogger.LogDebug($"[JavaScriptRuleEngine] Script result: {result} (type: {result?.GetType().Name ?? "null"})");
             return result;
         }
         catch (Exception ex)
         {
+            _debugLogger.LogError($"[JavaScriptRuleEngine] Script execution failed: {ex.Message}", ex);
             throw new InvalidOperationException($"Script execution failed: {ex.Message}", ex);
         }
     }

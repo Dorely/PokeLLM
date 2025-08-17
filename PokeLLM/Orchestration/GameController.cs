@@ -141,10 +141,18 @@ public class GameController : IGameController
         {
             _debugLogger.LogDebug("[GameController] CurrentPhase not set, initializing to GameSetup");
             gameState.CurrentPhase = GamePhase.GameSetup;
-            await _gameStateRepository.SaveStateAsync(gameState);
         }
         
-        _debugLogger.LogDebug($"[GameController] Current phase retrieved: {gameState.CurrentPhase}");
+        // If ActiveRulesetId is not set, initialize with default ruleset
+        if (string.IsNullOrEmpty(gameState.ActiveRulesetId))
+        {
+            _debugLogger.LogDebug("[GameController] ActiveRulesetId not set, initializing to pokemon-adventure");
+            gameState.ActiveRulesetId = "pokemon-adventure";
+        }
+        
+        await _gameStateRepository.SaveStateAsync(gameState);
+        
+        _debugLogger.LogDebug($"[GameController] Current phase retrieved: {gameState.CurrentPhase}, Active ruleset: {gameState.ActiveRulesetId}");
         return gameState.CurrentPhase;
     }
     

@@ -179,13 +179,8 @@ public static class ServiceConfiguration
         // Register phase service provider - create a minimal implementation that works with dynamic rulesets
         services.AddScoped<IPhaseServiceProvider, PhaseServiceProvider>();
         
-        // Register IPhaseService factory to provide a default phase service for services that need it
-        services.AddTransient<IPhaseService>(serviceProvider =>
-        {
-            var phaseServiceProvider = serviceProvider.GetRequiredService<IPhaseServiceProvider>();
-            // Use Exploration phase as default for general LLM interactions
-            return phaseServiceProvider.GetPhaseService(GameState.Models.GamePhase.Exploration);
-        });
+        // Note: IPhaseService is not registered directly to avoid circular dependencies.
+        // Services should use IPhaseServiceProvider.GetPhaseService(phase) to get specific phase services.
         
         services.AddScoped<IGameController, GameController>();
 

@@ -27,18 +27,18 @@ public class RulesetWizardService : IRulesetWizardService
 {
     private readonly IRulesetBuilderService _rulesetBuilder;
     private readonly IRulesetSchemaValidator _schemaValidator;
-    private readonly IPhaseService _phaseService;
+    private readonly IPhaseServiceProvider _phaseServiceProvider;
     private readonly IRulesetManager _rulesetManager;
 
     public RulesetWizardService(
         IRulesetBuilderService rulesetBuilder,
         IRulesetSchemaValidator schemaValidator,
-        IPhaseService phaseService,
+        IPhaseServiceProvider phaseServiceProvider,
         IRulesetManager rulesetManager)
     {
         _rulesetBuilder = rulesetBuilder;
         _schemaValidator = schemaValidator;
-        _phaseService = phaseService;
+        _phaseServiceProvider = phaseServiceProvider;
         _rulesetManager = rulesetManager;
     }
 
@@ -178,7 +178,7 @@ Respond in a helpful, encouraging tone.";
         Console.WriteLine("Let me provide some feedback on your metadata...");
         Console.WriteLine();
 
-        await foreach (var chunk in _phaseService.ProcessInputWithSpecialPromptAsync(metadataPrompt))
+        await foreach (var chunk in _phaseServiceProvider.GetPhaseService(GameState.Models.GamePhase.Exploration).ProcessInputWithSpecialPromptAsync(metadataPrompt))
         {
             Console.Write(chunk);
         }
@@ -231,7 +231,7 @@ Be encouraging and ask follow-up questions to help refine the concept.";
         Console.WriteLine("Let me analyze your game concept and suggest appropriate mechanics...");
         Console.WriteLine();
 
-        await foreach (var chunk in _phaseService.ProcessInputWithSpecialPromptAsync(mechanicsPrompt))
+        await foreach (var chunk in _phaseServiceProvider.GetPhaseService(GameState.Models.GamePhase.Exploration).ProcessInputWithSpecialPromptAsync(mechanicsPrompt))
         {
             Console.Write(chunk);
         }
@@ -280,7 +280,7 @@ Format your response clearly so the user can make informed decisions.";
         Console.WriteLine("Let me suggest a game state schema based on your mechanics...");
         Console.WriteLine();
 
-        await foreach (var chunk in _phaseService.ProcessInputWithSpecialPromptAsync(schemaPrompt))
+        await foreach (var chunk in _phaseServiceProvider.GetPhaseService(GameState.Models.GamePhase.Exploration).ProcessInputWithSpecialPromptAsync(schemaPrompt))
         {
             Console.Write(chunk);
         }
@@ -292,12 +292,12 @@ Format your response clearly so the user can make informed decisions.";
         Console.WriteLine();
 
         Console.Write("Required collections (comma-separated): ");
-        var collectionsInput = Console.ReadLine() ?? "";
+        var collectionsInput = Console.ReadLine() ??("");
         var collections = collectionsInput.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(c => c.Trim()).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
 
         Console.Write("Player fields (comma-separated): ");
-        var fieldsInput = Console.ReadLine() ?? "";
+        var fieldsInput = Console.ReadLine() ??("");
         var playerFields = fieldsInput.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(f => f.Trim()).Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
 
@@ -338,7 +338,7 @@ Keep the scope manageable for a custom ruleset - suggest 3-5 items in each categ
         Console.WriteLine("Let me suggest appropriate game data for your ruleset...");
         Console.WriteLine();
 
-        await foreach (var chunk in _phaseService.ProcessInputWithSpecialPromptAsync(dataPrompt))
+        await foreach (var chunk in _phaseServiceProvider.GetPhaseService(GameState.Models.GamePhase.Exploration).ProcessInputWithSpecialPromptAsync(dataPrompt))
         {
             Console.Write(chunk);
         }
@@ -383,7 +383,7 @@ Focus on functions that support the core mechanics you identified.";
         Console.WriteLine("Let me suggest functions for each game phase...");
         Console.WriteLine();
 
-        await foreach (var chunk in _phaseService.ProcessInputWithSpecialPromptAsync(functionsPrompt))
+        await foreach (var chunk in _phaseServiceProvider.GetPhaseService(GameState.Models.GamePhase.Exploration).ProcessInputWithSpecialPromptAsync(functionsPrompt))
         {
             Console.Write(chunk);
         }
@@ -422,7 +422,7 @@ Include placeholders for dynamic content like {{character_info}}, {{current_loca
         Console.WriteLine("Let me suggest appropriate prompt templates for your game...");
         Console.WriteLine();
 
-        await foreach (var chunk in _phaseService.ProcessInputWithSpecialPromptAsync(promptsTemplatePrompt))
+        await foreach (var chunk in _phaseServiceProvider.GetPhaseService(GameState.Models.GamePhase.Exploration).ProcessInputWithSpecialPromptAsync(promptsTemplatePrompt))
         {
             Console.Write(chunk);
         }

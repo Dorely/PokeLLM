@@ -3,12 +3,21 @@ using PokeLLM.Tests.TestModels;
 using PokeLLM.GameRules.Services;
 using PokeLLM.GameRules.Interfaces;
 using PokeLLM.GameRules.Models;
+using PokeLLM.Logging;
+using Moq;
 using System.Text.Json;
 
 namespace PokeLLM.Tests;
 
 public class PokemonRulesetTests
 {
+    private readonly Mock<IDebugLogger> _mockDebugLogger;
+
+    public PokemonRulesetTests()
+    {
+        _mockDebugLogger = new Mock<IDebugLogger>();
+    }
+
     [Fact]
     public void PokemonTrainer_Creation_SetsBasicProperties()
     {
@@ -114,7 +123,7 @@ public class PokemonRulesetTests
     public async Task JavaScriptRuleEngine_ValidatePokemonRule_TeamLimitCheck_ReturnsCorrect()
     {
         // Arrange
-        var ruleEngine = new JavaScriptRuleEngine();
+        var ruleEngine = new JavaScriptRuleEngine(_mockDebugLogger.Object);
         var trainer = new PokemonTrainer 
         { 
             Pokemon = new List<string> { "pikachu", "charizard" } // 2 Pokemon
@@ -133,7 +142,7 @@ public class PokemonRulesetTests
     public async Task JavaScriptRuleEngine_ValidatePokemonInventory_ItemCheck_ReturnsCorrect()
     {
         // Arrange
-        var ruleEngine = new JavaScriptRuleEngine();
+        var ruleEngine = new JavaScriptRuleEngine(_mockDebugLogger.Object);
         var trainer = new PokemonTrainer();
         trainer.Inventory["pokeball"] = 5;
         trainer.Inventory["potion"] = 3;
