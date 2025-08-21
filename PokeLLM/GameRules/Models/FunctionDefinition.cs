@@ -36,4 +36,13 @@ public class ParameterDefinition
 
     [JsonPropertyName("required")]
     public bool Required { get; set; } = false;
+
+    [JsonPropertyName("items")]
+    public ParameterItemDefinition? Items { get; set; }
+}
+
+public class ParameterItemDefinition
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty;
 }

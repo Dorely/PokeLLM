@@ -2774,7 +2774,10 @@
             "name": "combatants",
             "type": "array",
             "description": "List of combatants entering combat",
-            "required": true
+            "required": true,
+            "items": {
+              "type": "string"
+            }
           }
         ],
         "ruleValidations": [
@@ -3171,7 +3174,10 @@
             "name": "spellIds",
             "type": "array",
             "description": "List of spell IDs to learn",
-            "required": true
+            "required": true,
+            "items": {
+              "type": "string"
+            }
           }
         ],
         "ruleValidations": [

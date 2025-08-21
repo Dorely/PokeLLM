@@ -937,7 +937,10 @@
             "name": "startingAbilities",
             "type": "array",
             "description": "List of starting abilities/features",
-            "required": false
+            "required": false,
+            "items": {
+              "type": "string"
+            }
           }
         ],
         "ruleValidations": [
@@ -1724,7 +1727,10 @@
             "name": "combatants",
             "type": "array",
             "description": "Array of combatant IDs to roll initiative for",
-            "required": true
+            "required": true,
+            "items": {
+              "type": "string"
+            }
           }
         ],
         "ruleValidations": [
@@ -1977,7 +1983,10 @@
             "name": "chosenFeatures",
             "type": "array",
             "description": "Array of chosen class features for this level",
-            "required": false
+            "required": false,
+            "items": {
+              "type": "string"
+            }
           }
         ],
         "ruleValidations": [

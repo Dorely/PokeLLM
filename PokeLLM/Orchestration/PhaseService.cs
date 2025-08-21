@@ -76,12 +76,81 @@ public class PhaseService : IPhaseService
     {
         _kernel = _llmProvider.CreateKernelAsync().GetAwaiter().GetResult();
         
+        // Add function invocation filter for logging (modern approach, replaces deprecated events)
+        _kernel.FunctionInvocationFilters.Add(new FunctionLoggingFilter(_debugLogger, _phase));
+        
         // Load plugins with proper namespacing - no conflicts possible due to unique plugin names
         LoadHardcodedPlugin();
         LoadRulesetFunctions();
         LoadRulesetManagementPlugin();
         LoadVectorPlugin();
     }
+
+    // Modern function invocation filter for logging (replaces deprecated events)
+    private class FunctionLoggingFilter : IFunctionInvocationFilter
+    {
+        private readonly IDebugLogger _debugLogger;
+        private readonly GamePhase _phase;
+
+        public FunctionLoggingFilter(IDebugLogger debugLogger, GamePhase phase)
+        {
+            _debugLogger = debugLogger;
+            _phase = phase;
+        }
+
+        public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
+        {
+            var functionName = context.Function.Name;
+            var pluginName = context.Function.PluginName;
+            var functionFullName = string.IsNullOrEmpty(pluginName) ? functionName : $"{pluginName}.{functionName}";
+            
+            try
+            {
+                // Log function call with arguments
+                var argumentsJson = System.Text.Json.JsonSerializer.Serialize(
+                    context.Arguments.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                
+                _debugLogger.LogDebug($"[{_phase}PhaseService] Function invoking: {functionFullName}");
+                _debugLogger.LogDebug($"[{_phase}PhaseService] Function arguments: {argumentsJson}");
+                
+                // Log the function call start
+                _debugLogger.LogFunctionCall(functionFullName, argumentsJson, "INVOKING");
+                
+                // Execute the function
+                await next(context);
+                
+                // Log function result
+                var result = context.Result?.ToString() ?? "null";
+                _debugLogger.LogDebug($"[{_phase}PhaseService] Function invoked: {functionFullName}");
+                _debugLogger.LogDebug($"[{_phase}PhaseService] Function result length: {result.Length} characters");
+                
+                // Log metadata if available (token usage, etc.)
+                if (context.Result?.Metadata != null && context.Result.Metadata.Count > 0)
+                {
+                    var metadataJson = System.Text.Json.JsonSerializer.Serialize(context.Result.Metadata);
+                    _debugLogger.LogDebug($"[{_phase}PhaseService] Function metadata: {metadataJson}");
+                }
+                
+                // Log the complete function call with actual result
+                _debugLogger.LogFunctionCall(functionFullName, argumentsJson, result);
+            }
+            catch (Exception ex)
+            {
+                _debugLogger.LogError($"[{_phase}PhaseService] Error in function {functionFullName}: {ex.Message}", ex);
+                
+                // Log the failed function call
+                var argumentsJson = System.Text.Json.JsonSerializer.Serialize(
+                    context.Arguments.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                _debugLogger.LogFunctionCall(functionFullName, argumentsJson, $"ERROR: {ex.Message}");
+                
+                throw; // Re-throw to maintain original behavior
+            }
+        }
+    }
+
+    // REMOVED: Deprecated event handler replaced by FunctionLoggingFilter
+
+    // REMOVED: Deprecated event handler replaced by FunctionLoggingFilter
     
     private void LoadHardcodedPlugin()
     {
