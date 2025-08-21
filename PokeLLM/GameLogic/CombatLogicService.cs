@@ -429,7 +429,7 @@ public class CombatLogicService : ICombatLogicService
     }
 
     /// <summary>
-    /// Calculate damage for a Pokemon move using RPG-style dice mechanics
+    /// Calculate damage for a Pokemon move using D&D-style dice mechanics
     /// For Pokemon battles, damage is based on dice rolls with type effectiveness for advantage/disadvantage only
     /// </summary>
     /// <param name="attacker">The attacking Pokemon with full battle data</param>

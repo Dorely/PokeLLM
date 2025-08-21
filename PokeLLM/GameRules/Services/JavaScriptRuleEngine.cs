@@ -127,30 +127,10 @@ public class JavaScriptRuleEngine : IJavaScriptRuleEngine
             engine.AddHostObject("dice", new DiceUtilities());
             engine.AddHostObject("utils", new RuleUtilities());
             
-            // Add variables with proper property exposure
+            // Add variables
             foreach (var kvp in variables)
             {
-                if (kvp.Key == "character")
-                {
-                    // For character objects, expose properties in a JavaScript-friendly way
-                    var characterObj = kvp.Value;
-                    var characterType = characterObj.GetType();
-                    var jsObject = new Dictionary<string, object>();
-                    
-                    foreach (var prop in characterType.GetProperties())
-                    {
-                        var value = prop.GetValue(characterObj);
-                        // Add both Pascal and camel case versions
-                        jsObject[prop.Name] = value; // PascalCase (Race)
-                        jsObject[char.ToLower(prop.Name[0]) + prop.Name.Substring(1)] = value; // camelCase (race)
-                    }
-                    
-                    engine.AddHostObject(kvp.Key, jsObject);
-                }
-                else
-                {
-                    engine.AddHostObject(kvp.Key, kvp.Value);
-                }
+                engine.AddHostObject(kvp.Key, kvp.Value);
             }
 
             // Execute the script

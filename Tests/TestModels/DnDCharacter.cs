@@ -17,11 +17,6 @@ public class DnDCharacter
     public int Wisdom { get; set; } = 10;
     public int Charisma { get; set; } = 10;
 
-    // D&D-specific properties for multi-ruleset tests
-    public List<string> KnownSpells { get; set; } = new();
-    public Dictionary<int, int> SpellSlots { get; set; } = new();
-    public List<DnDEquipment> Equipment { get; set; } = new();
-
     public int GetAbilityModifier(string ability)
     {
         var score = ability.ToLower() switch
@@ -36,17 +31,4 @@ public class DnDCharacter
         };
         return (score - 10) / 2;
     }
-
-    public bool CanCastSpell(string spellId, int spellLevel)
-    {
-        return KnownSpells.Contains(spellId) && 
-               SpellSlots.ContainsKey(spellLevel) && 
-               SpellSlots[spellLevel] > 0;
-    }
-}
-
-public class DnDEquipment
-{
-    public string Name { get; set; } = string.Empty;
-    public int Quantity { get; set; } = 1;
 }

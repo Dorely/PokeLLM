@@ -35,7 +35,7 @@ public interface ICharacterManagementService
     Task<int[]> GenerateRandomStats();
     Task<int[]> GenerateStandardStats();
     
-    // Generic Character Management Methods
+    // D&D 5e Character Management Methods
     Task<object> CreateCharacter(string name, string race, string characterClass);
     Task<object?> GetCurrentCharacter();
     Task SaveCharacter(object character);
@@ -105,7 +105,7 @@ public class CharacterManagementService : ICharacterManagementService
         
         for (int i = 0; i < 6; i++)
         {
-            // Roll 4d6 drop lowest (classic RPG method)
+            // Roll 4d6 drop lowest (classic D&D method)
             var rolls = new List<int>();
             for (int j = 0; j < 4; j++)
             {
@@ -122,7 +122,7 @@ public class CharacterManagementService : ICharacterManagementService
     public async Task<int[]> GenerateStandardStats()
     {
         await Task.Yield();
-        // Standard ability array: 15, 14, 13, 12, 10, 8
+        // Standard array from D&D 5e: 15, 14, 13, 12, 10, 8
         return new int[] { 15, 14, 13, 12, 10, 8 };
     }
 
@@ -317,7 +317,7 @@ public class CharacterManagementService : ICharacterManagementService
         }
     }
 
-    #region Generic Character Management
+    #region D&D 5e Character Management
 
     public async Task<object> CreateCharacter(string name, string race, string characterClass)
     {
@@ -361,7 +361,7 @@ public class CharacterManagementService : ICharacterManagementService
     }
 
     
-    // Rule-specific character creation logic has been removed
+    // D&D-specific character creation logic has been removed
     // Character creation is now handled generically via ruleset configuration
 
     #endregion
