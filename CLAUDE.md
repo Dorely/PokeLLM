@@ -19,6 +19,13 @@ dotnet run --project PokeLLM/PokeLLM.Game.csproj
 dotnet test Tests/PokeLLM.Tests.csproj
 ```
 
+### Run from Project Directory
+When running the game, ensure you're in the correct directory to avoid configuration file errors:
+```cmd
+cd PokeLLM
+dotnet run
+```
+
 ### Clean and Rebuild
 ```cmd
 dotnet clean

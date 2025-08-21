@@ -11,6 +11,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
+using PPokeLLM.Game.Plugins;
 
 namespace PokeLLM.Game.Orchestration;
 
@@ -623,7 +624,7 @@ public class PhaseServiceProvider : IPhaseServiceProvider
     {
         _phaseServices[GamePhase.GameSetup] = new PhaseService(
             GamePhase.GameSetup,
-            typeof(PokeLLM.Plugins.GameSetupPhasePlugin),
+            typeof(GameSetupPhasePlugin),
             "GameSetupPhase",
             "GameSetup",
             _llmProvider,

@@ -814,6 +814,151 @@
         ]
       },
       {
+        "id": "create_player_character",
+        "name": "create_player_character",
+        "description": "Create a complete player character with name, class, backstory, and stats, including Vector DB entry",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "Character name",
+            "required": true
+          },
+          {
+            "name": "className",
+            "type": "string",
+            "description": "Trainer class ID",
+            "required": true
+          },
+          {
+            "name": "backstory",
+            "type": "string",
+            "description": "Character backstory for lore entry",
+            "required": true
+          },
+          {
+            "name": "stats",
+            "type": "object",
+            "description": "Character ability scores",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "rulesetData.trainerClasses.hasOwnProperty({{className}})"
+        ],
+        "effects": [
+          {
+            "target": "character.name",
+            "operation": "set",
+            "value": "{{name}}"
+          },
+          {
+            "target": "character.trainerClass",
+            "operation": "set",
+            "value": "{{className}}"
+          },
+          {
+            "target": "character.backstory",
+            "operation": "set",
+            "value": "{{backstory}}"
+          },
+          {
+            "target": "character.stats",
+            "operation": "set",
+            "value": "{{stats}}"
+          },
+          {
+            "target": "vectorDb.lore",
+            "operation": "addEntry",
+            "value": {
+              "type": "character_backstory",
+              "content": "{{backstory}}",
+              "tags": ["{{name}}", "{{className}}", "character", "backstory"]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get_character_stats_schema",
+        "name": "get_character_stats_schema",
+        "description": "Get the required character statistics schema from the active ruleset",
+        "parameters": [],
+        "ruleValidations": [],
+        "effects": [
+          {
+            "target": "response",
+            "operation": "return",
+            "value": {
+              "statNames": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"],
+              "statDescriptions": {
+                "strength": "Physical power and melee combat ability",
+                "dexterity": "Agility, reflexes, and ranged combat skill", 
+                "constitution": "Endurance, health, and stamina",
+                "intelligence": "Reasoning ability, memory, and knowledge",
+                "wisdom": "Awareness, insight, and mental resistance",
+                "charisma": "Force of personality and social skills"
+              },
+              "statRange": {"min": 3, "max": 18},
+              "pointBuyBudget": 27
+            }
+          }
+        ]
+      },
+      {
+        "id": "define_new_class",
+        "name": "define_new_class",
+        "description": "Dynamically create a new character class for the current session",
+        "parameters": [
+          {
+            "name": "classId",
+            "type": "string",
+            "description": "Unique identifier for the new class",
+            "required": true
+          },
+          {
+            "name": "className",
+            "type": "string", 
+            "description": "Display name for the class",
+            "required": true
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "description": "Class description and flavor text",
+            "required": true
+          },
+          {
+            "name": "baseStats",
+            "type": "object",
+            "description": "Starting ability scores for this class",
+            "required": true
+          },
+          {
+            "name": "startingAbilities",
+            "type": "array",
+            "description": "List of starting abilities/features",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "!rulesetData.trainerClasses.hasOwnProperty({{classId}})"
+        ],
+        "effects": [
+          {
+            "target": "rulesetData.trainerClasses.{{classId}}",
+            "operation": "create",
+            "value": {
+              "id": "{{classId}}",
+              "name": "{{className}}",
+              "description": "{{description}}",
+              "baseStats": "{{baseStats}}",
+              "startingAbilities": "{{startingAbilities}}",
+              "customClass": true
+            }
+          }
+        ]
+      },
+      {
         "id": "set_trainer_name",
         "name": "set_trainer_name",
         "description": "Set the trainer's name and customize appearance",
@@ -1569,6 +1714,46 @@
             "failureAction": "continueForced"
           }
         ]
+      },
+      {
+        "id": "roll_for_initiative",
+        "name": "roll_for_initiative",
+        "description": "Determine turn order for all combatants using initiative rolls with stat bonuses",
+        "parameters": [
+          {
+            "name": "combatants",
+            "type": "array",
+            "description": "Array of combatant IDs to roll initiative for",
+            "required": true
+          }
+        ],
+        "ruleValidations": [
+          "gameState.currentPhase == 'Combat'",
+          "gameState.combatState != null",
+          "{{combatants}}.length > 0"
+        ],
+        "effects": [
+          {
+            "target": "gameState.combatState.turnOrder",
+            "operation": "generateInitiativeOrder",
+            "value": {
+              "combatants": "{{combatants}}",
+              "statModifier": "dexterity",
+              "dieType": "d20",
+              "tieBreaker": "dexterityScore"
+            }
+          },
+          {
+            "target": "gameState.combatState.currentTurn",
+            "operation": "set",
+            "value": 0
+          },
+          {
+            "target": "gameState.combatState.initiativeRolled",
+            "operation": "set",
+            "value": true
+          }
+        ]
       }
     ],
     "LevelUp": [
@@ -1725,6 +1910,120 @@
             "value": "character.level * 1000"
           }
         ]
+      },
+      {
+        "id": "get_player_levelup_benefits",
+        "name": "get_player_levelup_benefits",
+        "description": "Display available level-up options from the active ruleset based on player's class and level",
+        "parameters": [],
+        "ruleValidations": [
+          "character.level > 0",
+          "character.trainerClass != null && character.trainerClass != ''"
+        ],
+        "effects": [
+          {
+            "target": "response",
+            "operation": "return",
+            "value": {
+              "availableOptions": {
+                "statIncreases": {
+                  "options": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"],
+                  "increaseAmount": 1,
+                  "maxSelections": 1,
+                  "description": "Choose one ability score to increase by 1"
+                },
+                "skillPoints": {
+                  "amount": 2,
+                  "description": "Gain 2 skill points to distribute among trainer skills"
+                },
+                "classFeatures": {
+                  "availableFeatures": "rulesetData.trainerClasses[character.trainerClass].levelProgression[character.level]",
+                  "description": "Class-specific features available at this level"
+                },
+                "hitPointIncrease": {
+                  "baseAmount": "rulesetData.trainerClasses[character.trainerClass].hitDie",
+                  "constitutionBonus": "character.stats.constitution.modifier",
+                  "description": "Increase maximum hit points"
+                }
+              },
+              "levelRequirements": {
+                "currentLevel": "character.level",
+                "nextLevel": "character.level + 1",
+                "experienceRequired": "(character.level + 1) * 1000",
+                "currentExperience": "character.experience"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "apply_player_levelup",
+        "name": "apply_player_levelup",
+        "description": "Apply chosen level-up improvements to the player character",
+        "parameters": [
+          {
+            "name": "statIncrease",
+            "type": "string",
+            "description": "Ability score to increase (strength, dexterity, constitution, intelligence, wisdom, charisma)",
+            "required": false
+          },
+          {
+            "name": "skillPointAllocations",
+            "type": "object",
+            "description": "Object mapping skill names to point allocations",
+            "required": false
+          },
+          {
+            "name": "chosenFeatures",
+            "type": "array",
+            "description": "Array of chosen class features for this level",
+            "required": false
+          }
+        ],
+        "ruleValidations": [
+          "character.experience >= (character.level + 1) * 1000",
+          "{{statIncrease}} == null || ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'].includes({{statIncrease}})"
+        ],
+        "effects": [
+          {
+            "target": "character.level",
+            "operation": "add",
+            "value": 1
+          },
+          {
+            "target": "character.experience",
+            "operation": "subtract",
+            "value": "(character.level + 1) * 1000"
+          },
+          {
+            "target": "character.stats[{{statIncrease}}]",
+            "operation": "add",
+            "value": 1,
+            "condition": "{{statIncrease}} != null"
+          },
+          {
+            "target": "character.maxHP",
+            "operation": "add",
+            "value": "rulesetData.trainerClasses[character.trainerClass].hitDie + character.stats.constitution.modifier"
+          },
+          {
+            "target": "character.currentHP",
+            "operation": "add",
+            "value": "rulesetData.trainerClasses[character.trainerClass].hitDie + character.stats.constitution.modifier"
+          },
+          {
+            "target": "character.skills",
+            "operation": "allocateSkillPoints",
+            "value": "{{skillPointAllocations}}",
+            "condition": "{{skillPointAllocations}} != null"
+          },
+          {
+            "target": "character.classFeatures",
+            "operation": "addFeatures",
+            "value": "{{chosenFeatures}}",
+            "condition": "{{chosenFeatures}} != null && {{chosenFeatures}}.length > 0"
+          }
+        ]
       }
     ]
   },
@@ -1732,7 +2031,7 @@
     "GameSetup": {
       "systemPrompt": "You are a creative storyteller helping craft a Pokemon trainer's origin story. Create compelling adventure hooks, vivid world details, and meaningful character choices. Never limit yourself to existing data - if something doesn't exist, create it as part of the world's expanding canon. Your goal is to make the player excited about their upcoming journey through imaginative world-building and character development.",
       "phaseObjective": "Create an engaging trainer origin story with class selection, starter Pokemon choice, and compelling adventure setup",
-      "availableFunctions": ["select_trainer_class", "choose_starter_pokemon"],
+      "availableFunctions": ["select_trainer_class", "choose_starter_pokemon", "create_player_character", "get_character_stats_schema", "define_new_class"],
       "contextElements": [
         "Adventure themes and storytelling opportunities",
         "Creative trainer class options and their narrative roles",
@@ -1766,7 +2065,7 @@
     "Combat": {
       "systemPrompt": "You are directing epic Pokemon battles like anime episodes, where bonds between trainers and Pokemon matter more than raw statistics. Create dramatic combat sequences where trust, strategy, and emotional connections lead to victory. If a move or battle mechanic doesn't exist, invent creative alternatives that enhance the story. Focus on the emotional stakes and relationship dynamics that make each battle meaningful.",
       "phaseObjective": "Create cinematic Pokemon battles that emphasize bonds, strategy, and dramatic storytelling over rigid rule enforcement",
-      "availableFunctions": ["use_move", "switch_pokemon", "use_item_in_battle", "flee_battle"],
+      "availableFunctions": ["use_move", "switch_pokemon", "use_item_in_battle", "flee_battle", "roll_for_initiative"],
       "contextElements": [
         "Trainer-Pokemon bonds and emotional connections",
         "Creative move combinations and battle strategies",
@@ -1778,7 +2077,7 @@
     "LevelUp": {
       "systemPrompt": "You are orchestrating breakthrough moments where Pokemon and trainers grow stronger through their shared bonds. Create emotional evolution ceremonies, meaningful ability discoveries, and celebration moments that reinforce relationships. If standard moves or evolutions don't fit the story, create unique alternatives that reflect the individual Pokemon's personality and journey. Focus on the emotional significance of growth and the deepening bonds between partners.",
       "phaseObjective": "Create meaningful growth experiences that celebrate bonds and unlock new potential through relationship development",
-      "availableFunctions": ["level_up_pokemon", "learn_move", "evolve_pokemon", "upgrade_trainer_skills", "level_up_trainer"],
+      "availableFunctions": ["level_up_pokemon", "learn_move", "evolve_pokemon", "upgrade_trainer_skills", "level_up_trainer", "get_player_levelup_benefits", "apply_player_levelup"],
       "contextElements": [
         "Emotional growth moments and breakthrough opportunities",
         "Unique move discoveries that reflect Pokemon personalities",

@@ -18,6 +18,7 @@ using PokeLLM.GameLogic.Services;
 using PokeLLM.Plugins;
 using PokeLLM.Configuration;
 using PokeLLM.Logging;
+using PPokeLLM.Game.Plugins;
 
 namespace PokeLLM.Game.Configuration;
 
