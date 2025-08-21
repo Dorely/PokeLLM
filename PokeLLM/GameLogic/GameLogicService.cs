@@ -154,7 +154,6 @@ public interface IGameLogicService
     Task<AdvantageD20Result> RollD20WithAdvantageAsync();
     Task<AdvantageD20Result> RollD20WithDisadvantageAsync();
     Task<DiceRollResult> RollDiceAsync(int sides, int count = 1);
-    Task<DiceRollResult> RollDiceAsync(string diceNotation);
     Task<SkillCheckResult> MakeSkillCheckAsync(string statName, int difficultyClass, bool advantage = false, bool disadvantage = false, int modifier = 0);
     Task<RandomDecisionResult> MakeRandomDecisionAsync(int numberOfOptions);
     Task<RandomDecisionResult> MakeRandomDecisionFromOptionsAsync(List<string> options);
@@ -205,73 +204,6 @@ public class GameLogicService : IGameLogicService
         };
 
         return result;
-    }
-
-    public async Task<DiceRollResult> RollDiceAsync(string diceNotation)
-    {
-        await Task.Yield();
-        
-        try
-        {
-            // Parse dice notation like "1d8", "2d6", "3d4+2"
-            var notation = diceNotation.ToLower().Trim();
-            
-            // Handle simple cases like "1d8"
-            if (notation.Contains('d'))
-            {
-                var parts = notation.Split('d');
-                if (parts.Length == 2)
-                {
-                    var count = int.Parse(parts[0]);
-                    var sidesStr = parts[1];
-                    
-                    // Handle modifiers like "+2" or "-1"
-                    var modifier = 0;
-                    if (sidesStr.Contains('+'))
-                    {
-                        var modParts = sidesStr.Split('+');
-                        sidesStr = modParts[0];
-                        modifier = int.Parse(modParts[1]);
-                    }
-                    else if (sidesStr.Contains('-'))
-                    {
-                        var modParts = sidesStr.Split('-');
-                        sidesStr = modParts[0];
-                        modifier = -int.Parse(modParts[1]);
-                    }
-                    
-                    var sides = int.Parse(sidesStr);
-                    
-                    // Roll the dice
-                    var baseResult = await RollDiceAsync(sides, count);
-                    if (baseResult.Success)
-                    {
-                        baseResult.Total += modifier;
-                        baseResult.DiceNotation = diceNotation;
-                        baseResult.Message = $"Rolled {diceNotation}: {string.Join(", ", baseResult.Rolls)}" + 
-                                           (modifier != 0 ? $" {modifier:+#;-#;+0}" : "") + 
-                                           $" = {baseResult.Total}";
-                    }
-                    return baseResult;
-                }
-            }
-            
-            return new DiceRollResult
-            {
-                Success = false,
-                Error = $"Invalid dice notation: {diceNotation}",
-                DiceNotation = diceNotation
-            };
-        }
-        catch (Exception ex)
-        {
-            return new DiceRollResult
-            {
-                Success = false,
-                Error = $"Error parsing dice notation '{diceNotation}': {ex.Message}",
-                DiceNotation = diceNotation
-            };
-        }
     }
 
     public async Task<AdvantageD20Result> RollD20WithAdvantageAsync()
