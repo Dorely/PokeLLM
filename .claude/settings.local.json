@@ -18,7 +18,8 @@
       "mcp__serena__list_dir",
       "mcp__serena__find_file",
       "mcp__sequential-thinking__sequentialthinking",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Program.New.cs\")"
     ],
     "deny": []
   }

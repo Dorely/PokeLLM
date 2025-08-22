@@ -79,14 +79,55 @@ public static class AgentServiceExtensions
 {
     public static IServiceCollection AddGameAgents(this IServiceCollection services)
     {
-        services.AddSingleton<IAgentFactory, AgentFactory>();
         services.AddSingleton<IIntentClassifier, LLMIntentClassifier>();
         
-        // Register individual agent types for DI
-        services.AddTransient<SetupAgent>();
-        services.AddTransient<GMSupervisorAgent>();
-        services.AddTransient<NarratorAgent>();
-        services.AddTransient<MechanicsAgent>();
+        // Register the kernel builder
+        services.AddSingleton<GameKernelBuilder>();
+        
+        // Register a factory method for creating the agent manager
+        services.AddSingleton<IGameAgentManager>(provider =>
+        {
+            var kernelBuilder = provider.GetRequiredService<GameKernelBuilder>();
+            var kernel = kernelBuilder.Build();
+            
+            var agentManager = new GameAgentManager(
+                provider.GetRequiredService<ILogger<GameAgentManager>>());
+
+            // Create and register all agents
+            var agents = new IGameAgent[]
+            {
+                new SetupAgent(
+                    kernel,
+                    provider.GetRequiredService<ILogger<SetupAgent>>(),
+                    provider.GetRequiredService<IEventLog>()),
+                
+                new NarratorAgent(
+                    kernel,
+                    provider.GetRequiredService<ILogger<NarratorAgent>>()),
+                
+                new MechanicsAgent(
+                    kernel,
+                    provider.GetRequiredService<ILogger<MechanicsAgent>>(),
+                    provider.GetRequiredService<RandomNumberService>(),
+                    provider.GetRequiredService<IEventLog>())
+            };
+
+            foreach (var agent in agents)
+            {
+                agentManager.RegisterAgent(agent);
+            }
+
+            // Create GM Supervisor after other agents are registered
+            var supervisorAgent = new GMSupervisorAgent(
+                kernel,
+                provider.GetRequiredService<ILogger<GMSupervisorAgent>>(),
+                provider.GetRequiredService<IIntentClassifier>(),
+                agentManager);
+
+            agentManager.RegisterAgent(supervisorAgent);
+
+            return agentManager;
+        });
 
         return services;
     }
