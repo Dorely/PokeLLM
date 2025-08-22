@@ -8,6 +8,7 @@ namespace PokeLLM.Agents;
 public interface IIntentClassifier
 {
     Task<GameIntent> ClassifyAsync(string userInput, GameContext context, CancellationToken cancellationToken = default);
+    Task<GameIntent> ClassifyIntentAsync(string userInput, GameContext context, CancellationToken cancellationToken = default);
     Task<(GameIntent Intent, double Confidence)> ClassifyWithConfidenceAsync(string userInput, GameContext context, CancellationToken cancellationToken = default);
 }
 
@@ -26,6 +27,11 @@ public class LLMIntentClassifier : IIntentClassifier
     {
         var (intent, _) = await ClassifyWithConfidenceAsync(userInput, context, cancellationToken);
         return intent;
+    }
+
+    public async Task<GameIntent> ClassifyIntentAsync(string userInput, GameContext context, CancellationToken cancellationToken = default)
+    {
+        return await ClassifyAsync(userInput, context, cancellationToken);
     }
 
     public async Task<(GameIntent Intent, double Confidence)> ClassifyWithConfidenceAsync(string userInput, GameContext context, CancellationToken cancellationToken = default)
@@ -134,6 +140,11 @@ public class RuleBasedIntentClassifier : IIntentClassifier
         }
         
         return Task.FromResult(GameIntent.Unknown);
+    }
+
+    public async Task<GameIntent> ClassifyIntentAsync(string userInput, GameContext context, CancellationToken cancellationToken = default)
+    {
+        return await ClassifyAsync(userInput, context, cancellationToken);
     }
 
     public async Task<(GameIntent Intent, double Confidence)> ClassifyWithConfidenceAsync(string userInput, GameContext context, CancellationToken cancellationToken = default)

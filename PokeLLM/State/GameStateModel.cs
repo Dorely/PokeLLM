@@ -100,6 +100,12 @@ public class PlayerState
     [JsonPropertyName("level")]
     public int Level { get; set; } = 1;
 
+    [JsonPropertyName("currentHP")]
+    public int HP { get; set; } = 20;
+
+    [JsonPropertyName("maxHP")]
+    public int MaxHP { get; set; } = 20;
+
     [JsonPropertyName("stats")]
     public Stats Stats { get; set; } = new();
 

@@ -14,6 +14,7 @@ public enum GameIntent
     Examine,
     Talk,
     Search,
+    Explore,
     
     // Combat intents
     Attack,
@@ -23,6 +24,7 @@ public enum GameIntent
     
     // Character management
     CheckStatus,
+    CheckSkill,
     ManageInventory,
     Rest,
     LevelUp,

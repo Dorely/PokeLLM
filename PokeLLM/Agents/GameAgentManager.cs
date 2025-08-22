@@ -7,6 +7,7 @@ public interface IGameAgentManager
 {
     void RegisterAgent(IGameAgent agent);
     IGameAgent? GetAgent(string agentId);
+    T? GetAgent<T>() where T : class, IGameAgent;
     IEnumerable<IGameAgent> GetAllAgents();
     Task<Dictionary<string, object>> GetMetricsAsync();
 }
@@ -46,6 +47,14 @@ public class GameAgentManager : IGameAgentManager, IDisposable
         lock (_lock)
         {
             return _agents.GetValueOrDefault(agentId);
+        }
+    }
+
+    public T? GetAgent<T>() where T : class, IGameAgent
+    {
+        lock (_lock)
+        {
+            return _agents.Values.OfType<T>().FirstOrDefault();
         }
     }
 

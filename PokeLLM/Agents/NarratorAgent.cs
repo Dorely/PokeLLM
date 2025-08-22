@@ -1,10 +1,14 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using PokeLLM.Memory;
 
 namespace PokeLLM.Agents;
 
 public class NarratorAgent : BaseGameAgent
 {
+    private readonly MemoryEnabledAgentThreadFactory _threadFactory;
+
     public override string Id => "narrator-agent";
     public override string Name => "Narrator Agent";
     
@@ -48,51 +52,114 @@ public class NarratorAgent : BaseGameAgent
         - Contradict previous established facts
         """;
 
-    public NarratorAgent(Kernel kernel, ILogger<NarratorAgent> logger) 
+    public NarratorAgent(
+        Kernel kernel, 
+        ILogger<NarratorAgent> logger,
+        MemoryEnabledAgentThreadFactory threadFactory) 
         : base(kernel, logger)
     {
+        _threadFactory = threadFactory;
+    }
+
+    /// <summary>
+    /// Creates a memory-enabled thread for this agent
+    /// </summary>
+    public async Task<MemoryEnabledAgentThread> CreateThreadAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        return await _threadFactory.CreateNarratorThreadAsync(sessionId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Enhanced invoke method that uses memory-enabled threads
+    /// </summary>
+    public async IAsyncEnumerable<ChatMessageContent> InvokeWithMemoryAsync(
+        MemoryEnabledAgentThread thread,
+        string userMessage,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        // Add user message to thread (this will notify memory components)
+        await thread.AddMessageAsync(new ChatMessageContent(AuthorRole.User, userMessage), cancellationToken);
+
+        // Create enhanced chat history with memory context
+        var agentChat = await thread.CreateAgentChatHistoryAsync(Instructions, cancellationToken);
+
+        // Get response from the chat service
+        var responses = await _chatService.GetChatMessageContentsAsync(
+            agentChat,
+            executionSettings: GetExecutionSettings(),
+            cancellationToken: cancellationToken);
+        
+        var response = responses.FirstOrDefault() ?? new ChatMessageContent(AuthorRole.Assistant, "No response generated.");
+
+        // Add assistant response to thread
+        await thread.AddMessageAsync(response, cancellationToken);
+
+        _logger.LogInformation("Narrator Agent generated response with memory context for session {SessionId}", thread.SessionId);
+
+        yield return response;
     }
 
     public async Task<string> NarrateActionAsync(
         string playerAction,
         string mechanicalResult,
         GameContext context,
+        MemoryEnabledAgentThread? thread = null,
         CancellationToken cancellationToken = default)
     {
         var prompt = CreateNarrationPrompt(playerAction, mechanicalResult, context);
         
-        var chat = new Microsoft.SemanticKernel.ChatCompletion.ChatHistory();
+        if (thread != null)
+        {
+            // Use memory-enhanced approach
+            var responses = InvokeWithMemoryAsync(thread, prompt, cancellationToken);
+            await foreach (var memoryResponse in responses)
+            {
+                return memoryResponse.Content ?? "The action unfolds before you.";
+            }
+        }
+
+        // Fall back to basic approach if no thread provided
+        var chat = new ChatHistory();
         chat.AddSystemMessage(Instructions);
         chat.AddUserMessage(prompt);
 
-        var responses = await _chatService.GetChatMessageContentsAsync(
+        var basicResponses = await _chatService.GetChatMessageContentsAsync(
             chat,
             executionSettings: GetExecutionSettings(),
             cancellationToken: cancellationToken);
         
-        var response = responses.FirstOrDefault();
-
+        var response = basicResponses.FirstOrDefault();
         return response.Content ?? "The action unfolds before you.";
     }
 
     public async Task<string> DescribeLocationAsync(
         string locationName,
         GameContext context,
+        MemoryEnabledAgentThread? thread = null,
         CancellationToken cancellationToken = default)
     {
         var prompt = CreateLocationPrompt(locationName, context);
         
-        var chat = new Microsoft.SemanticKernel.ChatCompletion.ChatHistory();
+        if (thread != null)
+        {
+            var responses = InvokeWithMemoryAsync(thread, prompt, cancellationToken);
+            await foreach (var memoryResponse in responses)
+            {
+                return memoryResponse.Content ?? $"You find yourself in {locationName}.";
+            }
+        }
+
+        // Fall back to basic approach
+        var chat = new ChatHistory();
         chat.AddSystemMessage(Instructions);
         chat.AddUserMessage(prompt);
 
-        var responses = await _chatService.GetChatMessageContentsAsync(
+        var basicResponses = await _chatService.GetChatMessageContentsAsync(
             chat,
             executionSettings: GetExecutionSettings(),
             cancellationToken: cancellationToken);
         
-        var response = responses.FirstOrDefault();
-
+        var response = basicResponses.FirstOrDefault();
         return response.Content ?? $"You find yourself in {locationName}.";
     }
 
@@ -100,21 +167,31 @@ public class NarratorAgent : BaseGameAgent
         string npcName,
         string context,
         string playerInput,
+        MemoryEnabledAgentThread? thread = null,
         CancellationToken cancellationToken = default)
     {
         var prompt = CreateDialoguePrompt(npcName, context, playerInput);
         
-        var chat = new Microsoft.SemanticKernel.ChatCompletion.ChatHistory();
+        if (thread != null)
+        {
+            var responses = InvokeWithMemoryAsync(thread, prompt, cancellationToken);
+            await foreach (var memoryResponse in responses)
+            {
+                return memoryResponse.Content ?? $"{npcName} looks at you thoughtfully.";
+            }
+        }
+
+        // Fall back to basic approach
+        var chat = new ChatHistory();
         chat.AddSystemMessage(Instructions);
         chat.AddUserMessage(prompt);
 
-        var responses = await _chatService.GetChatMessageContentsAsync(
+        var basicResponses = await _chatService.GetChatMessageContentsAsync(
             chat,
             executionSettings: GetExecutionSettings(),
             cancellationToken: cancellationToken);
         
-        var response = responses.FirstOrDefault();
-
+        var response = basicResponses.FirstOrDefault();
         return response.Content ?? $"{npcName} looks at you thoughtfully.";
     }
 
@@ -134,6 +211,7 @@ public class NarratorAgent : BaseGameAgent
             - Keep the focus on HOW the action unfolds
             - Maintain Pokemon universe authenticity
             - Write in present tense with 2-3 paragraphs maximum
+            - Use any relevant past events or user information to enhance the narrative
             
             Focus on visual, auditory, and emotional elements that bring the scene to life.
             """;
@@ -155,6 +233,7 @@ public class NarratorAgent : BaseGameAgent
             - Sounds, smells, and other sensory elements
             - Any notable landmarks or features
             - The emotional tone of the location
+            - Reference any past events that occurred here if relevant
             
             Keep it concise but evocative (2-3 paragraphs).
             """;
@@ -175,6 +254,7 @@ public class NarratorAgent : BaseGameAgent
             - Responds appropriately to the player's input
             - Includes body language and mannerisms
             - Stays true to established character traits
+            - References past interactions with this NPC if any exist
             
             Format as: "[Dialogue]" followed by narrative description of their actions/expressions.
             """;

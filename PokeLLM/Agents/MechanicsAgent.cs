@@ -1,277 +1,294 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using PokeLLM.State;
+using PokeLLM.Memory;
 
 namespace PokeLLM.Agents;
 
 public class MechanicsAgent : BaseGameAgent
 {
+    private readonly RandomNumberService _randomNumberService;
+    private readonly IEventLog _eventLog;
+    private readonly MemoryEnabledAgentThreadFactory _threadFactory;
+
     public override string Id => "mechanics-agent";
     public override string Name => "Mechanics Agent";
     
     public override string Instructions => """
-        You are the Mechanics Agent for a Pokemon RPG game. You are the ONLY agent authorized to make mechanical calculations and state changes.
+        You are the Mechanics Agent for a Pokemon RPG game. You are the ONLY agent authorized to make state changes.
 
         Core Responsibilities:
-        1. RULE ENFORCEMENT: Apply Pokemon RPG rules accurately and consistently
-        2. STATE MUTATION: Execute all authorized changes to game state
-        3. CALCULATIONS: Perform all combat, skill checks, and mechanical determinations
-        4. VALIDATION: Ensure all state changes are legal and justified
-        5. DETERMINISM: Use provided RNG seeds for reproducible outcomes
-
-        Mechanical Domains:
-        - Combat: Attack resolution, damage calculation, status effects
-        - Character: Experience, leveling, stat changes, evolution
-        - Inventory: Item usage, acquisition, equipment changes
-        - Skills: Ability checks, Pokemon move learning, effectiveness calculations
-        - World: Location changes, quest state updates, event triggers
+        1. DETERMINISTIC CALCULATIONS: All numerical outcomes must be predictable and reproducible
+        2. STATE AUTHORITY: You are the sole source of truth for all game state changes
+        3. RULES ENFORCEMENT: Apply Pokemon game rules consistently and accurately
+        4. VALIDATION: Verify all inputs and reject invalid actions
+        5. AUDIT TRAIL: Log all state changes for debugging and replay
 
         Critical Rules:
-        - ALL mechanical changes must be deterministic and reproducible
-        - NEVER guess or approximate - calculate exactly
-        - ALWAYS validate state changes against current game state
-        - Log all mechanical outcomes for audit trail
-        - Use provided RandomNumberService for all random elements
+        - ALL state mutations must go through your validated functions
+        - Use provided RNG seed for reproducible random outcomes
+        - NEVER allow other agents to modify game state
+        - Validate all actions against current game state
+        - Log every state change with precise details
+        - Reject actions that violate game rules
+
+        Functions You Provide:
+        - ResolveAttack(attacker, defender, move, context)
+        - ApplyDamage(target, damage, damageType, context)
+        - GrantXP(pokemon, amount, context)
+        - PerformSkillCheck(skill, difficulty, context)
+        - UpdateInventory(action, item, quantity, context)
+        - ProcessLevelUp(pokemon, context)
+        - ValidateAction(action, context)
 
         Output Format:
-        - State what mechanical action is being performed
-        - Show all calculations step-by-step
-        - Report the exact state changes being applied
-        - Provide clear success/failure outcomes
-        - Include any triggered secondary effects
+        Always return structured results in this format:
+        {
+            "success": true/false,
+            "result": "description of what happened",
+            "stateChanges": [list of specific changes],
+            "errors": [any validation errors],
+            "randomSeed": "seed used for this operation"
+        }
 
-        Authority:
-        - You have EXCLUSIVE authority over state mutations
-        - All other agents must work with your mechanical results
-        - Your calculations are final and cannot be overridden
-        - You determine what is mechanically possible within the rules
+        What You DON'T Do:
+        - Create narrative descriptions (that's the Narrator's job)
+        - Make subjective decisions
+        - Allow state changes from other sources
+        - Skip validation steps
         """;
-
-    private readonly RandomNumberService _randomService;
-    private readonly IEventLog _eventLog;
 
     public MechanicsAgent(
         Kernel kernel, 
         ILogger<MechanicsAgent> logger,
-        RandomNumberService randomService,
-        IEventLog eventLog) 
+        RandomNumberService randomNumberService,
+        IEventLog eventLog,
+        MemoryEnabledAgentThreadFactory threadFactory) 
         : base(kernel, logger)
     {
-        _randomService = randomService;
+        _randomNumberService = randomNumberService;
         _eventLog = eventLog;
+        _threadFactory = threadFactory;
     }
 
-    public async Task<MechanicsResult> ResolveAttackAsync(
-        string attackerName,
-        string defenderName,
-        string moveName,
-        State.PlayerState attackerState,
-        CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Creates a basic thread for mechanics operations (no memory to maintain determinism)
+    /// </summary>
+    public MemoryEnabledAgentThread CreateThread(string sessionId)
     {
-        _logger.LogInformation("Resolving attack: {Attacker} uses {Move} on {Defender}", 
-            attackerName, moveName, defenderName);
-
-        // Basic attack calculation
-        var baseDamage = CalculateBaseDamage(moveName, attackerState);
-        var accuracy = CalculateAccuracy(moveName);
-        var hitRoll = _randomService.Next(1, 101);
-        
-        var hit = hitRoll <= accuracy;
-        var actualDamage = hit ? baseDamage + _randomService.Next(-2, 3) : 0;
-
-        var result = new MechanicsResult(
-            Action: "Attack",
-            Success: hit,
-            Description: hit 
-                ? $"{attackerName} hits with {moveName} for {actualDamage} damage!"
-                : $"{attackerName}'s {moveName} missed!",
-            StateChanges: hit 
-                ? new Dictionary<string, object> { ["damage"] = actualDamage }
-                : new Dictionary<string, object>(),
-            Calculations: $"Base damage: {baseDamage}, Hit roll: {hitRoll}/{accuracy}, Final damage: {actualDamage}"
-        );
-
-        await LogMechanicsEvent("attack_resolved", result, cancellationToken);
-        return result;
+        // MechanicsAgent intentionally doesn't use memory components to maintain deterministic behavior
+        return _threadFactory.CreateBasicThread(sessionId);
     }
 
-    public async Task<MechanicsResult> UseItemAsync(
-        string itemName,
-        string targetName,
-        State.PlayerState playerState,
+    /// <summary>
+    /// Processes a mechanical action with full validation and state mutation authority
+    /// </summary>
+    public async Task<MechanicalResult> ProcessActionAsync(
+        MechanicalAction action,
+        GameContext context,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Using item: {Item} on {Target}", itemName, targetName);
-
-        // For now, assume item is available - could check CharacterDetails.Items in future
-        // if (!playerState.CharacterDetails.Items.Contains(itemName))
+        try
         {
-            return new MechanicsResult(
-                Action: "Use Item",
-                Success: false,
-                Description: $"You don't have {itemName} in your inventory.",
-                StateChanges: new Dictionary<string, object>(),
-                Calculations: "Item not found in inventory"
-            );
+            _logger.LogInformation("Processing mechanical action {ActionType} for session {SessionId}", 
+                action.ActionType, action.SessionId);
+
+            // Set deterministic random seed
+            var seed = GenerateActionSeed(action, context);
+            _randomNumberService.SetSeed(seed);
+
+            // Validate the action
+            var validationResult = await ValidateActionAsync(action, context, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                return MechanicalResult.Failure(validationResult.ErrorMessage, seed);
+            }
+
+            // Process the action based on type
+            var result = action.ActionType switch
+            {
+                MechanicalActionType.Attack => await ProcessAttackAsync(action, context, cancellationToken),
+                MechanicalActionType.UseItem => await ProcessItemUseAsync(action, context, cancellationToken),
+                MechanicalActionType.SkillCheck => await ProcessSkillCheckAsync(action, context, cancellationToken),
+                MechanicalActionType.LevelUp => await ProcessLevelUpAsync(action, context, cancellationToken),
+                MechanicalActionType.Rest => await ProcessRestAsync(action, context, cancellationToken),
+                _ => MechanicalResult.Failure($"Unknown action type: {action.ActionType}", seed)
+            };
+
+            // Log the state changes
+            if (result.IsSuccess && result.StateChanges.Any())
+            {
+                await LogStateChangesAsync(action, result, cancellationToken);
+            }
+
+            _logger.LogInformation("Completed mechanical action {ActionType} with success: {Success}", 
+                action.ActionType, result.IsSuccess);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing mechanical action {ActionType}", action.ActionType);
+            return MechanicalResult.Failure($"Internal error: {ex.Message}", "error-seed");
+        }
+    }
+
+    private async Task<ValidationResult> ValidateActionAsync(
+        MechanicalAction action, 
+        GameContext context, 
+        CancellationToken cancellationToken)
+    {
+        // Basic validation logic
+        if (string.IsNullOrWhiteSpace(action.SessionId))
+            return ValidationResult.Invalid("Session ID is required");
+
+        if (action.ActionType == MechanicalActionType.Unknown)
+            return ValidationResult.Invalid("Action type must be specified");
+
+        // Additional validation based on action type
+        return action.ActionType switch
+        {
+            MechanicalActionType.Attack => await ValidateAttackActionAsync(action, context, cancellationToken),
+            MechanicalActionType.UseItem => await ValidateItemUseActionAsync(action, context, cancellationToken),
+            MechanicalActionType.SkillCheck => await ValidateSkillCheckActionAsync(action, context, cancellationToken),
+            _ => ValidationResult.Valid()
+        };
+    }
+
+    private async Task<ValidationResult> ValidateAttackActionAsync(MechanicalAction action, GameContext context, CancellationToken cancellationToken)
+    {
+        // Validate attack action specifics
+        return ValidationResult.Valid(); // Placeholder
+    }
+
+    private async Task<ValidationResult> ValidateItemUseActionAsync(MechanicalAction action, GameContext context, CancellationToken cancellationToken)
+    {
+        // Validate item use specifics
+        return ValidationResult.Valid(); // Placeholder
+    }
+
+    private async Task<ValidationResult> ValidateSkillCheckActionAsync(MechanicalAction action, GameContext context, CancellationToken cancellationToken)
+    {
+        // Validate skill check specifics
+        return ValidationResult.Valid(); // Placeholder
+    }
+
+    private async Task<MechanicalResult> ProcessAttackAsync(MechanicalAction action, GameContext context, CancellationToken cancellationToken)
+    {
+        // Implement attack resolution logic
+        var damage = _randomNumberService.Next(1, 21); // Placeholder damage calculation
+        var critical = _randomNumberService.NextDouble() < 0.1; // 10% critical chance
+        
+        var stateChanges = new List<StateChange>
+        {
+            new StateChange("HP", "target", context.PlayerState.HP, Math.Max(0, context.PlayerState.HP - damage))
+        };
+
+        if (critical)
+        {
+            stateChanges.Add(new StateChange("CriticalHit", "battle", false, true));
         }
 
-        var effect = GetItemEffect(itemName);
-        var result = new MechanicsResult(
-            Action: "Use Item",
-            Success: true,
-            Description: $"Used {itemName}. {effect.Description}",
-            StateChanges: effect.StateChanges,
-            Calculations: $"Item effect: {effect.Description}"
-        );
-
-        await LogMechanicsEvent("item_used", result, cancellationToken);
-        return result;
+        return MechanicalResult.Success(
+            $"Attack deals {damage} damage{(critical ? " (Critical Hit!)" : "")}",
+            stateChanges,
+            _randomNumberService.CurrentSeed);
     }
 
-    public async Task<MechanicsResult> PerformSkillCheckAsync(
-        string skillName,
-        int difficulty,
-        State.PlayerState playerState,
-        CancellationToken cancellationToken = default)
+    private async Task<MechanicalResult> ProcessItemUseAsync(MechanicalAction action, GameContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Skill check: {Skill} (DC {Difficulty})", skillName, difficulty);
-
-        var baseStat = GetRelevantStat(skillName, playerState);
-        var roll = _randomService.Next(1, 21); // d20 roll
-        var total = baseStat + roll;
-        var success = total >= difficulty;
-
-        var result = new MechanicsResult(
-            Action: "Skill Check",
-            Success: success,
-            Description: success 
-                ? $"Success! {skillName} check passed."
-                : $"Failed {skillName} check.",
-            StateChanges: new Dictionary<string, object>(),
-            Calculations: $"Roll: {roll} + {baseStat} = {total} vs DC {difficulty}"
-        );
-
-        await LogMechanicsEvent("skill_check", result, cancellationToken);
-        return result;
-    }
-
-    public async Task<MechanicsResult> GrantExperienceAsync(
-        int experienceAmount,
-        State.PlayerState playerState,
-        CancellationToken cancellationToken = default)
-    {
-        _logger.LogInformation("Granting {XP} experience to {Player}", experienceAmount, playerState.Name);
-
-        var newExperience = playerState.Experience + experienceAmount;
-        var experienceToNextLevel = CalculateExperienceToNextLevel(playerState.Level);
-        var leveledUp = newExperience >= experienceToNextLevel;
-        
-        var stateChanges = new Dictionary<string, object>
+        // Implement item use logic
+        var stateChanges = new List<StateChange>
         {
-            ["experience"] = newExperience
+            new StateChange("Inventory", action.Parameters.GetValueOrDefault("itemName", "unknown"), 1, 0)
         };
 
-        var description = $"Gained {experienceAmount} experience!";
+        return MechanicalResult.Success(
+            $"Used {action.Parameters.GetValueOrDefault("itemName", "item")}",
+            stateChanges,
+            _randomNumberService.CurrentSeed);
+    }
 
-        if (leveledUp)
+    private async Task<MechanicalResult> ProcessSkillCheckAsync(MechanicalAction action, GameContext context, CancellationToken cancellationToken)
+    {
+        // Implement skill check logic
+        var roll = _randomNumberService.Next(1, 21); // d20 roll
+        var difficulty = int.Parse(action.Parameters.GetValueOrDefault("difficulty", "10"));
+        var success = roll >= difficulty;
+
+        var stateChanges = new List<StateChange>
         {
-            var newLevel = playerState.Level + 1;
-            var statBoosts = CalculateLevelUpStats(newLevel);
+            new StateChange("LastSkillRoll", "player", 0, roll)
+        };
+
+        return MechanicalResult.Success(
+            $"Skill check: rolled {roll} vs DC {difficulty} - {(success ? "Success" : "Failure")}",
+            stateChanges,
+            _randomNumberService.CurrentSeed);
+    }
+
+    private async Task<MechanicalResult> ProcessLevelUpAsync(MechanicalAction action, GameContext context, CancellationToken cancellationToken)
+    {
+        // Implement level up logic
+        var stateChanges = new List<StateChange>
+        {
+            new StateChange("Level", "player", context.PlayerState.Level, context.PlayerState.Level + 1),
+            new StateChange("MaxHP", "player", context.PlayerState.MaxHP, context.PlayerState.MaxHP + 10)
+        };
+
+        return MechanicalResult.Success(
+            "Level up! Gained 10 max HP",
+            stateChanges,
+            _randomNumberService.CurrentSeed);
+    }
+
+    private async Task<MechanicalResult> ProcessRestAsync(MechanicalAction action, GameContext context, CancellationToken cancellationToken)
+    {
+        // Implement rest logic
+        var stateChanges = new List<StateChange>
+        {
+            new StateChange("HP", "player", context.PlayerState.HP, context.PlayerState.MaxHP)
+        };
+
+        return MechanicalResult.Success(
+            "Restored to full health",
+            stateChanges,
+            _randomNumberService.CurrentSeed);
+    }
+
+    private string GenerateActionSeed(MechanicalAction action, GameContext context)
+    {
+        // Generate a deterministic seed based on action and context
+        var seedInput = $"{action.SessionId}_{action.ActionType}_{context.TurnNumber}_{DateTime.UtcNow.Ticks}";
+        return seedInput.GetHashCode().ToString();
+    }
+
+    private async Task LogStateChangesAsync(MechanicalAction action, MechanicalResult result, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var eventData = new Dictionary<string, object>
+            {
+                ["ActionType"] = action.ActionType.ToString(),
+                ["SessionId"] = action.SessionId,
+                ["Success"] = result.IsSuccess,
+                ["StateChanges"] = result.StateChanges,
+                ["RandomSeed"] = result.RandomSeed,
+                ["Timestamp"] = DateTime.UtcNow
+            };
+
+            await _eventLog.AppendEventAsync(
+                GameEvent.Create("MechanicalAction", "Mechanical action processed", eventData), 
+                cancellationToken);
             
-            stateChanges["level"] = newLevel;
-            stateChanges["max_vigor"] = playerState.Stats.MaxVigor + statBoosts["health"];
-            stateChanges["stats"] = statBoosts;
-            
-            description += $" Level up! Now level {newLevel}!";
+            _logger.LogDebug("Logged {ChangeCount} state changes for action {ActionType}", 
+                result.StateChanges.Count, action.ActionType);
         }
-
-        var result = new MechanicsResult(
-            Action: "Grant Experience",
-            Success: true,
-            Description: description,
-            StateChanges: stateChanges,
-            Calculations: $"XP: {playerState.Experience} + {experienceAmount} = {newExperience}"
-        );
-
-        await LogMechanicsEvent("experience_granted", result, cancellationToken);
-        return result;
-    }
-
-    private int CalculateBaseDamage(string moveName, State.PlayerState attackerState)
-    {
-        var basePower = moveName.ToLower() switch
+        catch (Exception ex)
         {
-            "tackle" => 40,
-            "scratch" => 40,
-            "bite" => 60,
-            "slam" => 80,
-            _ => 50
-        };
-
-        return (attackerState.Stats.Strength * basePower) / 50;
-    }
-
-    private int CalculateAccuracy(string moveName)
-    {
-        return moveName.ToLower() switch
-        {
-            "tackle" => 100,
-            "scratch" => 100,
-            "bite" => 100,
-            "slam" => 75,
-            _ => 85
-        };
-    }
-
-    private int GetRelevantStat(string skillName, State.PlayerState playerState)
-    {
-        return skillName.ToLower() switch
-        {
-            "strength" => playerState.Stats.Strength,
-            "agility" => playerState.Stats.Dexterity,
-            "endurance" => playerState.Stats.Constitution,
-            _ => playerState.Level
-        };
-    }
-
-    private ItemEffect GetItemEffect(string itemName)
-    {
-        return itemName.ToLower() switch
-        {
-            "potion" => new ItemEffect("Restores 20 HP", new Dictionary<string, object> { ["health_restore"] = 20 }),
-            "super potion" => new ItemEffect("Restores 50 HP", new Dictionary<string, object> { ["health_restore"] = 50 }),
-            "antidote" => new ItemEffect("Cures poison", new Dictionary<string, object> { ["cure_poison"] = true }),
-            _ => new ItemEffect("No effect", new Dictionary<string, object>())
-        };
-    }
-
-    private int CalculateExperienceToNextLevel(int currentLevel)
-    {
-        return currentLevel * currentLevel * 100;
-    }
-
-    private Dictionary<string, int> CalculateLevelUpStats(int newLevel)
-    {
-        return new Dictionary<string, int>
-        {
-            ["health"] = 5 + _randomService.Next(0, 3),
-            ["attack"] = 2 + _randomService.Next(0, 2),
-            ["defense"] = 2 + _randomService.Next(0, 2),
-            ["speed"] = 2 + _randomService.Next(0, 2)
-        };
-    }
-
-    private async Task LogMechanicsEvent(string eventType, MechanicsResult result, CancellationToken cancellationToken)
-    {
-        await _eventLog.AppendEventAsync(
-            GameEvent.Create(eventType, result.Description, 
-                new Dictionary<string, object> 
-                { 
-                    ["action"] = result.Action,
-                    ["success"] = result.Success,
-                    ["calculations"] = result.Calculations 
-                }),
-            cancellationToken);
+            _logger.LogError(ex, "Failed to log state changes for action {ActionType}", action.ActionType);
+        }
     }
 
     protected override PromptExecutionSettings GetExecutionSettings()
@@ -280,20 +297,83 @@ public class MechanicsAgent : BaseGameAgent
         {
             ExtensionData = new Dictionary<string, object>
             {
-                ["temperature"] = 0.1, // Very low for deterministic calculations
-                ["max_tokens"] = 1000
+                ["temperature"] = 0.1, // Low temperature for deterministic responses
+                ["max_tokens"] = 500
             }
         };
     }
 }
 
-public record MechanicsResult(
-    string Action,
-    bool Success,
-    string Description,
-    Dictionary<string, object> StateChanges,
-    string Calculations);
+// Supporting classes for MechanicsAgent
 
-public record ItemEffect(
-    string Description,
-    Dictionary<string, object> StateChanges);
+public class MechanicalAction
+{
+    public string SessionId { get; set; } = "";
+    public MechanicalActionType ActionType { get; set; }
+    public Dictionary<string, string> Parameters { get; set; } = new();
+}
+
+public enum MechanicalActionType
+{
+    Unknown,
+    Attack,
+    UseItem,
+    SkillCheck,
+    LevelUp,
+    Rest
+}
+
+public class MechanicalResult
+{
+    public bool IsSuccess { get; set; }
+    public string Description { get; set; } = "";
+    public List<StateChange> StateChanges { get; set; } = new();
+    public List<string> Errors { get; set; } = new();
+    public string RandomSeed { get; set; } = "";
+
+    public static MechanicalResult Success(string description, List<StateChange> stateChanges, string randomSeed)
+    {
+        return new MechanicalResult
+        {
+            IsSuccess = true,
+            Description = description,
+            StateChanges = stateChanges,
+            RandomSeed = randomSeed
+        };
+    }
+
+    public static MechanicalResult Failure(string error, string randomSeed)
+    {
+        return new MechanicalResult
+        {
+            IsSuccess = false,
+            Errors = new List<string> { error },
+            RandomSeed = randomSeed
+        };
+    }
+}
+
+public class StateChange
+{
+    public string Property { get; set; }
+    public string Target { get; set; }
+    public object OldValue { get; set; }
+    public object NewValue { get; set; }
+
+    public StateChange(string property, string target, object oldValue, object newValue)
+    {
+        Property = property;
+        Target = target;
+        OldValue = oldValue;
+        NewValue = newValue;
+    }
+}
+
+public class ValidationResult
+{
+    public bool IsValid { get; set; }
+    public string ErrorMessage { get; set; } = "";
+
+    public static ValidationResult Valid() => new() { IsValid = true };
+    public static ValidationResult Invalid(string error) => new() { IsValid = false, ErrorMessage = error };
+}

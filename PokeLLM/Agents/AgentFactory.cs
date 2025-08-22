@@ -2,6 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using PokeLLM.State;
+using PokeLLM.Memory;
+using System;
 
 namespace PokeLLM.Agents;
 
@@ -24,7 +26,7 @@ public class AgentFactory : IAgentFactory
         var agentManager = new GameAgentManager(
             _serviceProvider.GetRequiredService<ILogger<GameAgentManager>>());
 
-        // Create and register all agents
+        // Create and register all agents with memory support
         var agents = new IGameAgent[]
         {
             CreateSetupAgent(kernel),
@@ -55,14 +57,16 @@ public class AgentFactory : IAgentFactory
             kernel,
             _serviceProvider.GetRequiredService<ILogger<GMSupervisorAgent>>(),
             _serviceProvider.GetRequiredService<IIntentClassifier>(),
-            agentManager);
+            agentManager,
+            _serviceProvider.GetRequiredService<MemoryEnabledAgentThreadFactory>());
     }
 
     private NarratorAgent CreateNarratorAgent(Kernel kernel)
     {
         return new NarratorAgent(
             kernel,
-            _serviceProvider.GetRequiredService<ILogger<NarratorAgent>>());
+            _serviceProvider.GetRequiredService<ILogger<NarratorAgent>>(),
+            _serviceProvider.GetRequiredService<MemoryEnabledAgentThreadFactory>());
     }
 
     private MechanicsAgent CreateMechanicsAgent(Kernel kernel)
@@ -71,7 +75,8 @@ public class AgentFactory : IAgentFactory
             kernel,
             _serviceProvider.GetRequiredService<ILogger<MechanicsAgent>>(),
             _serviceProvider.GetRequiredService<RandomNumberService>(),
-            _serviceProvider.GetRequiredService<IEventLog>());
+            _serviceProvider.GetRequiredService<IEventLog>(),
+            _serviceProvider.GetRequiredService<MemoryEnabledAgentThreadFactory>());
     }
 }
 
@@ -79,62 +84,61 @@ public static class AgentServiceExtensions
 {
     public static IServiceCollection AddGameAgents(this IServiceCollection services)
     {
-        // Register the kernel builder
-        services.AddSingleton<GameKernelBuilder>();
+        // Register memory components first
+        services.AddMemoryComponents();
         
-        // Register the kernel itself
+        // Register memory-enabled agent thread factory
+        services.AddSingleton<MemoryEnabledAgentThreadFactory>();
+        
+        // Register the kernel directly without GameKernelBuilder for now
         services.AddSingleton<Kernel>(provider =>
         {
-            var kernelBuilder = provider.GetRequiredService<GameKernelBuilder>();
+            var kernelBuilder = Kernel.CreateBuilder();
+            
+            // Configure AI services (simplified version)
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "test-key";
+            
+            kernelBuilder.AddOpenAIChatCompletion(
+                modelId: "gpt-4o-mini",
+                apiKey: apiKey);
+
+            kernelBuilder.AddOpenAITextEmbeddingGeneration(
+                modelId: "text-embedding-ada-002",
+                apiKey: apiKey);
+                
+            // Configure logging
+            kernelBuilder.Services.AddLogging(builder =>
+            {
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Information);
+            });
+            
             return kernelBuilder.Build();
         });
         
         // Register intent classifier that depends on kernel
         services.AddSingleton<IIntentClassifier, LLMIntentClassifier>();
         
+        // Register agent factory
+        services.AddSingleton<IAgentFactory, AgentFactory>();
+        
         // Register a factory method for creating the agent manager
         services.AddSingleton<IGameAgentManager>(provider =>
         {
             var kernel = provider.GetRequiredService<Kernel>();
+            var factory = provider.GetRequiredService<IAgentFactory>();
             
-            var agentManager = new GameAgentManager(
-                provider.GetRequiredService<ILogger<GameAgentManager>>());
-
-            // Create and register all agents
-            var agents = new IGameAgent[]
-            {
-                new SetupAgent(
-                    kernel,
-                    provider.GetRequiredService<ILogger<SetupAgent>>(),
-                    provider.GetRequiredService<IEventLog>()),
-                
-                new NarratorAgent(
-                    kernel,
-                    provider.GetRequiredService<ILogger<NarratorAgent>>()),
-                
-                new MechanicsAgent(
-                    kernel,
-                    provider.GetRequiredService<ILogger<MechanicsAgent>>(),
-                    provider.GetRequiredService<RandomNumberService>(),
-                    provider.GetRequiredService<IEventLog>())
-            };
-
-            foreach (var agent in agents)
-            {
-                agentManager.RegisterAgent(agent);
-            }
-
-            // Create GM Supervisor after other agents are registered
-            var supervisorAgent = new GMSupervisorAgent(
-                kernel,
-                provider.GetRequiredService<ILogger<GMSupervisorAgent>>(),
-                provider.GetRequiredService<IIntentClassifier>(),
-                agentManager);
-
-            agentManager.RegisterAgent(supervisorAgent);
-
-            return agentManager;
+            // This is a bit of a hack since we can't await in a sync factory method
+            // In a real implementation, this would be restructured
+            return factory.CreateAgentManagerAsync(kernel).GetAwaiter().GetResult();
         });
+
+        // Register state management services
+        services.AddSingleton<RandomNumberService>();
+        
+        // Register game context and orchestration services
+        services.AddScoped<GameSession>();
+        services.AddScoped<GameOrchestrator>();
 
         return services;
     }

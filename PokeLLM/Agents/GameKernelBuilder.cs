@@ -1,106 +1,84 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PokeLLM.Game.Configuration;
-using PokeLLM.State;
+using PokeLLM.Game.VectorStore;
+using PokeLLM.Memory;
 
 namespace PokeLLM.Agents;
 
 public class GameKernelBuilder
 {
-    private readonly IConfiguration _configuration;
-    private readonly List<Type> _plugins = new();
+    private readonly IServiceCollection _services;
 
-    public GameKernelBuilder(IConfiguration configuration)
+    public GameKernelBuilder(IServiceCollection services)
     {
-        _configuration = configuration;
-    }
-
-    public GameKernelBuilder AddPlugin<T>() where T : class
-    {
-        _plugins.Add(typeof(T));
-        return this;
-    }
-
-    public GameKernelBuilder AddMemoryServices()
-    {
-        // Memory services will be configured here
-        return this;
+        _services = services;
     }
 
     public Kernel Build()
     {
         var kernelBuilder = Kernel.CreateBuilder();
-        
-        // Configure LLM provider based on configuration
-        var llmConfig = _configuration.GetSection("LLM").Get<LLMConfig>();
-        if (llmConfig?.Provider == "OpenAI")
-        {
-            var apiKey = _configuration["LLM:ApiKey"] ?? "test-key-for-unit-tests";
-            kernelBuilder.AddOpenAIChatCompletion(
-                modelId: llmConfig.ModelId ?? "gpt-4",
-                apiKey: apiKey);
-        }
-        else if (llmConfig?.Provider == "Ollama")
-        {
-            var endpoint = _configuration["LLM:Endpoint"] ?? "http://localhost:11434";
-            kernelBuilder.AddOllamaChatCompletion(
-                modelId: llmConfig.ModelId ?? "llama2",
-                endpoint: new Uri(endpoint));
-        }
-        else if (llmConfig?.Provider == "Gemini")
-        {
-            var apiKey = _configuration["LLM:ApiKey"] ?? "test-key-for-unit-tests";
-            kernelBuilder.AddGoogleAIGeminiChatCompletion(
-                modelId: llmConfig.ModelId ?? "gemini-pro",
-                apiKey: apiKey);
-        }
-        else
-        {
-            // Default to OpenAI for testing if no configuration is provided
-            kernelBuilder.AddOpenAIChatCompletion(
-                modelId: "gpt-4",
-                apiKey: "test-key-for-unit-tests");
-        }
-        
-        // Logging will be configured externally
 
-        // Register state services
-        kernelBuilder.Services.AddSingleton<IEventLog, InMemoryEventLog>();
-        kernelBuilder.Services.AddSingleton<RandomNumberService>();
+        // Configure AI services
+        ConfigureAIServices(kernelBuilder);
         
-        // Add plugins
+        // Configure plugins
+        ConfigurePlugins(kernelBuilder);
+        
+        // Configure logging
+        ConfigureLogging(kernelBuilder);
+
+        // Build the kernel
         var kernel = kernelBuilder.Build();
-        foreach (var pluginType in _plugins)
-        {
-            var plugin = Activator.CreateInstance(pluginType);
-            if (plugin != null)
-            {
-                kernel.Plugins.AddFromObject(plugin);
-            }
-        }
+
+        // Register the kernel in the service collection for DI
+        _services.AddSingleton(kernel);
+        
+        // Register memory components
+        _services.AddMemoryComponents();
+        
+        // Register memory-enabled thread factory
+        _services.AddSingleton<MemoryEnabledAgentThreadFactory>();
 
         return kernel;
     }
-}
 
-public class RandomNumberService
-{
-    private Random _random;
-    
-    public RandomNumberService()
+    private void ConfigureAIServices(IKernelBuilder kernelBuilder)
     {
-        _random = new Random();
+        // For now, use a simple OpenAI configuration
+        // In a full implementation, this would use the FlexibleProviderConfig
+        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "test-key";
+        
+        kernelBuilder.AddOpenAIChatCompletion(
+            modelId: "gpt-4o-mini",
+            apiKey: apiKey);
+
+        // Configure embedding service for memory operations
+        kernelBuilder.AddOpenAITextEmbeddingGeneration(
+            modelId: "text-embedding-ada-002",
+            apiKey: apiKey);
     }
-    
-    public void SetSeed(int seed)
+
+    private void ConfigurePlugins(IKernelBuilder kernelBuilder)
     {
-        _random = new Random(seed);
+        // Register game-specific plugins that will be shared across agents
+        // These will be configured later when we implement the rules engine
+        
+        // Example placeholder for future plugins:
+        // kernelBuilder.Plugins.AddFromType<RulesPlugin>();
+        // kernelBuilder.Plugins.AddFromType<ModulePlugin>();
+        // kernelBuilder.Plugins.AddFromType<NarrativeStylePlugin>();
     }
-    
-    public int Next(int min, int max) => _random.Next(min, max);
-    public int Next(int max) => _random.Next(max);
-    public double NextDouble() => _random.NextDouble();
+
+    private void ConfigureLogging(IKernelBuilder kernelBuilder)
+    {
+        // Configure Semantic Kernel logging
+        kernelBuilder.Services.AddLogging(builder =>
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
+    }
 }

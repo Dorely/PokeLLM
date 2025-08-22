@@ -67,7 +67,7 @@ public class GameSession : IGameSession
 
         // Step 3: Create initial game context
         var recentEvents = await _eventLog.GetRecentEventsAsync(10, cancellationToken);
-        _currentContext = GameContext.Create(_adventureModule, _currentPlayerState!, recentEvents);
+        _currentContext = GameContext.Create(SessionId, _adventureModule, _currentPlayerState!, recentEvents);
 
         // Step 4: Initialize conversation with setup summary
         await InitializeConversationAsync(cancellationToken);
@@ -179,24 +179,27 @@ public class GameSession : IGameSession
         string userInput,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var response in supervisorAgent.SuperviseAndRouteAsync(userInput, _currentContext!, cancellationToken))
-        {
-            // Add response to conversation history
-            _conversationHistory.Add(response);
+        // Create or get memory-enabled thread for this session
+        var thread = await supervisorAgent.CreateThreadAsync(SessionId, cancellationToken);
+        
+        // Process the input through the supervisor
+        var supervisorResponse = await supervisorAgent.ProcessPlayerInputAsync(userInput, _currentContext!, thread, cancellationToken);
+        
+        // Add response to conversation history
+        _conversationHistory.AddAssistantMessage(supervisorResponse.FinalNarration);
 
-            // Update game context with latest events
-            var recentEvents = await _eventLog.GetRecentEventsAsync(10, cancellationToken);
-            _currentContext = GameContext.Create(_adventureModule!, _currentPlayerState!, recentEvents);
+        // Update game context with latest events
+        var recentEvents = await _eventLog.GetRecentEventsAsync(10, cancellationToken);
+        _currentContext = GameContext.Create(SessionId, _adventureModule!, _currentPlayerState!, recentEvents);
 
-            yield return new GameTurnResult(
-                SessionId: SessionId,
-                PlayerInput: userInput,
-                Response: response.Content ?? "",
-                UpdatedContext: _currentContext,
-                TurnNumber: _conversationHistory.Count / 2, // Rough turn counter
-                Timestamp: DateTime.UtcNow
-            );
-        }
+        yield return new GameTurnResult(
+            SessionId: SessionId,
+            PlayerInput: userInput,
+            Response: supervisorResponse.FinalNarration,
+            UpdatedContext: _currentContext,
+            TurnNumber: _conversationHistory.Count / 2, // Rough turn counter
+            Timestamp: DateTime.UtcNow
+        );
 
         await _eventLog.AppendEventAsync(
             GameEvent.Create("player_turn_processed", "Player turn completed",
@@ -208,23 +211,25 @@ public class GameSession : IGameSession
     {
         var playerState = new State.PlayerState
         {
-            Name = adventureModule.PlayerCharacter.Name,
-            Level = adventureModule.PlayerCharacter.Stats["Level"],
+            Name = "Player", // Default name since PlayerCharacter doesn't exist yet
+            Level = 1,
+            HP = 20,
+            MaxHP = 20,
             Experience = 0,
             Stats = new State.Stats
             {
-                Strength = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Strength", 10),
-                Dexterity = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Dexterity", 10),
-                Constitution = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Constitution", 10),
-                Intelligence = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Intelligence", 10),
-                Wisdom = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Wisdom", 10),
-                Charisma = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Charisma", 10),
-                CurrentVigor = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Health", 10),
-                MaxVigor = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Health", 10)
+                Strength = 10,
+                Dexterity = 10,
+                Constitution = 10,
+                Intelligence = 10,
+                Wisdom = 10,
+                Charisma = 10,
+                CurrentVigor = 10,
+                MaxVigor = 10
             },
             CharacterDetails = new State.CharacterDetails
             {
-                Class = "Trainer", // PlayerCharacter doesn't have Class property
+                Class = "Trainer",
                 Money = 500
             }
         };
@@ -236,13 +241,13 @@ public class GameSession : IGameSession
     {
         // Add initial system context
         var systemMessage = $"""
-            Adventure Module: {_adventureModule!.Title}
-            Setting: {_adventureModule.Setting}
-            Player: {_adventureModule.PlayerCharacter.Name}
+            Adventure Module: {_adventureModule!.Name}
+            Setting: {_adventureModule.Theme}
+            Player: {_currentPlayerState!.Name}
             Starting Location: [Location tracking simplified]
             
             Active Quests:
-            {string.Join("\n", _adventureModule.Quests.Where(q => q.Status == QuestStatus.Active).Select(q => $"- {q.Title}: {q.Description}"))}
+            {string.Join("\n", _adventureModule.Quests.Where(q => q.IsActive).Select(q => $"- {q.Name}: {q.Description}"))}
             """;
 
         _conversationHistory.AddSystemMessage(systemMessage);
@@ -254,10 +259,11 @@ public class GameSession : IGameSession
         var initialDescription = await narratorAgent.DescribeLocationAsync(
             "[Location tracking simplified]", 
             _currentContext!, 
+            null, // No thread for this simple case
             cancellationToken);
 
         var welcomeMessage = $"""
-            Welcome to {_adventureModule.Title}!
+            Welcome to {_adventureModule.Name}!
             
             {initialDescription}
             
