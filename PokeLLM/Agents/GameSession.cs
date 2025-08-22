@@ -97,7 +97,7 @@ public class GameSession : IGameSession
         _conversationHistory.AddUserMessage(userInput);
 
         // Get GM Supervisor to coordinate the response
-        var supervisorAgent = _agentManager.GetAgent("gm-supervisor") as GMSupervisorAgent;
+        var supervisorAgent = _agentManager.GetAgent("gm-supervisor-agent") as GMSupervisorAgent;
         if (supervisorAgent == null)
         {
             yield return new GameTurnResult(

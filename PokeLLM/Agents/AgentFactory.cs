@@ -9,7 +9,7 @@ namespace PokeLLM.Agents;
 
 public interface IAgentFactory
 {
-    Task<IGameAgentManager> CreateAgentManagerAsync(Kernel kernel);
+    Task<IGameAgentManager> CreateAgentManagerAsync();
 }
 
 public class AgentFactory : IAgentFactory
@@ -21,10 +21,13 @@ public class AgentFactory : IAgentFactory
         _serviceProvider = serviceProvider;
     }
 
-    public async Task<IGameAgentManager> CreateAgentManagerAsync(Kernel kernel)
+    public async Task<IGameAgentManager> CreateAgentManagerAsync()
     {
         var agentManager = new GameAgentManager(
             _serviceProvider.GetRequiredService<ILogger<GameAgentManager>>());
+
+        // Get the kernel directly from DI instead of creating it through ILLMProvider
+        var kernel = _serviceProvider.GetRequiredService<Kernel>();
 
         // Create and register all agents with memory support
         var agents = new IGameAgent[]
@@ -90,55 +93,25 @@ public static class AgentServiceExtensions
         // Register memory-enabled agent thread factory
         services.AddSingleton<MemoryEnabledAgentThreadFactory>();
         
-        // Register the kernel directly without GameKernelBuilder for now
-        services.AddSingleton<Kernel>(provider =>
-        {
-            var kernelBuilder = Kernel.CreateBuilder();
-            
-            // Configure AI services (simplified version)
-            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "test-key";
-            
-            kernelBuilder.AddOpenAIChatCompletion(
-                modelId: "gpt-4o-mini",
-                apiKey: apiKey);
-
-            kernelBuilder.AddOpenAITextEmbeddingGeneration(
-                modelId: "text-embedding-ada-002",
-                apiKey: apiKey);
-                
-            // Configure logging
-            kernelBuilder.Services.AddLogging(builder =>
-            {
-                builder.AddConsole();
-                builder.SetMinimumLevel(LogLevel.Information);
-            });
-            
-            return kernelBuilder.Build();
-        });
-        
         // Register intent classifier that depends on kernel
         services.AddSingleton<IIntentClassifier, LLMIntentClassifier>();
         
         // Register agent factory
         services.AddSingleton<IAgentFactory, AgentFactory>();
         
-        // Register a factory method for creating the agent manager
+        // Register a factory method for creating the agent manager using the async-friendly pattern
         services.AddSingleton<IGameAgentManager>(provider =>
         {
-            var kernel = provider.GetRequiredService<Kernel>();
             var factory = provider.GetRequiredService<IAgentFactory>();
             
-            // This is a bit of a hack since we can't await in a sync factory method
-            // In a real implementation, this would be restructured
-            return factory.CreateAgentManagerAsync(kernel).GetAwaiter().GetResult();
+            // Use async factory pattern recommended by Semantic Kernel documentation
+            return factory.CreateAgentManagerAsync().GetAwaiter().GetResult();
         });
 
         // Register state management services
         services.AddSingleton<RandomNumberService>();
         
-        // Register game context and orchestration services
-        services.AddScoped<GameSession>();
-        services.AddScoped<GameOrchestrator>();
+        // Note: GameOrchestrator and GameSession are now registered in AddGameOrchestration extension method
 
         return services;
     }

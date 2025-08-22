@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using PokeLLM.Agents;
@@ -92,6 +93,13 @@ public static class ServiceConfiguration
         
         services.Configure<QdrantConfig>(configuration.GetSection("Qdrant"));
 
+        // **CRITICAL FIX: Register the main Kernel for dependency injection**
+        services.AddSingleton<Kernel>(serviceProvider =>
+        {
+            var flexConfig = serviceProvider.GetRequiredService<IOptions<FlexibleProviderConfig>>();
+            return CreateMainKernel(flexConfig);
+        });
+
         // Register IEmbeddingGenerator based on embedding provider
         services.AddTransient<IEmbeddingGenerator<string, Embedding<float>>>(serviceProvider => 
         {
@@ -132,6 +140,67 @@ public static class ServiceConfiguration
         services.AddSingleton<IEventLog, InMemoryEventLog>();
 
         return services;
+    }
+
+    /// <summary>
+    /// Creates the main Kernel for dependency injection
+    /// </summary>
+    private static Kernel CreateMainKernel(IOptions<FlexibleProviderConfig> options)
+    {
+        var config = options.Value;
+        var kernelBuilder = Kernel.CreateBuilder();
+        
+        // Configure the main LLM provider for chat completion
+        switch (config.LLM.Provider.ToLower())
+        {
+            case "openai":
+                var apiKey = !string.IsNullOrWhiteSpace(config.LLM.ApiKey) ? config.LLM.ApiKey : "test-api-key";
+                var modelId = !string.IsNullOrWhiteSpace(config.LLM.ModelId) ? config.LLM.ModelId : "gpt-4o-mini";
+                
+#pragma warning disable SKEXP0010
+                kernelBuilder.AddOpenAIChatCompletion(
+                    modelId: modelId,
+                    apiKey: apiKey
+                );
+#pragma warning restore SKEXP0010
+                break;
+                
+            case "ollama":
+                var endpoint = !string.IsNullOrEmpty(config.LLM.Endpoint) ? new Uri(config.LLM.Endpoint) : new Uri("http://localhost:11434");
+                var ollamaModelId = !string.IsNullOrWhiteSpace(config.LLM.ModelId) ? config.LLM.ModelId : "llama3.1";
+                
+#pragma warning disable SKEXP0070
+                kernelBuilder.AddOllamaChatCompletion(
+                    modelId: ollamaModelId,
+                    endpoint: endpoint
+                );
+#pragma warning restore SKEXP0070
+                break;
+                
+            case "gemini":
+                var geminiApiKey = !string.IsNullOrWhiteSpace(config.LLM.ApiKey) ? config.LLM.ApiKey : "test-api-key";
+                var geminiModelId = !string.IsNullOrWhiteSpace(config.LLM.ModelId) ? config.LLM.ModelId : "gemini-1.5-flash";
+                
+#pragma warning disable SKEXP0020
+                kernelBuilder.AddGoogleAIGeminiChatCompletion(
+                    modelId: geminiModelId,
+                    apiKey: geminiApiKey
+                );
+#pragma warning restore SKEXP0020
+                break;
+                
+            default:
+                throw new InvalidOperationException($"Unknown main LLM provider: {config.LLM.Provider}");
+        }
+        
+        // Configure logging for the kernel
+        kernelBuilder.Services.AddLogging(builder =>
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
+        
+        return kernelBuilder.Build();
     }
 
     private static IEmbeddingGenerator<string, Embedding<float>> CreateOpenAIEmbeddingGenerator(IOptions<ModelConfig> options)

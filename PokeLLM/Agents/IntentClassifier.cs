@@ -1,6 +1,7 @@
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using PokeLLM.Game.LLM.Interfaces;
 using System.Text.Json;
 
 namespace PokeLLM.Agents;
@@ -14,13 +15,22 @@ public interface IIntentClassifier
 
 public class LLMIntentClassifier : IIntentClassifier
 {
-    private readonly IChatCompletionService _chatService;
-    private readonly Kernel _kernel;
+    private readonly ILLMProvider _llmProvider;
+    private Kernel? _kernel;
+    private IChatCompletionService? _chatService;
 
-    public LLMIntentClassifier(Kernel kernel)
+    public LLMIntentClassifier(ILLMProvider llmProvider)
     {
-        _kernel = kernel;
-        _chatService = kernel.GetRequiredService<IChatCompletionService>();
+        _llmProvider = llmProvider;
+    }
+
+    private async Task EnsureKernelInitializedAsync()
+    {
+        if (_kernel == null)
+        {
+            _kernel = await _llmProvider.CreateKernelAsync();
+            _chatService = _kernel.GetRequiredService<IChatCompletionService>();
+        }
     }
 
     public async Task<GameIntent> ClassifyAsync(string userInput, GameContext context, CancellationToken cancellationToken = default)
@@ -36,23 +46,23 @@ public class LLMIntentClassifier : IIntentClassifier
 
     public async Task<(GameIntent Intent, double Confidence)> ClassifyWithConfidenceAsync(string userInput, GameContext context, CancellationToken cancellationToken = default)
     {
+        await EnsureKernelInitializedAsync();
+
         var prompt = CreateClassificationPrompt(userInput, context);
         var chatHistory = new ChatHistory();
         chatHistory.AddSystemMessage(prompt);
         chatHistory.AddUserMessage(userInput);
 
-        var responses = await _chatService.GetChatMessageContentsAsync(
+        var executionSettings = _llmProvider.GetExecutionSettings(maxTokens: 100, temperature: 0.1f);
+        
+        var responses = await _chatService!.GetChatMessageContentsAsync(
             chatHistory,
-            executionSettings: new OpenAIPromptExecutionSettings
-            {
-                Temperature = 0.1,
-                MaxTokens = 100
-            },
+            executionSettings: executionSettings,
             cancellationToken: cancellationToken);
         
         var response = responses.FirstOrDefault();
 
-        return ParseClassificationResponse(response.Content ?? "");
+        return ParseClassificationResponse(response?.Content ?? "");
     }
 
     private string CreateClassificationPrompt(string userInput, GameContext context)
