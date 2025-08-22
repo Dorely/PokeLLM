@@ -10,7 +10,15 @@
       "Bash(verbosity=quiet)",
       "Bash(dotnet run:*)",
       "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Orchestration\\IPhaseService.cs\")",
-      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Orchestration\\GameSetupService.cs\")"
+      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Orchestration\\GameSetupService.cs\")",
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__activate_project",
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__onboarding",
+      "mcp__serena__list_dir",
+      "mcp__serena__find_file",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }
