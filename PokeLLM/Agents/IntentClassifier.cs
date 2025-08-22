@@ -35,7 +35,7 @@ public class LLMIntentClassifier : IIntentClassifier
         chatHistory.AddSystemMessage(prompt);
         chatHistory.AddUserMessage(userInput);
 
-        var response = await _chatService.GetChatMessageContentAsync(
+        var responses = await _chatService.GetChatMessageContentsAsync(
             chatHistory,
             executionSettings: new OpenAIPromptExecutionSettings
             {
@@ -43,6 +43,8 @@ public class LLMIntentClassifier : IIntentClassifier
                 MaxTokens = 100
             },
             cancellationToken: cancellationToken);
+        
+        var response = responses.FirstOrDefault();
 
         return ParseClassificationResponse(response.Content ?? "");
     }
