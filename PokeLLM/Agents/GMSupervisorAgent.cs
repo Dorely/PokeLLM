@@ -134,7 +134,7 @@ public class GMSupervisorAgent : BaseGameAgent
         var chat = new ChatHistory();
         chat.AddSystemMessage($"Process this {intent} action mechanically:");
         chat.AddUserMessage($"Player action: {userInput}");
-        chat.AddAssistantMessage($"Current player state: {JsonSerializePlayerState(context.CurrentState.Player)}");
+        chat.AddAssistantMessage($"Current player state: {JsonSerializePlayerState(context.PlayerState)}");
         return chat;
     }
 
@@ -200,7 +200,7 @@ public class GMSupervisorAgent : BaseGameAgent
 
     private string JsonSerializePlayerState(State.PlayerState playerState)
     {
-        return $"{{\"Name\":\"{playerState.Name}\",\"Level\":{playerState.Level},\"Health\":{playerState.Health},\"Location\":\"{playerState.CurrentLocation}\"}}";
+        return $"{{\"Name\":\"{playerState.Name}\",\"Level\":{playerState.Level},\"Vigor\":{playerState.Stats.CurrentVigor}/{playerState.Stats.MaxVigor}}}";
     }
 
     protected override PromptExecutionSettings GetExecutionSettings()

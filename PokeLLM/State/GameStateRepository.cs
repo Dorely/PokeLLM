@@ -1,8 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PokeLLM.GameState.Models;
 
-namespace PokeLLM.GameState;
+namespace PokeLLM.State;
 public interface IGameStateRepository
 {
     Task<GameStateModel> CreateNewGameStateAsync();

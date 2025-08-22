@@ -1,6 +1,6 @@
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
-using PokeLLM.GameState.Models;
+using PokeLLM.State;
 
 namespace PokeLLM.Game.LLM.Interfaces;
 

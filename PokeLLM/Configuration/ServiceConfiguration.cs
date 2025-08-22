@@ -3,13 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
-using PokeLLM.Game.GameLogic;
+using PokeLLM.Agents;
 using PokeLLM.Game.LLM;
-using PokeLLM.Game.Orchestration;
-using PokeLLM.Game.Plugins;
-using PokeLLM.GameState;
 using PokeLLM.Game.VectorStore.Interfaces;
 using PokeLLM.Game.VectorStore;
+using PokeLLM.State;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -101,26 +99,12 @@ public static class ServiceConfiguration
             return CreateEmbeddingGenerator(flexConfig);
         });
 
-        // Add core services (order matters to avoid circular dependencies)
+        // Add core services that are still needed
         services.AddSingleton<IGameStateRepository, GameStateRepository>();
         services.AddTransient<IVectorStoreService, QdrantVectorStoreService>();
 
-        // Register Game Logic Services
-        services.AddTransient<IGameLogicService, GameLogicService>();
-        services.AddTransient<ICharacterManagementService, CharacterManagementService>();
-        services.AddTransient<IInformationManagementService, InformationManagementService>();
-        services.AddTransient<INpcManagementService, NpcManagementService>();
-        services.AddTransient<IPokemonManagementService, PokemonManagementService>();
-        services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
-        services.AddTransient<IWorldManagementService, WorldManagementService>();
-
-        // Register plugins (updated for new architecture)
-        services.AddTransient<ExplorationPhasePlugin>();
-        services.AddTransient<CombatPhasePlugin>();
-        services.AddTransient<LevelUpPhasePlugin>();
-        services.AddTransient<UnifiedContextPlugin>();
-        services.AddTransient<GameSetupPhasePlugin>();
-        services.AddTransient<WorldGenerationPhasePlugin>();
+        // Game Logic Services no longer needed with agent architecture
+        // All game logic is now handled by specialized agents
 
         // Register all LLM providers
         services.AddTransient<OpenAiLLMProvider>();
@@ -143,13 +127,9 @@ public static class ServiceConfiguration
                 throw new InvalidOperationException($"Unknown main LLM provider: {MAIN_LLM_PROVIDER}");
         }
 
-        // Register new service architecture
-        services.AddScoped<IUnifiedContextService, UnifiedContextService>();
-        
-        // Register phase service provider
-        services.AddScoped<IPhaseServiceProvider, PhaseServiceProvider>();
-        
-        services.AddScoped<IGameController, GameController>();
+        // Add agent-specific services
+        services.AddSingleton<RandomNumberService>();
+        services.AddSingleton<IEventLog, InMemoryEventLog>();
 
         return services;
     }

@@ -79,16 +79,23 @@ public static class AgentServiceExtensions
 {
     public static IServiceCollection AddGameAgents(this IServiceCollection services)
     {
-        services.AddSingleton<IIntentClassifier, LLMIntentClassifier>();
-        
         // Register the kernel builder
         services.AddSingleton<GameKernelBuilder>();
+        
+        // Register the kernel itself
+        services.AddSingleton<Kernel>(provider =>
+        {
+            var kernelBuilder = provider.GetRequiredService<GameKernelBuilder>();
+            return kernelBuilder.Build();
+        });
+        
+        // Register intent classifier that depends on kernel
+        services.AddSingleton<IIntentClassifier, LLMIntentClassifier>();
         
         // Register a factory method for creating the agent manager
         services.AddSingleton<IGameAgentManager>(provider =>
         {
-            var kernelBuilder = provider.GetRequiredService<GameKernelBuilder>();
-            var kernel = kernelBuilder.Build();
+            var kernel = provider.GetRequiredService<Kernel>();
             
             var agentManager = new GameAgentManager(
                 provider.GetRequiredService<ILogger<GameAgentManager>>());

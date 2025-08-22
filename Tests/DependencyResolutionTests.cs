@@ -1,8 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PokeLLM.Game;
-using PokeLLM.Game.GameLogic;
-using PokeLLM.Game.Orchestration;
-using PokeLLM.GameState;
+using PokeLLM.Controllers;
+using PokeLLM.State;
 
 namespace PokeLLM.Tests;
 
@@ -20,12 +19,12 @@ public class DependencyResolutionTests
     }
 
     [Fact]
-    public void GameLogicServiceResolves()
+    public void GameStateRepositoryResolves()
     {
         var provider = Program.BuildServiceProvider();
 
-        var gameLogicService = provider.GetRequiredService<IGameLogicService>();
+        var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
         
-        Assert.NotNull(gameLogicService);
+        Assert.NotNull(gameStateRepository);
     }
 }

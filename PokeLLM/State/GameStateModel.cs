@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Text.Json.Serialization;
 
-namespace PokeLLM.GameState.Models;
+namespace PokeLLM.State;
 
 /// <summary>
 /// The root object for the entire game state. This serves as the "live sheet" of what's happening in the world right now.

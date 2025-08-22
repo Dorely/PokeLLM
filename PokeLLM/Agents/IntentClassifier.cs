@@ -59,9 +59,9 @@ public class LLMIntentClassifier : IIntentClassifier
             {{string.Join(", ", availableIntents)}}
             
             Current game context:
-            - Player location: {{context.CurrentState.Player.CurrentLocation}}
-            - Player health: {{context.CurrentState.Player.Health}}/{{context.CurrentState.Player.MaxHealth}}
-            - Current region: {{context.CurrentState.World.CurrentRegion}}
+            - Player: {{context.PlayerState.Name}} (Level {{context.PlayerState.Level}})
+            - Player vigor: {{context.PlayerState.Stats.CurrentVigor}}/{{context.PlayerState.Stats.MaxVigor}}
+            - Player class: {{context.PlayerState.CharacterDetails.Class}}
             
             Respond with JSON in this format:
             {

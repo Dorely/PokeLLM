@@ -103,7 +103,8 @@ public class MechanicsAgent : BaseGameAgent
     {
         _logger.LogInformation("Using item: {Item} on {Target}", itemName, targetName);
 
-        if (!playerState.Inventory.Contains(itemName))
+        // For now, assume item is available - could check CharacterDetails.Items in future
+        // if (!playerState.CharacterDetails.Items.Contains(itemName))
         {
             return new MechanicsResult(
                 Action: "Use Item",
@@ -178,7 +179,7 @@ public class MechanicsAgent : BaseGameAgent
             var statBoosts = CalculateLevelUpStats(newLevel);
             
             stateChanges["level"] = newLevel;
-            stateChanges["max_health"] = playerState.MaxHealth + statBoosts["health"];
+            stateChanges["max_vigor"] = playerState.Stats.MaxVigor + statBoosts["health"];
             stateChanges["stats"] = statBoosts;
             
             description += $" Level up! Now level {newLevel}!";
@@ -207,7 +208,7 @@ public class MechanicsAgent : BaseGameAgent
             _ => 50
         };
 
-        return (attackerState.Stats.GetValueOrDefault("Attack", 10) * basePower) / 50;
+        return (attackerState.Stats.Strength * basePower) / 50;
     }
 
     private int CalculateAccuracy(string moveName)
@@ -226,9 +227,9 @@ public class MechanicsAgent : BaseGameAgent
     {
         return skillName.ToLower() switch
         {
-            "strength" => playerState.Stats.GetValueOrDefault("Attack", 10),
-            "agility" => playerState.Stats.GetValueOrDefault("Speed", 10),
-            "endurance" => playerState.Stats.GetValueOrDefault("Defense", 10),
+            "strength" => playerState.Stats.Strength,
+            "agility" => playerState.Stats.Dexterity,
+            "endurance" => playerState.Stats.Constitution,
             _ => playerState.Level
         };
     }

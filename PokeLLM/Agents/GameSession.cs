@@ -28,7 +28,7 @@ public class GameSession : IGameSession
     
     private GameContext? _currentContext;
     private AdventureModule? _adventureModule;
-    private GameStateSnapshot? _currentState;
+    private State.PlayerState? _currentPlayerState;
 
     public string SessionId { get; }
     public GameContext CurrentContext => _currentContext ?? throw new InvalidOperationException("Game session not started");
@@ -63,11 +63,11 @@ public class GameSession : IGameSession
             playerName, characterBackstory, preferredSetting, cancellationToken);
 
         // Step 2: Initialize game state from Adventure Module
-        _currentState = CreateInitialGameState(_adventureModule);
+        _currentPlayerState = CreateInitialGameState(_adventureModule);
 
         // Step 3: Create initial game context
         var recentEvents = await _eventLog.GetRecentEventsAsync(10, cancellationToken);
-        _currentContext = GameContext.Create(_adventureModule, _currentState, recentEvents);
+        _currentContext = GameContext.Create(_adventureModule, _currentPlayerState!, recentEvents);
 
         // Step 4: Initialize conversation with setup summary
         await InitializeConversationAsync(cancellationToken);
@@ -131,7 +131,7 @@ public class GameSession : IGameSession
         var saveData = new GameSaveData(
             SessionId: SessionId,
             AdventureModule: _adventureModule!,
-            CurrentState: _currentState!,
+            PlayerState: _currentPlayerState!,
             ConversationHistory: _conversationHistory.ToList(),
             SavedAt: DateTime.UtcNow
         );
@@ -186,7 +186,7 @@ public class GameSession : IGameSession
 
             // Update game context with latest events
             var recentEvents = await _eventLog.GetRecentEventsAsync(10, cancellationToken);
-            _currentContext = GameContext.Create(_adventureModule!, _currentState!, recentEvents);
+            _currentContext = GameContext.Create(_adventureModule!, _currentPlayerState!, recentEvents);
 
             yield return new GameTurnResult(
                 SessionId: SessionId,
@@ -204,31 +204,32 @@ public class GameSession : IGameSession
             cancellationToken);
     }
 
-    private GameStateSnapshot CreateInitialGameState(AdventureModule adventureModule)
+    private State.PlayerState CreateInitialGameState(AdventureModule adventureModule)
     {
-        var playerState = new State.PlayerState(
-            Name: adventureModule.PlayerCharacter.Name,
-            Level: adventureModule.PlayerCharacter.Stats["Level"],
-            Health: adventureModule.PlayerCharacter.Stats["Health"],
-            MaxHealth: adventureModule.PlayerCharacter.Stats["Health"],
-            Experience: 0,
-            Stats: adventureModule.PlayerCharacter.Stats,
-            Inventory: new List<string> { "Potion", "Pokeball" },
-            CurrentLocation: adventureModule.Regions.First().Locations.First()
-        );
+        var playerState = new State.PlayerState
+        {
+            Name = adventureModule.PlayerCharacter.Name,
+            Level = adventureModule.PlayerCharacter.Stats["Level"],
+            Experience = 0,
+            Stats = new State.Stats
+            {
+                Strength = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Strength", 10),
+                Dexterity = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Dexterity", 10),
+                Constitution = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Constitution", 10),
+                Intelligence = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Intelligence", 10),
+                Wisdom = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Wisdom", 10),
+                Charisma = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Charisma", 10),
+                CurrentVigor = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Health", 10),
+                MaxVigor = adventureModule.PlayerCharacter.Stats.GetValueOrDefault("Health", 10)
+            },
+            CharacterDetails = new State.CharacterDetails
+            {
+                Class = "Trainer", // PlayerCharacter doesn't have Class property
+                Money = 500
+            }
+        };
 
-        var worldState = new WorldState(
-            CurrentRegion: adventureModule.Regions.First().Name,
-            CurrentLocation: playerState.CurrentLocation,
-            LocationData: new Dictionary<string, object>(),
-            ActiveEvents: new List<string>(),
-            NpcStates: adventureModule.NpcSeeds.ToDictionary(
-                npc => npc.Id,
-                npc => new NpcState(npc.Id, npc.Name, npc.Location, new Dictionary<string, object>())
-            )
-        );
-
-        return GameStateSnapshot.Create(playerState, worldState);
+        return playerState;
     }
 
     private async Task InitializeConversationAsync(CancellationToken cancellationToken)
@@ -238,7 +239,7 @@ public class GameSession : IGameSession
             Adventure Module: {_adventureModule!.Title}
             Setting: {_adventureModule.Setting}
             Player: {_adventureModule.PlayerCharacter.Name}
-            Starting Location: {_currentState!.Player.CurrentLocation}
+            Starting Location: [Location tracking simplified]
             
             Active Quests:
             {string.Join("\n", _adventureModule.Quests.Where(q => q.Status == QuestStatus.Active).Select(q => $"- {q.Title}: {q.Description}"))}
@@ -251,7 +252,7 @@ public class GameSession : IGameSession
             ?? throw new InvalidOperationException("Narrator agent not found");
 
         var initialDescription = await narratorAgent.DescribeLocationAsync(
-            _currentState.Player.CurrentLocation, 
+            "[Location tracking simplified]", 
             _currentContext!, 
             cancellationToken);
 
@@ -278,6 +279,6 @@ public record GameTurnResult(
 public record GameSaveData(
     string SessionId,
     AdventureModule AdventureModule,
-    GameStateSnapshot CurrentState,
+    State.PlayerState PlayerState,
     List<ChatMessageContent> ConversationHistory,
     DateTime SavedAt);

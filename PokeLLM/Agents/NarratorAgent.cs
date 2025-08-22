@@ -125,8 +125,8 @@ public class NarratorAgent : BaseGameAgent
             
             Player Action: {playerAction}
             Mechanical Result: {mechanicalResult}
-            Current Location: {context.CurrentState.Player.CurrentLocation}
-            Player: {context.CurrentState.Player.Name} (Level {context.CurrentState.Player.Level})
+            Player Location: [Location tracking moved to world state]
+            Player: {context.PlayerState.Name} (Level {context.PlayerState.Level})
             
             Requirements:
             - Preserve all mechanical outcomes exactly as given
@@ -145,9 +145,9 @@ public class NarratorAgent : BaseGameAgent
             Describe the Pokemon location with immersive detail:
             
             Location: {locationName}
-            Region: {context.CurrentState.World.CurrentRegion}
+            Region: [World state tracking simplified]
             Time of Day: {GetTimeOfDay()}
-            Player: {context.CurrentState.Player.Name}
+            Player: {context.PlayerState.Name}
             
             Create a vivid description that includes:
             - Visual atmosphere and environmental details

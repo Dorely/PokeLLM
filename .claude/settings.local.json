@@ -19,7 +19,14 @@
       "mcp__serena__find_file",
       "mcp__sequential-thinking__sequentialthinking",
       "Bash(mkdir:*)",
-      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Program.New.cs\")"
+      "Bash(del \"C:\\Users\\jonth\\source\\repos\\PokeLLM\\PokeLLM\\Program.New.cs\")",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__find_symbol",
+      "mcp__serena__replace_symbol_body",
+      "mcp__serena__insert_before_symbol",
+      "mcp__serena__write_memory",
+      "Bash(mv:*)",
+      "mcp__serena__find_referencing_symbols"
     ],
     "deny": []
   }

@@ -96,7 +96,7 @@ public class GameController : IGameController
             {
                 sessionInfos.Add(new GameSessionInfo(
                     SessionId: sessionId,
-                    PlayerName: session.CurrentContext.CurrentState.Player.Name,
+                    PlayerName: session.CurrentContext.PlayerState.Name,
                     IsActive: session.IsActive,
                     CreatedAt: DateTime.UtcNow // In real implementation, would track creation time
                 ));

@@ -1,7 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using PokeLLM.Agents;
+using PokeLLM.Controllers;
 using PokeLLM.Game.Configuration;
-using PokeLLM.Game.GameLogic;
-using PokeLLM.GameState;
+using PokeLLM.State;
+using PokeLLM.UI;
 
 namespace PokeLLM.Game;
 
@@ -9,65 +12,44 @@ public class Program
 {
     public static ServiceProvider BuildServiceProvider()
     {
-
         // Create configuration and set up DI using ServiceConfiguration
         var config = ServiceConfiguration.CreateConfiguration();
         var services = new ServiceCollection();
+        
+        // Add logging
+        services.AddLogging(builder => 
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
+        
+        // Add core configuration and services
         ServiceConfiguration.ConfigureServices(services, config);
-
+        
+        // Add new agent-based architecture services
+        services.AddGameAgents();
+        services.AddGameOrchestration();
+        services.AddGameController();
+        services.AddConsoleGameUI();
+        
         var provider = services.BuildServiceProvider();
-
         return provider;
     }
 
     private static async Task Main(string[] args)
     {
         var provider = BuildServiceProvider();
-        var gameController = provider.GetRequiredService<IGameController>();
-        var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
-
-        if (!await gameStateRepository.HasGameStateAsync())
+        
+        try
         {
-            await gameStateRepository.CreateNewGameStateAsync();
-            Console.WriteLine("New game created.");
+            var gameUI = provider.GetRequiredService<IGameUI>();
+            await gameUI.RunAsync();
         }
-
-        Console.WriteLine($"PokeLLM: ");
-        await foreach (var chunk in gameController.ProcessInputAsync("Game is done loading. Introduce yourself to the player"))
+        catch (Exception ex)
         {
-            Console.Write(chunk);
-        }
-
-        while (true)
-        {
-            Console.WriteLine("\nYou (multi-line, end with 'blank line'):");
-            var lines = new List<string>();
-            while (true)
-            {
-                var line = Console.ReadLine();
-                if (line == null || string.IsNullOrWhiteSpace(line))
-                    break;
-                lines.Add(line);
-            }
-
-            Console.WriteLine("\nSending...");
-            var input = string.Join('\n', lines);
-            if (string.IsNullOrWhiteSpace(input) || input.Trim().ToLower() == "exit")
-                break;
-
-            // Process player input through the new game controller
-            Console.WriteLine($"PokeLLM: ");
-            try
-            {
-                await foreach (var chunk in gameController.ProcessInputAsync(input))
-                {
-                    Console.Write(chunk);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
+            var logger = provider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "Application failed to start");
+            Console.WriteLine($"Application failed: {ex.Message}");
         }
     }
 }

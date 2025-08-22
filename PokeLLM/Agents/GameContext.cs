@@ -4,18 +4,18 @@ namespace PokeLLM.Agents;
 
 public record GameContext(
     AdventureModule AdventureModule,
-    GameStateSnapshot CurrentState,
+    State.PlayerState PlayerState,
     IReadOnlyList<GameEvent> RecentEvents,
     DateTime Timestamp)
 {
     public static GameContext Create(
         AdventureModule module,
-        GameStateSnapshot state,
+        State.PlayerState playerState,
         IEnumerable<GameEvent> events)
     {
         return new GameContext(
             module,
-            state,
+            playerState,
             events.ToList(),
             DateTime.UtcNow);
     }
