@@ -10,6 +10,7 @@ using PokeLLM.Game.Plugins;
 using PokeLLM.GameState;
 using PokeLLM.Game.VectorStore.Interfaces;
 using PokeLLM.Game.VectorStore;
+using PokeLLM.Game.Orchestration.Interfaces;
 
 namespace PokeLLM.Game.Configuration;
 

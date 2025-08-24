@@ -2,14 +2,11 @@ using PokeLLM.GameState.Models;
 using System.Runtime.CompilerServices;
 using PokeLLM.Game.Orchestration;
 using System.Diagnostics;
+using PokeLLM.Game.Orchestration.Interfaces;
 
 namespace PokeLLM.Game.GameLogic;
 
-public interface IGameController
-{
-    IAsyncEnumerable<string> ProcessInputAsync(string input, CancellationToken cancellationToken = default);
-    Task<GamePhase> GetCurrentPhaseAsync();
-}
+
 
 public class GameController : IGameController
 {

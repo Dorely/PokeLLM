@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PokeLLM.Game;
 using PokeLLM.Game.GameLogic;
-using PokeLLM.Game.Orchestration;
+using PokeLLM.Game.Orchestration.Interfaces;
 using PokeLLM.GameState;
 
 namespace PokeLLM.Tests;
