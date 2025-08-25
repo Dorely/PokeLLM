@@ -42,7 +42,7 @@ public class GeminiLLMProvider : ILLMProvider
         return null;
     }
 
-    public PromptExecutionSettings GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = false)
+    public PromptExecutionSettings GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = true)
     {
         return new GeminiPromptExecutionSettings
         {

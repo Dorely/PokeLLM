@@ -55,7 +55,7 @@ public class OpenAiLLMProvider : ILLMProvider
         return kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
     }
 
-    public PromptExecutionSettings GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = false)
+    public PromptExecutionSettings GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = true)
     {
         return new OpenAIPromptExecutionSettings
         {

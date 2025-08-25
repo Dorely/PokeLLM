@@ -23,5 +23,5 @@ public interface ILLMProvider
     /// <summary>
     /// Gets provider-specific execution settings
     /// </summary>
-    PromptExecutionSettings GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = false);
+    PromptExecutionSettings GetExecutionSettings(int maxTokens, float temperature, bool enableFunctionCalling = true);
 }

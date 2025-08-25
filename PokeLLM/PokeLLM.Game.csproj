@@ -52,6 +52,8 @@
     <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.63.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.63.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Magentic" Version="1.63.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.63.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.63.0-alpha" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.63.0-alpha" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.63.0" />
