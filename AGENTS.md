@@ -12,7 +12,8 @@ This document is the operating guide for the LLM developer agent working in this
 - No secrets committed: keep API keys in UserSecrets or env vars, not in source.
 - Scope discipline: changes are limited to the task; no unrelated refactors.
 
-Tasks cannot be considered complete until both build and tests succeed.
+Tasks cannot be considered complete until both build and tests succeed. 
+Tests can and should be modified to match actual use cases. Obsolete tests should be amended or deleted. 
 
 ## How To Validate (Every Task)
 - Restore: `dotnet restore PokeLLM.sln`
@@ -66,11 +67,9 @@ If build or tests fail, fix the cause, then re‑run until both pass. Do not mar
 - `PokeLLM/Prompts/*` — system prompts per phase
 - `Tests/*` — active unit tests (mocks) and commented integration tests
 
-## Agent Instructions Updating
-- When major architectural changes occur that would contradict anything in these agent instructions, you must update this file.
+## AGENTS.md Updates
+- When major architectural changes occur that would contradict anything in these agent instructions, you must update this file (AGENTS.md).
 
-—
-
-Footnotes (Agent Tools)
-- Serena MCP: Use for precise code search and structured edits (symbols, references, safe inserts/replacements) when navigating or refactoring.
-- Context7 Docs: Resolve a library (e.g., `/microsoft/semantic-kernel`) and fetch focused docs to guide implementation details when needed.
+## Agent Tools
+- Serena MCP: Primarily use for repository indexing, semantic search, symbol/reference queries, and reading and saving project memories. DO NOT use Serena's editing tools (no inserts/replacements) in this repo.
+- Context7 Docs: Mandatory for fetching up-to-date documentation before writing code that uses libraries—especially the Semantic Kernel (`/microsoft/semantic-kernel`), and also any other libraries involved.
