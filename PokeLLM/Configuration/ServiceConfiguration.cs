@@ -119,9 +119,11 @@ public static class ServiceConfiguration
         services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
         services.AddTransient<IWorldManagementService, WorldManagementService>();
 
+        // Multi-agent services
+        services.AddScoped<IContextBroker, ContextBroker>();
+
         
         // Register SK-based orchestrator wrapper (uses fallback at runtime)
-        services.AddScoped<HandoffOrchestrator>();
         services.AddScoped<ITurnOrchestrator, SkHandoffOrchestrator>();
 
         services.AddTransient<OpenAiLLMProvider>();

@@ -1,20 +1,16 @@
-
-#pragma warning disable SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-namespace PokeLLM.Game.Orchestration.MultiAgent;
-// SK Handoff orchestration implementation (compiled only when SK_HANDOFF is defined)
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.Orchestration;
 using Microsoft.SemanticKernel.Agents.Orchestration.Handoff;
-using Microsoft.SemanticKernel.Agents.Runtime;
+using Microsoft.SemanticKernel.Agents.Runtime.InProcess;
 using Microsoft.SemanticKernel.ChatCompletion;
 using PokeLLM.Game.Agents.ContextBroker;
 using PokeLLM.Game.LLM;
 
+namespace PokeLLM.Game.Orchestration.MultiAgent;
+
 public class SkHandoffOrchestrator : ITurnOrchestrator
 {
-
-
     private readonly IContextBroker _contextBroker;
     private readonly ILLMProvider _llmProvider;
 
@@ -29,34 +25,53 @@ public class SkHandoffOrchestrator : ITurnOrchestrator
         var context = await _contextBroker.BuildContextAsync(playerInput, cancellationToken);
         var task = BuildTask(context, playerInput);
 
+        // Create agents
         var guardAgent = await CreateAgentAsync(
             name: "GuardAgent",
             description: "Validates and routes player intents.",
-            instructions: "Validate player input; reject cheating with a brief explanation; otherwise hand off to PlotDirector or Dialogue.");
+            instructions: "Validate the player's input against the current scene and facts. If the input is impossible or cheating, respond briefly and end. Otherwise, hand off to PlotDirector or Dialogue as needed.");
 
         var plotAgent = await CreateAgentAsync(
             name: "PlotDirector",
             description: "Guides pacing and selects next agent.",
-            instructions: "Read scene summary and recent events; suggest the next primary agent and keep responses concise.");
+            instructions: "Read the scene summary and recent events. Suggest the primary next agent. Keep responses concise and focused on objectives.");
 
         var dialogueAgent = await CreateAgentAsync(
             name: "DialogueAgent",
             description: "Handles NPC and social interactions.",
-            instructions: "Reply as world/NPCs in 1-3 sentences, grounded in the scene summary and recent events. If not dialogue, hand back to PlotDirector.");
+            instructions: "Reply as the world/NPCs in 1-3 sentences, grounded in the provided scene summary and recent events. If not a dialogue matter, hand back to PlotDirector.");
 
         var returnAgent = await CreateAgentAsync(
             name: "ReturnAgent",
-            description: "Returns final narrative to the player.",
+            description: "Returns the final narrative to the player.",
             instructions: "Output only the final narrative line(s) for the player with no extra commentary.");
 
+#pragma warning disable SKEXP0110
+        // Define allowed handoffs (API is experimental and subject to change)
+        var handoffs = OrchestrationHandoffs.StartWith(guardAgent);
+        handoffs = handoffs.Add(guardAgent, plotAgent, dialogueAgent);
+        handoffs = handoffs.Add(plotAgent, dialogueAgent, guardAgent);
+        handoffs = handoffs.Add(dialogueAgent, returnAgent, plotAgent);
 
-        var handoffs = OrchestrationHandoffs
-            .StartWith(guardAgent)
-            .Add(guardAgent, plotAgent, dialogueAgent)
-            .Add(plotAgent, dialogueAgent, guardAgent)
-            .Add(dialogueAgent, returnAgent, plotAgent, "Return to PlotDirector if additional guidance is required");
-        throw new NotImplementedException();
+        // Create and run the orchestration
+        var orchestration = new HandoffOrchestration(
+            handoffs,
+            guardAgent,
+            plotAgent,
+            dialogueAgent,
+            returnAgent);
+#pragma warning restore SKEXP0110
 
+        await using var runtime = new InProcessRuntime();
+        await runtime.StartAsync(cancellationToken);
+
+#pragma warning disable SKEXP0110
+        var result = await orchestration.InvokeAsync(task, runtime, cancellationToken);
+        var output = await result.GetValueAsync(TimeSpan.FromSeconds(60), cancellationToken);
+#pragma warning restore SKEXP0110
+
+        await runtime.RunUntilIdleAsync();
+        return output;
     }
 
     private async Task<ChatCompletionAgent> CreateAgentAsync(string name, string description, string instructions)
