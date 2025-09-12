@@ -1,0 +1,68 @@
+{
+  "sessionId": "0b1588bb-6a47-458c-b8d0-09cfa5c0c15e",
+  "gameTurnNumber": 1,
+  "sessionStartTime": "2025-09-12T17:31:09.660558Z",
+  "lastSaveTime": "2025-09-12T17:31:09.7434963Z",
+  "player": {
+    "name": "",
+    "description": "",
+    "abilities": [],
+    "characterDetails": {
+      "class": "",
+      "inventory": [],
+      "money": 500,
+      "globalRenown": 0,
+      "globalNotoriety": 0
+    },
+    "experience": 0,
+    "level": 1,
+    "stats": {
+      "currentVigor": 10,
+      "maxVigor": 10,
+      "strength": 10,
+      "dexterity": 10,
+      "constitution": 10,
+      "intelligence": 10,
+      "wisdom": 10,
+      "charisma": 10
+    },
+    "trainerClassData": {
+      "id": "",
+      "name": "",
+      "description": "",
+      "statModifiers": {},
+      "startingAbilities": [],
+      "startingMoney": 1000,
+      "startingItems": [],
+      "tags": [],
+      "levelUpTable": {}
+    },
+    "conditions": [],
+    "teamPokemon": [],
+    "boxedPokemon": [],
+    "playerNpcRelationships": {},
+    "factionRelationships": {},
+    "gymBadges": []
+  },
+  "currentLocationId": "",
+  "worldLocations": {},
+  "region": "",
+  "timeOfDay": "Morning",
+  "weather": "Clear",
+  "worldNpcs": {},
+  "worldPokemon": {},
+  "adventureSummary": "New Game - The Region has not been selected. Character Creation is not complete. The Adventure has not yet begun",
+  "recentEvents": [
+    {
+      "turnNumber": 1,
+      "eventDescription": "DialogueSpoken: {\u0022player\u0022:true,\u0022text\u0022:\u0022Game is done loading. Introduce yourself to the player\u0022}"
+    },
+    {
+      "turnNumber": 1,
+      "eventDescription": "DialogueSpoken: {\u0022player\u0022:false,\u0022text\u0022:\u0022You say, \\u0022Game is done loading. Introduce yourself to the player\\u0022. The barkeep nods thoughtfully and replies with a friendly smile.\u0022}"
+    }
+  ],
+  "currentPhase": "GameSetup",
+  "phaseChangeSummary": "",
+  "currentContext": "Beginning of a new Pokemon adventure. The trainer has not yet chosen a region or created their character."
+}

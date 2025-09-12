@@ -5,11 +5,16 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using PokeLLM.Game.GameLogic;
 using PokeLLM.Game.LLM;
-using PokeLLM.Game.Orchestration;
-using PokeLLM.Game.Plugins;
+using PokeLLM.Game.Orchestration.MultiAgent;
 using PokeLLM.GameState;
 using PokeLLM.Game.VectorStore.Interfaces;
 using PokeLLM.Game.VectorStore;
+using PokeLLM.Game.Agents.ContextBroker;
+using PokeLLM.Game.Agents.Dialogue;
+using PokeLLM.Game.Agents.Guard;
+using PokeLLM.Game.Agents.Plot;
+using PokeLLM.Game.Agents.World;
+using PokeLLM.Game.Agents.Memory;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -114,13 +119,14 @@ public static class ServiceConfiguration
         services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
         services.AddTransient<IWorldManagementService, WorldManagementService>();
 
-        // Register plugins (updated for new architecture)
-        services.AddTransient<ExplorationPhasePlugin>();
-        services.AddTransient<CombatPhasePlugin>();
-        services.AddTransient<LevelUpPhasePlugin>();
-        services.AddTransient<UnifiedContextPlugin>();
-        services.AddTransient<GameSetupPhasePlugin>();
-        services.AddTransient<WorldGenerationPhasePlugin>();
+        // Register multi-agent services (dialogue-only prototype)
+        services.AddScoped<IContextBroker, ContextBroker>();
+        services.AddScoped<IGuardAgent, GuardAgent>();
+        services.AddScoped<IPlotDirector, PlotDirector>();
+        services.AddScoped<IDialogueAgent, DialogueAgent>();
+        services.AddScoped<IWorldAgent, WorldAgent>();
+        services.AddScoped<IMemoryCurator, MemoryCurator>();
+        services.AddScoped<ITurnOrchestrator, HandoffOrchestrator>();
 
         // Register all LLM providers
         services.AddTransient<OpenAiLLMProvider>();
@@ -143,13 +149,7 @@ public static class ServiceConfiguration
                 throw new InvalidOperationException($"Unknown main LLM provider: {MAIN_LLM_PROVIDER}");
         }
 
-        // Register new service architecture
-        services.AddScoped<IUnifiedContextService, UnifiedContextService>();
-        
-        // Register phase service provider
-        services.AddScoped<IPhaseServiceProvider, PhaseServiceProvider>();
-        
-        services.AddScoped<IGameController, GameController>();
+        // Remove old phase-based services; orchestrator handles runtime
 
         return services;
     }

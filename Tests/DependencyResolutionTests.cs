@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PokeLLM.Game;
 using PokeLLM.Game.GameLogic;
-using PokeLLM.Game.Orchestration;
+using PokeLLM.Game.Orchestration.MultiAgent;
 using PokeLLM.GameState;
 
 namespace PokeLLM.Tests;
@@ -13,10 +13,10 @@ public class DependencyResolutionTests
     {
         var provider = Program.BuildServiceProvider();
 
-        var gameController = provider.GetRequiredService<IGameController>();
+        var orchestrator = provider.GetRequiredService<ITurnOrchestrator>();
         var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
 
-        Assert.NotNull(gameController);
+        Assert.NotNull(orchestrator);
     }
 
     [Fact]

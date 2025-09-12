@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using PokeLLM.Game.Configuration;
-using PokeLLM.Game.GameLogic;
+using PokeLLM.Game.Orchestration.MultiAgent;
 using PokeLLM.GameState;
 
 namespace PokeLLM.Game;
@@ -23,7 +23,7 @@ public class Program
     private static async Task Main(string[] args)
     {
         var provider = BuildServiceProvider();
-        var gameController = provider.GetRequiredService<IGameController>();
+        var orchestrator = provider.GetRequiredService<ITurnOrchestrator>();
         var gameStateRepository = provider.GetRequiredService<IGameStateRepository>();
 
         if (!await gameStateRepository.HasGameStateAsync())
@@ -33,10 +33,8 @@ public class Program
         }
 
         Console.WriteLine($"PokeLLM: ");
-        await foreach (var chunk in gameController.ProcessInputAsync("Game is done loading. Introduce yourself to the player"))
-        {
-            Console.Write(chunk);
-        }
+        var intro = await orchestrator.ProcessTurnAsync("Game is done loading. Introduce yourself to the player");
+        Console.Write(intro);
 
         while (true)
         {
@@ -55,19 +53,10 @@ public class Program
             if (string.IsNullOrWhiteSpace(input) || input.Trim().ToLower() == "exit")
                 break;
 
-            // Process player input through the new game controller
+            // Process player input through the orchestrator
             Console.WriteLine($"PokeLLM: ");
-            try
-            {
-                await foreach (var chunk in gameController.ProcessInputAsync(input))
-                {
-                    Console.Write(chunk);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
+            var output = await orchestrator.ProcessTurnAsync(input);
+            Console.Write(output);
         }
     }
 }

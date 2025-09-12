@@ -9,4 +9,4 @@ global using PokeLLM.Game.LLM;
 global using PokeLLM.Game.LLM.Interfaces;
 global using PokeLLM.Game.VectorStore;
 global using PokeLLM.Game.VectorStore.Interfaces;
-global using PokeLLM.Game.Plugins;
+global using PokeLLM.Game.Orchestration.MultiAgent;
