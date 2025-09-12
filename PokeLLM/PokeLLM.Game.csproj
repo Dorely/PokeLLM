@@ -9,34 +9,34 @@
 
   <ItemGroup>
     <None Remove="appsettings.json" />
-    <None Remove="Prompts\CombatPhase.md" />
-    <None Remove="Prompts\ExplorationPhase.md" />
-    <None Remove="Prompts\GameSetupPhase.md" />
-    <None Remove="Prompts\LevelUpPhase.md" />
-    <None Remove="Prompts\UnifiedContextSubroutine.md" />
-    <None Remove="Prompts\WorldGenerationPhase.md" />
+    <None Remove="Prompts\\CombatPhase.md" />
+    <None Remove="Prompts\\ExplorationPhase.md" />
+    <None Remove="Prompts\\GameSetupPhase.md" />
+    <None Remove="Prompts\\LevelUpPhase.md" />
+    <None Remove="Prompts\\UnifiedContextSubroutine.md" />
+    <None Remove="Prompts\\WorldGenerationPhase.md" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Prompts\CombatPhase.md">
+    <Content Include="Prompts\\CombatPhase.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Prompts\ExplorationPhase.md">
+    <Content Include="Prompts\\ExplorationPhase.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Prompts\GameSetupPhase.md">
+    <Content Include="Prompts\\GameSetupPhase.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Prompts\LevelUpPhase.md">
+    <Content Include="Prompts\\LevelUpPhase.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Prompts\UnifiedContextSubroutine.md">
+    <Content Include="Prompts\\UnifiedContextSubroutine.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Prompts\WorldGenerationPhase.md">
+    <Content Include="Prompts\\WorldGenerationPhase.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -50,15 +50,29 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.64.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.61.0-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.61.0-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.64.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.61.0-preview" />    <PackageReference Include="Qdrant.Client" Version="1.15.0" />
+
+    <!-- Semantic Kernel core and connectors aligned with Agents 1.63.x -->
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.65.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Abstractions" Version="1.65.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.Abstractions" Version="1.65.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.Core" Version="1.65.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.InProcess" Version="1.65.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.65.0" />
+
+    <!-- Existing connectors left as-is -->
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.65.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.65.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.65.0-preview" />
+
+    <!-- SK Agents packages -->
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.65.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.65.0-preview" />    <PackageReference Include="Microsoft.SemanticKernel.Agents.Magentic" Version="1.65.0-preview" />
+
+    <PackageReference Include="Qdrant.Client" Version="1.15.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Docs\" />
+    <Folder Include="Docs\\" />
   </ItemGroup>
 
 </Project>

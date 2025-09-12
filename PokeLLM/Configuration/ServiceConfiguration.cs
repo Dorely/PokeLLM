@@ -119,16 +119,11 @@ public static class ServiceConfiguration
         services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
         services.AddTransient<IWorldManagementService, WorldManagementService>();
 
-        // Register multi-agent services (dialogue-only prototype)
-        services.AddScoped<IContextBroker, ContextBroker>();
-        services.AddScoped<IGuardAgent, GuardAgent>();
-        services.AddScoped<IPlotDirector, PlotDirector>();
-        services.AddScoped<IDialogueAgent, DialogueAgent>();
-        services.AddScoped<IWorldAgent, WorldAgent>();
-        services.AddScoped<IMemoryCurator, MemoryCurator>();
-        services.AddScoped<ITurnOrchestrator, HandoffOrchestrator>();
+        
+        // Register SK-based orchestrator wrapper (uses fallback at runtime)
+        services.AddScoped<HandoffOrchestrator>();
+        services.AddScoped<ITurnOrchestrator, SkHandoffOrchestrator>();
 
-        // Register all LLM providers
         services.AddTransient<OpenAiLLMProvider>();
         services.AddTransient<OllamaLLMProvider>();
         services.AddTransient<GeminiLLMProvider>();
