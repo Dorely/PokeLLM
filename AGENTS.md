@@ -68,9 +68,3 @@ If build or tests fail, fix the cause, then re‑run until both pass. Do not mar
 
 ## Agent Instructions Updating
 - When major architectural changes occur that would contradict anything in these agent instructions, you must update this file.
-
-—
-
-Footnotes (Agent Tools)
-- Serena MCP: Use for precise code search and structured edits (symbols, references, safe inserts/replacements) when navigating or refactoring.
-- Context7 Docs: Resolve a library (e.g., `/microsoft/semantic-kernel`) and fetch focused docs to guide implementation details when needed.
