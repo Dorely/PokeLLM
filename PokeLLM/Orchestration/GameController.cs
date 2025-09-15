@@ -8,7 +8,6 @@ namespace PokeLLM.Game.GameLogic;
 public interface IGameController
 {
     IAsyncEnumerable<string> ProcessInputAsync(string input, CancellationToken cancellationToken = default);
-    Task<GamePhase> GetCurrentPhaseAsync();
 }
 
 public class GameController : IGameController
