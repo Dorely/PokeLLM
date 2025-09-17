@@ -29,10 +29,10 @@ public class AdventureModuleRepository : IAdventureModuleRepository
     public AdventureModuleRepository(IOptions<GameStateRepositoryOptions>? options = null)
     {
         var configuredDirectory = options?.Value?.DataDirectory;
-        var baseDirectory = string.IsNullOrWhiteSpace(configuredDirectory)
-            ? Directory.GetCurrentDirectory()
+        var rootDirectory = string.IsNullOrWhiteSpace(configuredDirectory)
+            ? Path.Combine(Directory.GetCurrentDirectory(), GameStateRepository.DefaultDirectoryName)
             : Path.GetFullPath(configuredDirectory, Directory.GetCurrentDirectory());
-        _modulesDirectory = Path.Combine(baseDirectory, DefaultDirectoryName);
+        _modulesDirectory = Path.Combine(rootDirectory, DefaultDirectoryName);
 
         Directory.CreateDirectory(_modulesDirectory);
     }

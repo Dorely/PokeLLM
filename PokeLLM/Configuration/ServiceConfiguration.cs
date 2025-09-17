@@ -15,99 +15,52 @@ namespace PokeLLM.Game.Configuration;
 
 public static class ServiceConfiguration
 {
-    // Configuration: Change these to switch between providers
-    //private const string MAIN_LLM_PROVIDER = "Gemini"; // "OpenAI", "Ollama", "Gemini"
-    private const string MAIN_LLM_PROVIDER = "OpenAI"; // "OpenAI", "Ollama", "Gemini"
-    private const string EMBEDDING_PROVIDER = "Ollama"; // "OpenAI", "Ollama" (default)
+    private const string DefaultProvider = "OpenAI";
 
     public static IServiceCollection ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
-        // Add configuration
         services.AddSingleton(configuration);
-        
-        // Configure flexible provider system
+
+        var providerSelection = configuration.GetSection("Provider");
+        var selectedLlmProvider = providerSelection["LLM"] ?? DefaultProvider;
+        var selectedEmbeddingProvider = providerSelection["Embedding"];
+        if (string.IsNullOrWhiteSpace(selectedEmbeddingProvider))
+        {
+            selectedEmbeddingProvider = selectedLlmProvider;
+        }
+
         services.Configure<FlexibleProviderConfig>(config =>
         {
-            // Configure main LLM provider
-            config.LLM.Provider = MAIN_LLM_PROVIDER;
-            config.Embedding.Provider = EMBEDDING_PROVIDER;
-            
-            // Set default models and dimensions based on providers
-            switch (MAIN_LLM_PROVIDER.ToLower())
-            {
-                case "openai":
-                    configuration.GetSection("OpenAi").Bind(config.LLM);
-                    config.LLM.ModelId = config.LLM.ModelId ?? "gpt-4o-mini";
-                    break;
-                case "ollama":
-                    configuration.GetSection("Ollama").Bind(config.LLM);
-                    config.LLM.ModelId = config.LLM.ModelId ?? "llama3.1";
-                    config.LLM.Endpoint = config.LLM.Endpoint ?? "http://localhost:11434";
-                    break;
-                case "gemini":
-                    configuration.GetSection("Gemini").Bind(config.LLM);
-                    config.LLM.ModelId = config.LLM.ModelId ?? "gemini-1.5-flash";
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unknown main LLM provider: {MAIN_LLM_PROVIDER}");
-            }
-            
-            // Configure embedding provider (always separate)
-            switch (EMBEDDING_PROVIDER.ToLower())
-            {
-                case "openai":
-                    var openAiSection = configuration.GetSection("OpenAi");
-                    config.Embedding.ApiKey = openAiSection["ApiKey"];
-                    config.Embedding.ModelId = config.Embedding.ModelId ?? "text-embedding-3-small";
-                    config.Embedding.Dimensions = config.Embedding.Dimensions > 0 ? config.Embedding.Dimensions : 1536;
-                    break;
-                case "ollama":
-                    var ollamaSection = configuration.GetSection("Ollama");
-                    config.Embedding.Endpoint = ollamaSection["Endpoint"] ?? "http://localhost:11434";
-                    config.Embedding.ModelId = config.Embedding.ModelId ?? "nomic-embed-text";
-                    config.Embedding.Dimensions = config.Embedding.Dimensions > 0 ? config.Embedding.Dimensions : 768;
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unknown embedding provider: {EMBEDDING_PROVIDER}");
-            }
+            ApplyLlmConfig(config.LLM, configuration, selectedLlmProvider);
+            ApplyEmbeddingConfig(config.Embedding, configuration, selectedEmbeddingProvider);
         });
-        
-        // Also configure individual ModelConfig for backward compatibility
+
         services.Configure<ModelConfig>(config =>
         {
-            switch (MAIN_LLM_PROVIDER.ToLower())
-            {
-                case "openai":
-                    configuration.GetSection("OpenAi").Bind(config);
-                    config.EmbeddingDimensions = EMBEDDING_PROVIDER.ToLower() == "openai" ? 1536 : 768;
-                    break;
-                case "ollama":
-                    configuration.GetSection("Ollama").Bind(config);
-                    config.EmbeddingDimensions = EMBEDDING_PROVIDER.ToLower() == "openai" ? 1536 : 768;
-                    break;
-                case "gemini":
-                    configuration.GetSection("Gemini").Bind(config);
-                    config.EmbeddingDimensions = EMBEDDING_PROVIDER.ToLower() == "openai" ? 1536 : 768;
-                    break;
-            }
+            var llm = new LLMConfig();
+            ApplyLlmConfig(llm, configuration, selectedLlmProvider);
+            config.ApiKey = llm.ApiKey;
+            config.ModelId = llm.ModelId;
+
+            var embedding = new EmbeddingConfig();
+            ApplyEmbeddingConfig(embedding, configuration, selectedEmbeddingProvider);
+            config.EmbeddingModelId = embedding.ModelId;
+            config.EmbeddingDimensions = embedding.Dimensions;
         });
-        
+
         services.Configure<QdrantConfig>(configuration.GetSection("Qdrant"));
 
-        // Register IEmbeddingGenerator based on embedding provider
-        services.AddTransient<IEmbeddingGenerator<string, Embedding<float>>>(serviceProvider => 
+        services.AddTransient<IEmbeddingGenerator<string, Embedding<float>>>(serviceProvider =>
         {
             var flexConfig = serviceProvider.GetRequiredService<IOptions<FlexibleProviderConfig>>();
             return CreateEmbeddingGenerator(flexConfig);
         });
 
-        // Add core services (order matters to avoid circular dependencies)
         services.Configure<GameStateRepositoryOptions>(configuration.GetSection("GameState"));
         services.AddSingleton<IGameStateRepository, GameStateRepository>();
         services.AddSingleton<IAdventureModuleRepository, AdventureModuleRepository>();
         services.AddTransient<IVectorStoreService, QdrantVectorStoreService>();
 
-        // Register Game Logic Services
         services.AddTransient<IGameLogicService, GameLogicService>();
         services.AddTransient<ICharacterManagementService, CharacterManagementService>();
         services.AddTransient<IInformationManagementService, InformationManagementService>();
@@ -116,7 +69,6 @@ public static class ServiceConfiguration
         services.AddTransient<IPlayerPokemonManagementService, PlayerPokemonManagementService>();
         services.AddTransient<IWorldManagementService, WorldManagementService>();
 
-        // Register plugins (updated for new architecture)
         services.AddTransient<ExplorationPhasePlugin>();
         services.AddTransient<CombatPhasePlugin>();
         services.AddTransient<LevelUpPhasePlugin>();
@@ -124,112 +76,109 @@ public static class ServiceConfiguration
         services.AddTransient<GameSetupPhasePlugin>();
         services.AddTransient<WorldGenerationPhasePlugin>();
 
-        // Register all LLM providers
         services.AddTransient<OpenAiLLMProvider>();
         services.AddTransient<OllamaLLMProvider>();
         services.AddTransient<GeminiLLMProvider>();
-        
-        // Register ILLMProvider based on main LLM provider configuration
-        switch (MAIN_LLM_PROVIDER.ToLower())
-        {
-            case "openai":
-                services.AddTransient<ILLMProvider, OpenAiLLMProvider>();
-                break;
-            case "ollama":
-                services.AddTransient<ILLMProvider, OllamaLLMProvider>();
-                break;
-            case "gemini":
-                services.AddTransient<ILLMProvider, GeminiLLMProvider>();
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown main LLM provider: {MAIN_LLM_PROVIDER}");
-        }
 
-        // Register new service architecture
+        services.AddTransient<ILLMProvider>(serviceProvider =>
+        {
+            var flexConfig = serviceProvider.GetRequiredService<IOptions<FlexibleProviderConfig>>();
+            return flexConfig.Value.LLM.Provider.ToLower() switch
+            {
+                "openai" => serviceProvider.GetRequiredService<OpenAiLLMProvider>(),
+                "ollama" => serviceProvider.GetRequiredService<OllamaLLMProvider>(),
+                "gemini" => serviceProvider.GetRequiredService<GeminiLLMProvider>(),
+                _ => throw new InvalidOperationException($"Unknown LLM provider: {flexConfig.Value.LLM.Provider}")
+            };
+        });
+
         services.AddScoped<IUnifiedContextService, UnifiedContextService>();
-        
-        // Register phase service provider
         services.AddScoped<IPhaseServiceProvider, PhaseServiceProvider>();
-        
         services.AddScoped<IGameController, GameController>();
 
         return services;
     }
 
-    private static IEmbeddingGenerator<string, Embedding<float>> CreateOpenAIEmbeddingGenerator(IOptions<ModelConfig> options)
+    private static void ApplyLlmConfig(LLMConfig target, IConfiguration configuration, string provider)
     {
-        // Ensure we have valid configuration values or use defaults for OpenAI
-        var apiKey = !string.IsNullOrWhiteSpace(options.Value.ApiKey) ? options.Value.ApiKey : "test-api-key";
-        var embeddingModelId = !string.IsNullOrWhiteSpace(options.Value.EmbeddingModelId) ? options.Value.EmbeddingModelId : "text-embedding-3-small";
-        
-        // Create a minimal kernel just for the embedding generator
-        var kernelBuilder = Kernel.CreateBuilder();
-#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        kernelBuilder.AddOpenAIEmbeddingGenerator(
-            modelId: embeddingModelId,
-            apiKey: apiKey
-        );
-#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        
-        var kernel = kernelBuilder.Build();
-        return kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        switch (provider.ToLower())
+        {
+            case "openai":
+                var openAi = configuration.GetSection("OpenAi");
+                target.Provider = "OpenAI";
+                target.ApiKey = openAi["ApiKey"];
+                target.ModelId = openAi["ModelId"] ?? "gpt-4.1-mini";
+                target.Endpoint = openAi["Endpoint"];
+                break;
+            case "ollama":
+                var ollama = configuration.GetSection("Ollama");
+                target.Provider = "Ollama";
+                target.Endpoint = ollama["Endpoint"] ?? "http://localhost:11434";
+                target.ModelId = ollama["ModelId"] ?? "llama3.1";
+                break;
+            case "gemini":
+                var gemini = configuration.GetSection("Gemini");
+                target.Provider = "Gemini";
+                target.ApiKey = gemini["ApiKey"];
+                target.ModelId = gemini["ModelId"] ?? "gemini-2.5-flash";
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown LLM provider: {provider}");
+        }
     }
 
-    private static IEmbeddingGenerator<string, Embedding<float>> CreateOllamaEmbeddingGenerator(IOptions<ModelConfig> options)
+    private static void ApplyEmbeddingConfig(EmbeddingConfig target, IConfiguration configuration, string provider)
     {
-        // Ensure we have valid configuration values or use defaults for Ollama
-        var endpoint = !string.IsNullOrWhiteSpace(options.Value.ApiKey) ? new Uri(options.Value.ApiKey) : new Uri("http://localhost:11434");
-        var embeddingModelId = !string.IsNullOrWhiteSpace(options.Value.EmbeddingModelId) ? options.Value.EmbeddingModelId : "nomic-embed-text";
-        
-        // Create a minimal kernel just for the embedding generator
-        var kernelBuilder = Kernel.CreateBuilder();
-#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        kernelBuilder.AddOllamaEmbeddingGenerator(
-            modelId: embeddingModelId,
-            endpoint: endpoint
-        );
-#pragma warning restore SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        
-        var kernel = kernelBuilder.Build();
-        return kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        switch (provider.ToLower())
+        {
+            case "openai":
+                var openAi = configuration.GetSection("OpenAi");
+                target.Provider = "OpenAI";
+                target.ApiKey = openAi["ApiKey"];
+                target.ModelId = openAi["EmbeddingModelId"] ?? "text-embedding-3-small";
+                target.Dimensions = int.TryParse(openAi["EmbeddingDimensions"], out var openAiDims) ? openAiDims : 1536;
+                break;
+            case "ollama":
+                var ollama = configuration.GetSection("Ollama");
+                target.Provider = "Ollama";
+                target.Endpoint = ollama["Endpoint"] ?? "http://localhost:11434";
+                target.ModelId = ollama["EmbeddingModelId"] ?? "nomic-embed-text";
+                target.Dimensions = int.TryParse(ollama["EmbeddingDimensions"], out var ollamaDims) ? ollamaDims : 768;
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown embedding provider: {provider}");
+        }
     }
 
     private static IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator(IOptions<FlexibleProviderConfig> options)
     {
         var config = options.Value;
         var kernelBuilder = Kernel.CreateBuilder();
-        
-        // Create embedding generator based on embedding provider configuration
+
         switch (config.Embedding.Provider.ToLower())
         {
             case "openai":
                 var apiKey = !string.IsNullOrWhiteSpace(config.Embedding.ApiKey) ? config.Embedding.ApiKey : "test-api-key";
                 var embeddingModelId = !string.IsNullOrWhiteSpace(config.Embedding.ModelId) ? config.Embedding.ModelId : "text-embedding-3-small";
-                
 #pragma warning disable SKEXP0010
                 kernelBuilder.AddOpenAIEmbeddingGenerator(
                     modelId: embeddingModelId,
-                    apiKey: apiKey
-                );
+                    apiKey: apiKey);
 #pragma warning restore SKEXP0010
                 break;
-                
             case "ollama":
                 var endpoint = !string.IsNullOrEmpty(config.Embedding.Endpoint) ? new Uri(config.Embedding.Endpoint) : new Uri("http://localhost:11434");
                 var ollamaEmbeddingModelId = !string.IsNullOrWhiteSpace(config.Embedding.ModelId) ? config.Embedding.ModelId : "nomic-embed-text";
-                
 #pragma warning disable SKEXP0070
                 kernelBuilder.AddOllamaEmbeddingGenerator(
                     modelId: ollamaEmbeddingModelId,
-                    endpoint: endpoint
-                );
+                    endpoint: endpoint);
 #pragma warning restore SKEXP0070
                 break;
-                
             default:
                 throw new InvalidOperationException($"Unknown embedding provider: {config.Embedding.Provider}");
         }
-        
+
         var kernel = kernelBuilder.Build();
         return kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
     }

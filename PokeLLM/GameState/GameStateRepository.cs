@@ -30,7 +30,6 @@ public class GameStateRepository : IGameStateRepository
     {
         _gameStateDirectory = ResolveDirectory(dataDirectory);
         _currentStateFile = Path.Combine(_gameStateDirectory, "game_current_state.json");
-
         _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -46,7 +45,7 @@ public class GameStateRepository : IGameStateRepository
     {
         if (string.IsNullOrWhiteSpace(dataDirectory))
         {
-            return Directory.GetCurrentDirectory();
+            return Path.Combine(Directory.GetCurrentDirectory(), DefaultDirectoryName);
         }
 
         return Path.GetFullPath(dataDirectory, Directory.GetCurrentDirectory());
