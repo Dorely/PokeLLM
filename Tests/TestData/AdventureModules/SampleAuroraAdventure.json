@@ -1,0 +1,4501 @@
+{
+  "metadata": {
+    "moduleId": "module_aurelia_archipelago",
+    "title": "Aurelia Archipelago: Luminous Horizons",
+    "version": "0.1.0",
+    "createdAt": "2024-06-01T00:00:00Z",
+    "generator": {
+      "llmProvider": "OpenAi",
+      "modelId": "gpt-4o-worldgen",
+      "seedPrompt": "WorldGenerationPhase",
+      "notes": "Draft module assembled for regression testing of adventure lifecycle."
+    },
+    "recommendedLevelRange": "Levels 3-8",
+    "summary": "A chain of solar-powered islands threatened by the Shadow Cartel while the legendary Solaryn stirs beneath the waves.",
+    "tags": [
+      "archipelago",
+      "league",
+      "legendary",
+      "shadow-cartel"
+    ]
+  },
+  "world": {
+    "setting": "A sun-drenched archipelago where floating solar arrays power island habitats and Pok\u00e9mon research domes.",
+    "themes": [
+      "Exploration",
+      "Community",
+      "Renewable Innovation",
+      "Corruption vs. Hope"
+    ],
+    "startingContext": "Festival preparations in Sunspire City are interrupted by cartel sabotage, leaving the solar grid flickering.",
+    "tone": "Adventurous and cinematic with bright highs and looming shadows.",
+    "hooks": [
+      "A sabotaged solar array strands travelers across the archipelago.",
+      "Rival Set challenges the player to race for the Radiant Badge.",
+      "Professor Marina requests help retrieving the Solaryn Keystone before the cartel does.",
+      "Companion Lyra uncovers evidence that the cartel is funneling energy to an unknown subterranean vault."
+    ]
+  },
+  "locations": {
+    "loc_sunspire_city": {
+      "locationId": "loc_sunspire_city",
+      "name": "Sunspire City",
+      "summary": "Capital hub of the archipelago and site of the Radiant Gym.",
+      "fullDescription": "Sunspire's terraced plazas glitter with solar glass. Research domes line the harbor while the Radiant Gym towers above, channeling daylight into radiant arenas.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "city",
+        "gym",
+        "capital"
+      ],
+      "factionsPresent": [
+        "faction_luminance_league",
+        "faction_archipelago_guard"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_sunspire_gym",
+          "name": "Radiant Gym",
+          "description": "Arena of refracted light overseen by Leader Solaris.",
+          "relatedNpcIds": [
+            "npc_gym_leader_solaris"
+          ],
+          "relatedItemIds": [
+            "item_sunflare_badge"
+          ]
+        },
+        {
+          "id": "poi_aurelia_university",
+          "name": "Aurelia Research Dome",
+          "description": "Professor Marina's lab dedicated to sustainable Pok\u00e9mon habitats.",
+          "relatedNpcIds": [
+            "npc_professor_marina",
+            "npc_companion_lyra"
+          ],
+          "relatedItemIds": [
+            "item_solaryn_keystone"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_sunspire_gym_battle",
+          "type": "GymBattle",
+          "trigger": "Player challenges Solaris for the Radiant Badge.",
+          "difficulty": "Hard",
+          "narrative": "Solaris tests the challenger's ability to adapt to blinding light and shifting terrain.",
+          "participants": [
+            "npc_gym_leader_solaris",
+            "inst_magmar_radiant_guard"
+          ],
+          "outcomes": [
+            {
+              "description": "Radiant Badge awarded and solar grid stabilized.",
+              "resultingChanges": [
+                {
+                  "changeType": "AwardItem",
+                  "targetType": "item",
+                  "targetId": "item_sunflare_badge",
+                  "payload": "1"
+                },
+                {
+                  "changeType": "UnlockQuestStage",
+                  "targetType": "quest",
+                  "targetId": "quest_pokemon_league_stage2",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "south",
+          "targetLocationId": "loc_coral_causeway",
+          "notes": "Glide rail along the festival promenade."
+        },
+        {
+          "direction": "east",
+          "targetLocationId": "loc_starfall_observatory",
+          "notes": "Skybridge to the observatory."
+        }
+      ]
+    },
+    "loc_tidal_crown_city": {
+      "locationId": "loc_tidal_crown_city",
+      "name": "Tidal Crown City",
+      "summary": "An amphitheater city built into coral cliffs, home to the Tidal Crown Gym.",
+      "fullDescription": "Waterfalls cascade through amphitheater arenas while tide-powered turbines hum beneath the boardwalks.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "city",
+        "gym",
+        "coastal"
+      ],
+      "factionsPresent": [
+        "faction_luminance_league",
+        "faction_research_coalition"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_tidal_gym",
+          "name": "Tidal Crown Gym",
+          "description": "A multi-tiered water arena regulated by tide gates.",
+          "relatedNpcIds": [
+            "npc_gym_leader_cascade"
+          ],
+          "relatedItemIds": [
+            "item_tidal_coronet"
+          ]
+        },
+        {
+          "id": "poi_coral_locks",
+          "name": "Coral Lock Network",
+          "description": "Controls sea level flow across trade routes.",
+          "relatedNpcIds": [
+            "npc_companion_lyra"
+          ],
+          "relatedItemIds": []
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_tidal_cartel_sabotage",
+          "type": "HazardResponse",
+          "trigger": "Investigate flickering tide gates during festival night.",
+          "difficulty": "Medium",
+          "narrative": "Shadow Cartel divers sabotage the turbines, releasing caged Sharpedo.",
+          "participants": [
+            "npc_shadow_cartel_saboteur",
+            "inst_milotic_tidal_guardian"
+          ],
+          "outcomes": [
+            {
+              "description": "Cartel plot disrupted, unlocking safe passage to Shattered Reef.",
+              "resultingChanges": [
+                {
+                  "changeType": "UnlockLocation",
+                  "targetType": "location",
+                  "targetId": "loc_shattered_reef_vault",
+                  "payload": "after repairs"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "north",
+          "targetLocationId": "loc_coral_causeway",
+          "notes": "Glass-bottom skiff ferry."
+        },
+        {
+          "direction": "west",
+          "targetLocationId": "loc_shattered_reef_vault",
+          "notes": "Requires dive module or escort."
+        }
+      ]
+    },
+    "loc_verdant_cradle": {
+      "locationId": "loc_verdant_cradle",
+      "name": "Verdant Cradle",
+      "summary": "Floating greenhouse arcs supporting the Verdant Cradle Gym.",
+      "fullDescription": "Suspended sky gardens provide nutrient-rich habitats populated by symbiotic Pok\u00e9mon and botanists.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "gym",
+        "agriculture",
+        "research"
+      ],
+      "factionsPresent": [
+        "faction_research_coalition"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_verdant_gym",
+          "name": "Verdant Sanctuary Gym",
+          "description": "Aerial platforms rotate to simulate trail puzzles.",
+          "relatedNpcIds": [
+            "npc_gym_leader_thorn"
+          ],
+          "relatedItemIds": [
+            "item_verdant_emblem"
+          ]
+        },
+        {
+          "id": "poi_seed_archive",
+          "name": "Seedling Archive",
+          "description": "Stores rare starter seeds, guarded by Thorn's Trevenant.",
+          "relatedNpcIds": [
+            "npc_gym_leader_thorn"
+          ],
+          "relatedItemIds": [
+            "item_growth_tonic"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_cradle_pollination_trial",
+          "type": "PuzzleChallenge",
+          "trigger": "Assist in rebalancing pollination drones after sabotage.",
+          "difficulty": "Medium",
+          "narrative": "Players coordinate with friendly Combee swarms to restore nutrient flow.",
+          "participants": [
+            "npc_gym_leader_thorn",
+            "inst_trevenant_heartwood"
+          ],
+          "outcomes": [
+            {
+              "description": "Unlocks access to Rootbound Labyrinth and yields growth tonics.",
+              "resultingChanges": [
+                {
+                  "changeType": "AwardItem",
+                  "targetType": "item",
+                  "targetId": "item_growth_tonic",
+                  "payload": "2"
+                },
+                {
+                  "changeType": "UnlockLocation",
+                  "targetType": "location",
+                  "targetId": "loc_rootbound_labyrinth",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "southeast",
+          "targetLocationId": "loc_coral_causeway",
+          "notes": "Aerial tram network."
+        }
+      ]
+    },
+    "loc_slate_bastion": {
+      "locationId": "loc_slate_bastion",
+      "name": "Slate Bastion",
+      "summary": "Fortified mining town anchored around the Bastion Gym.",
+      "fullDescription": "Basalt walls repel constant storms while subterranean forges harness geothermal vents.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "gym",
+        "industrial"
+      ],
+      "factionsPresent": [
+        "faction_archipelago_guard",
+        "faction_shadow_cartel"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_bastion_gym",
+          "name": "Bastion Hammer Gym",
+          "description": "An endurance trial fought atop moving ore carts.",
+          "relatedNpcIds": [
+            "npc_gym_leader_onyx"
+          ],
+          "relatedItemIds": [
+            "item_bastion_cog"
+          ]
+        },
+        {
+          "id": "poi_geothermal_forge",
+          "name": "Geothermal Forge",
+          "description": "Shadow Cartel attempts to siphon power from this facility.",
+          "relatedNpcIds": [
+            "npc_shadow_cartel_boss"
+          ],
+          "relatedItemIds": [
+            "item_shadow_cipher"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_bastion_rescue",
+          "type": "RescueOperation",
+          "trigger": "Respond to a collapsing mine shaft during cartel sabotage.",
+          "difficulty": "Hard",
+          "narrative": "Players free trapped miners while battling magnetized Steelix drones.",
+          "participants": [
+            "npc_gym_leader_onyx",
+            "creature_aggron"
+          ],
+          "outcomes": [
+            {
+              "description": "Cartel influence in Slate Bastion diminishes.",
+              "resultingChanges": [
+                {
+                  "changeType": "AdjustFactionReputation",
+                  "targetType": "faction",
+                  "targetId": "faction_shadow_cartel",
+                  "payload": "-10"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "northwest",
+          "targetLocationId": "loc_solaris_forge",
+          "notes": "Tunnel network guarded by Onyx"
+        },
+        {
+          "direction": "east",
+          "targetLocationId": "loc_emberglow_wastes",
+          "notes": "Cliffside funicular"
+        }
+      ]
+    },
+    "loc_zephyr_haven": {
+      "locationId": "loc_zephyr_haven",
+      "name": "Zephyr Haven",
+      "summary": "Floating wind farms and the Zephyr Haven Gym drift in constant gales.",
+      "fullDescription": "Levitation crystals keep the island suspended while skyfarers cultivate gale-adapted Pok\u00e9mon.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "gym",
+        "flying",
+        "aerial"
+      ],
+      "factionsPresent": [
+        "faction_luminance_league"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_zephyr_gym",
+          "name": "Zephyr Cyclone Gym",
+          "description": "Rotating arenas demand balance and aerial strategy.",
+          "relatedNpcIds": [
+            "npc_gym_leader_aeris"
+          ],
+          "relatedItemIds": [
+            "item_zephyr_wing"
+          ]
+        },
+        {
+          "id": "poi_wind_relay",
+          "name": "Wind Relay Towers",
+          "description": "Relay stations that stabilize stormfront communications.",
+          "relatedNpcIds": [
+            "npc_companion_dex"
+          ],
+          "relatedItemIds": []
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_haven_storm_trial",
+          "type": "SkillChallenge",
+          "trigger": "Navigate a cyclone corridor to rescue downed gliders.",
+          "difficulty": "Medium",
+          "narrative": "Players coordinate updrafts while Aeris's Talonflame herd stray Drifloon.",
+          "participants": [
+            "npc_gym_leader_aeris",
+            "creature_talonflame"
+          ],
+          "outcomes": [
+            {
+              "description": "Unlocks access to the Skyglass Spire dungeon.",
+              "resultingChanges": [
+                {
+                  "changeType": "UnlockLocation",
+                  "targetType": "location",
+                  "targetId": "loc_skyglass_spire",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "southwest",
+          "targetLocationId": "loc_coral_causeway",
+          "notes": "Sky ferry docking platform"
+        }
+      ]
+    },
+    "loc_luminous_mirage": {
+      "locationId": "loc_luminous_mirage",
+      "name": "Luminous Mirage",
+      "summary": "Psychic sanctum and home to Mirage Gym hidden within refracted light mazes.",
+      "fullDescription": "Mirrors and psychic crystals bend perception; visitors rely on guided lights to traverse.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "gym",
+        "psychic",
+        "mystic"
+      ],
+      "factionsPresent": [
+        "faction_research_coalition"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_mirage_gym",
+          "name": "Mirage Refraction Gym",
+          "description": "Teleport pads rearrange the battlefield mid-match.",
+          "relatedNpcIds": [
+            "npc_gym_leader_mirage"
+          ],
+          "relatedItemIds": [
+            "item_mirage_charm"
+          ]
+        },
+        {
+          "id": "poi_psychic_observatory",
+          "name": "Psychic Observatory",
+          "description": "Researches Solaryn's dream signals.",
+          "relatedNpcIds": [
+            "npc_professor_marina"
+          ],
+          "relatedItemIds": []
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_mirage_mind_bend",
+          "type": "MindTrial",
+          "trigger": "Solve illusions to reach the Mirage Gym.",
+          "difficulty": "Medium",
+          "narrative": "Mirage guides challengers through echoing futures while testing empathy.",
+          "participants": [
+            "npc_gym_leader_mirage",
+            "creature_gardevoir"
+          ],
+          "outcomes": [
+            {
+              "description": "Unlocks access to the Eclipsed Sanctum and reveals cartel hideouts.",
+              "resultingChanges": [
+                {
+                  "changeType": "RevealLore",
+                  "targetType": "lore",
+                  "targetId": "lore_shadow_cartel_history",
+                  "payload": ""
+                },
+                {
+                  "changeType": "UnlockLocation",
+                  "targetType": "location",
+                  "targetId": "loc_eclipsed_sanctum",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "north",
+          "targetLocationId": "loc_sunspire_city",
+          "notes": "Light bridge activated after gym trial"
+        }
+      ]
+    },
+    "loc_emberglow_wastes": {
+      "locationId": "loc_emberglow_wastes",
+      "name": "Emberglow Wastes",
+      "summary": "Volcanic desert hosting Quake's Ground Gym and hidden ruins.",
+      "fullDescription": "Glassified dunes shimmer above magma veins; storms of ash reveal ancient technology.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "gym",
+        "dungeon",
+        "volcanic"
+      ],
+      "factionsPresent": [
+        "faction_shadow_cartel"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_quake_gym",
+          "name": "Wasteland Resonance Gym",
+          "description": "Earthquake chambers shift geometry mid-battle.",
+          "relatedNpcIds": [
+            "npc_gym_leader_quake"
+          ],
+          "relatedItemIds": [
+            "item_quake_plate"
+          ]
+        },
+        {
+          "id": "poi_dune_beacons",
+          "name": "Seismic Beacon Network",
+          "description": "Tracks Solaryn tremors; cartel seeks to hijack data.",
+          "relatedNpcIds": [
+            "npc_gym_leader_quake"
+          ],
+          "relatedItemIds": []
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_wastes_cartel_ambush",
+          "type": "Battle",
+          "trigger": "Cartel commandos attempt to steal beacon cores.",
+          "difficulty": "Hard",
+          "narrative": "Quake teams with the player against Garchomp riders stirring sandstorms.",
+          "participants": [
+            "npc_gym_leader_quake",
+            "npc_shadow_cartel_commander",
+            "inst_garchomp_resonance"
+          ],
+          "outcomes": [
+            {
+              "description": "Cartel offensive routed, revealing path to Solaris Forge.",
+              "resultingChanges": [
+                {
+                  "changeType": "UnlockLocation",
+                  "targetType": "location",
+                  "targetId": "loc_solaris_forge",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "west",
+          "targetLocationId": "loc_slate_bastion",
+          "notes": "Magma rail with hazard checks"
+        },
+        {
+          "direction": "south",
+          "targetLocationId": "loc_solaris_forge",
+          "notes": "Requires quake stabilizers"
+        }
+      ]
+    },
+    "loc_starfall_observatory": {
+      "locationId": "loc_starfall_observatory",
+      "name": "Starfall Observatory",
+      "summary": "Electromagnetic observatory that doubles as Nova's Electric Gym.",
+      "fullDescription": "An observatory perched on a floating ring, collecting cosmic rays to power experimental labs.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "gym",
+        "electric",
+        "research"
+      ],
+      "factionsPresent": [
+        "faction_luminance_league",
+        "faction_research_coalition"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_nova_gym",
+          "name": "Starfall Conductor Gym",
+          "description": "Battlefield rotates around electromagnetic pylons.",
+          "relatedNpcIds": [
+            "npc_gym_leader_nova"
+          ],
+          "relatedItemIds": [
+            "item_nova_circuit"
+          ]
+        },
+        {
+          "id": "poi_cosmic_array",
+          "name": "Cosmic Array",
+          "description": "Monitors Solaryn energy surges.",
+          "relatedNpcIds": [
+            "npc_professor_marina"
+          ],
+          "relatedItemIds": [
+            "item_solaryn_keystone"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_starfall_rival_rematch",
+          "type": "RivalBattle",
+          "trigger": "Set issues a rematch atop the cosmic array.",
+          "difficulty": "Hard",
+          "narrative": "Set's adaptive strategies force the player to counter agile Rotom formations.",
+          "participants": [
+            "npc_rival_set",
+            "npc_gym_leader_nova",
+            "creature_magnezone"
+          ],
+          "outcomes": [
+            {
+              "description": "Rival yields data unlocking the path to Eclipsed Sanctum.",
+              "resultingChanges": [
+                {
+                  "changeType": "UnlockQuestStage",
+                  "targetType": "quest",
+                  "targetId": "quest_rival_arc_stage3",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "west",
+          "targetLocationId": "loc_sunspire_city",
+          "notes": "Skybridge"
+        }
+      ]
+    },
+    "loc_coral_causeway": {
+      "locationId": "loc_coral_causeway",
+      "name": "Coral Causeway",
+      "summary": "Central transit route lined with stalls and festival games.",
+      "fullDescription": "Bioluminescent coral paths weave between islets. Travelers gather at night markets and story plazas.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "route",
+        "festival"
+      ],
+      "factionsPresent": [
+        "faction_companion_network",
+        "faction_shadow_cartel"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_festival_stage",
+          "name": "Luminous Stage",
+          "description": "Hosts performances by traveling companions.",
+          "relatedNpcIds": [
+            "npc_companion_lyra",
+            "npc_companion_dex"
+          ],
+          "relatedItemIds": []
+        },
+        {
+          "id": "poi_cartel_hideout",
+          "name": "Hidden Cargo Hold",
+          "description": "Smuggling tunnel disguised beneath market stalls.",
+          "relatedNpcIds": [
+            "npc_shadow_cartel_scout"
+          ],
+          "relatedItemIds": [
+            "item_shadow_cipher"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_causeway_opening",
+          "type": "OpeningScenario",
+          "trigger": "Adventure start during the Luminous Festival.",
+          "difficulty": "Story",
+          "narrative": "Cartel saboteurs ignite fireworks to mask their theft of Solaryn energy cells.",
+          "participants": [
+            "npc_companion_lyra",
+            "npc_shadow_cartel_scout",
+            "inst_shadow_lurantis_cell"
+          ],
+          "outcomes": [
+            {
+              "description": "Player rescues festival goers and chooses a starter partner.",
+              "resultingChanges": [
+                {
+                  "changeType": "SetStarter",
+                  "targetType": "player",
+                  "targetId": "pkmn_partner_starter",
+                  "payload": "choice"
+                },
+                {
+                  "changeType": "UnlockQuestStage",
+                  "targetType": "quest",
+                  "targetId": "quest_travel_companions_stage1",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "north",
+          "targetLocationId": "loc_sunspire_city",
+          "notes": "Festival tram"
+        },
+        {
+          "direction": "south",
+          "targetLocationId": "loc_tidal_crown_city",
+          "notes": "Glass skiffs"
+        },
+        {
+          "direction": "east",
+          "targetLocationId": "loc_zephyr_haven",
+          "notes": "Wind elevator"
+        }
+      ]
+    },
+    "loc_shattered_reef_vault": {
+      "locationId": "loc_shattered_reef_vault",
+      "name": "Shattered Reef Vault",
+      "summary": "Submerged vault containing ancient Solaryn technology.",
+      "fullDescription": "Labyrinthine coral caverns hide luminous glyphs; water currents conceal traps.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "dungeon",
+        "legendary"
+      ],
+      "factionsPresent": [
+        "faction_shadow_cartel"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_solaryn_glyph",
+          "name": "Solaryn Glyph Chamber",
+          "description": "Reveals history of Solaryn and the archipelago.",
+          "relatedNpcIds": [
+            "npc_professor_marina"
+          ],
+          "relatedItemIds": [
+            "item_solaryn_keystone"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_reef_cartel_showdown",
+          "type": "DungeonBoss",
+          "trigger": "Cartel boss attempts to seize Solaryn Keystone.",
+          "difficulty": "Hard",
+          "narrative": "Shadow Cartel saboteurs deploy quakedozer drones while Set lends reluctant aid.",
+          "participants": [
+            "npc_shadow_cartel_boss",
+            "npc_rival_set",
+            "inst_milotic_tidal_guardian"
+          ],
+          "outcomes": [
+            {
+              "description": "Players safeguard Keystone, unlocking legendary quest progression.",
+              "resultingChanges": [
+                {
+                  "changeType": "UnlockQuestStage",
+                  "targetType": "quest",
+                  "targetId": "quest_solaryn_mystery_stage2",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "east",
+          "targetLocationId": "loc_tidal_crown_city",
+          "notes": "Requires dive module"
+        }
+      ]
+    },
+    "loc_luminescent_caverns": {
+      "locationId": "loc_luminescent_caverns",
+      "name": "Luminescent Caverns",
+      "summary": "Crystal cave network humming with Solaryn resonance.",
+      "fullDescription": "Bioluminescent crystals sing harmonic tones; explorers coordinate to avoid resonant collapses.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "dungeon",
+        "crystal"
+      ],
+      "factionsPresent": [
+        "faction_research_coalition"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_resonance_altar",
+          "name": "Resonance Altar",
+          "description": "Synchronizes the Solaryn Keystone's pulse.",
+          "relatedNpcIds": [
+            "npc_professor_marina"
+          ],
+          "relatedItemIds": []
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_cavern_echoes",
+          "type": "Exploration",
+          "trigger": "Trace Solaryn songlines to stabilize crystals.",
+          "difficulty": "Medium",
+          "narrative": "Friendly Carbink guide the player through echo puzzles while a stray Diancie tests their harmony.",
+          "participants": [
+            "creature_solaryn_fragment"
+          ],
+          "outcomes": [
+            {
+              "description": "Player attunes Keystone, enhancing legendary quest progression.",
+              "resultingChanges": [
+                {
+                  "changeType": "ProgressLegendary",
+                  "targetType": "quest",
+                  "targetId": "quest_solaryn_mystery_stage3",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "north",
+          "targetLocationId": "loc_rootbound_labyrinth",
+          "notes": "Subterranean river"
+        }
+      ]
+    },
+    "loc_skyglass_spire": {
+      "locationId": "loc_skyglass_spire",
+      "name": "Skyglass Spire",
+      "summary": "Aerial dungeon of glass platforms frequented by rare bird Pok\u00e9mon.",
+      "fullDescription": "Transparent bridges glimmer in the sun; missteps send challengers floating to safe nets patrolled by Aeris's team.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "dungeon",
+        "aerial"
+      ],
+      "factionsPresent": [
+        "faction_luminance_league"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_spire_nest",
+          "name": "Skyglass Nest",
+          "description": "Roost of the guardian Talonflame.",
+          "relatedNpcIds": [
+            "npc_gym_leader_aeris"
+          ],
+          "relatedItemIds": [
+            "item_zephyr_wing"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_spire_updraft",
+          "type": "SkillChallenge",
+          "trigger": "Ride updrafts to deliver emergency supplies to gliders.",
+          "difficulty": "Easy",
+          "narrative": "Cooperative gliding fosters bonds between trainers and Pok\u00e9mon.",
+          "participants": [
+            "npc_companion_dex",
+            "creature_talonflame"
+          ],
+          "outcomes": [
+            {
+              "description": "Player gains trust of aerial community and faster travel between islands.",
+              "resultingChanges": [
+                {
+                  "changeType": "UnlockTravel",
+                  "targetType": "rule",
+                  "targetId": "travel_sky_paths",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "south",
+          "targetLocationId": "loc_zephyr_haven",
+          "notes": "Wind elevator"
+        }
+      ]
+    },
+    "loc_rootbound_labyrinth": {
+      "locationId": "loc_rootbound_labyrinth",
+      "name": "Rootbound Labyrinth",
+      "summary": "An overgrown trial ground beneath Verdant Cradle.",
+      "fullDescription": "Massive roots form shifting corridors while glowing spores mark safe passage.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "dungeon",
+        "nature"
+      ],
+      "factionsPresent": [
+        "faction_research_coalition"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_heartwood_shrine",
+          "name": "Heartwood Shrine",
+          "description": "Blesses trainers who preserve ecological balance.",
+          "relatedNpcIds": [
+            "npc_gym_leader_thorn"
+          ],
+          "relatedItemIds": [
+            "item_growth_tonic"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_labyrinth_guardian",
+          "type": "GuardianBattle",
+          "trigger": "Face Thorn's Trevenant to earn passage.",
+          "difficulty": "Medium",
+          "narrative": "A symbiotic Trevenant tests environmental stewardship.",
+          "participants": [
+            "npc_gym_leader_thorn",
+            "inst_trevenant_heartwood"
+          ],
+          "outcomes": [
+            {
+              "description": "Unlocks subterranean river to Luminescent Caverns.",
+              "resultingChanges": [
+                {
+                  "changeType": "UnlockLocation",
+                  "targetType": "location",
+                  "targetId": "loc_luminescent_caverns",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "south",
+          "targetLocationId": "loc_verdant_cradle",
+          "notes": "Spiral vine lift"
+        }
+      ]
+    },
+    "loc_aurelia_depths": {
+      "locationId": "loc_aurelia_depths",
+      "name": "Aurelia Depths",
+      "summary": "Abyssal trench where Solaryn slumbers.",
+      "fullDescription": "Luminescent currents swirl around a colossal, dormant figure. Ancient pylons hum with stored sunlight.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "dungeon",
+        "legendary"
+      ],
+      "factionsPresent": [
+        "faction_luminance_league",
+        "faction_shadow_cartel"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_solaryn_core",
+          "name": "Solaryn Core",
+          "description": "The heart of the legendary Pok\u00e9mon awaiting balance.",
+          "relatedNpcIds": [],
+          "relatedItemIds": [
+            "item_solaryn_keystone"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_solaryn_awakening",
+          "type": "LegendaryEncounter",
+          "trigger": "Complete Keystone attunement and confront the Shadow Cartel.",
+          "difficulty": "Epic",
+          "narrative": "Solaryn awakens amidst a battle between cartel dreadnoughts and league guardians.",
+          "participants": [
+            "inst_solaryn_radiant_core",
+            "npc_shadow_cartel_boss",
+            "npc_professor_marina"
+          ],
+          "outcomes": [
+            {
+              "description": "Final quest resolution branches; Solaryn chooses alliance based on player decisions.",
+              "resultingChanges": [
+                {
+                  "changeType": "ResolveLegendary",
+                  "targetType": "quest",
+                  "targetId": "quest_solaryn_mystery_stage4",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "up",
+          "targetLocationId": "loc_shattered_reef_vault",
+          "notes": "Requires Solaryn Keystone"
+        }
+      ]
+    },
+    "loc_gale_ruins": {
+      "locationId": "loc_gale_ruins",
+      "name": "Gale Ruins",
+      "summary": "Storm-ravaged ruins containing weather control relics.",
+      "fullDescription": "Crumbling towers harness wind currents; relics recalibrate the archipelago's climate shield.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "dungeon",
+        "weather"
+      ],
+      "factionsPresent": [
+        "faction_archipelago_guard"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_weather_relic",
+          "name": "Tempest Relic",
+          "description": "Controls emergency weather overrides.",
+          "relatedNpcIds": [
+            "npc_companion_dex"
+          ],
+          "relatedItemIds": []
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_ruin_tempest",
+          "type": "EnvironmentalChallenge",
+          "trigger": "Stabilize relics to prevent archipelago-wide storm.",
+          "difficulty": "Medium",
+          "narrative": "Cooperate with Dex to reconfigure weather pylons while fending off rogue Braviary.",
+          "participants": [
+            "npc_companion_dex"
+          ],
+          "outcomes": [
+            {
+              "description": "Unlocks all-weather travel routes.",
+              "resultingChanges": [
+                {
+                  "changeType": "UnlockTravel",
+                  "targetType": "rule",
+                  "targetId": "travel_storm_passage",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "east",
+          "targetLocationId": "loc_zephyr_haven",
+          "notes": "Jetstream corridor"
+        }
+      ]
+    },
+    "loc_solaris_forge": {
+      "locationId": "loc_solaris_forge",
+      "name": "Solaris Forge",
+      "summary": "Ancient facility that channels sunlight into defensive barriers.",
+      "fullDescription": "Golden conduits run beneath molten glass; dormant constructs guard the forge's core.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "dungeon",
+        "legendary",
+        "industrial"
+      ],
+      "factionsPresent": [
+        "faction_shadow_cartel",
+        "faction_luminance_league"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_forge_core",
+          "name": "Forge Core",
+          "description": "Controls the archipelago's solar barrier.",
+          "relatedNpcIds": [
+            "npc_gym_leader_solaris"
+          ],
+          "relatedItemIds": [
+            "item_sunflare_badge"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_forge_retake",
+          "type": "Assault",
+          "trigger": "Retake the forge from cartel engineers.",
+          "difficulty": "Hard",
+          "narrative": "Solaris leads a charge alongside the player to reclaim the forge.",
+          "participants": [
+            "npc_gym_leader_solaris",
+            "npc_shadow_cartel_commander",
+            "inst_magmar_radiant_guard"
+          ],
+          "outcomes": [
+            {
+              "description": "Solar barrier restored, weakening the cartel's influence island-wide.",
+              "resultingChanges": [
+                {
+                  "changeType": "AdjustFactionReputation",
+                  "targetType": "faction",
+                  "targetId": "faction_luminance_league",
+                  "payload": "10"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "north",
+          "targetLocationId": "loc_emberglow_wastes",
+          "notes": "Seismic elevator"
+        },
+        {
+          "direction": "east",
+          "targetLocationId": "loc_eclipsed_sanctum",
+          "notes": "Hidden tunnel revealed after retaking forge"
+        }
+      ]
+    },
+    "loc_eclipsed_sanctum": {
+      "locationId": "loc_eclipsed_sanctum",
+      "name": "Eclipsed Sanctum",
+      "summary": "Shadow Cartel's mobile headquarters hidden beneath the archipelago.",
+      "fullDescription": "An inverted ziggurat with constant eclipse lighting; cartel lieutenants coordinate operations here.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "dungeon",
+        "villain"
+      ],
+      "factionsPresent": [
+        "faction_shadow_cartel"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_cartel_command",
+          "name": "Command Nexus",
+          "description": "Central tactical room siphoning Solaryn energy.",
+          "relatedNpcIds": [
+            "npc_shadow_cartel_boss"
+          ],
+          "relatedItemIds": [
+            "item_shadow_cipher"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_cartel_finale",
+          "type": "BossBattle",
+          "trigger": "Confront boss Noctis at the height of the cartel uprising.",
+          "difficulty": "Epic",
+          "narrative": "Allies from across the islands rally to breach the sanctum.",
+          "participants": [
+            "npc_shadow_cartel_boss",
+            "npc_companion_lyra",
+            "npc_gym_leader_nova"
+          ],
+          "outcomes": [
+            {
+              "description": "Cartel operations crippled; Solaryn energy redistributed to the people.",
+              "resultingChanges": [
+                {
+                  "changeType": "ResolveQuest",
+                  "targetType": "quest",
+                  "targetId": "quest_shadow_cartel_stage4",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "west",
+          "targetLocationId": "loc_solaris_forge",
+          "notes": "Hidden aquifer tunnel"
+        },
+        {
+          "direction": "down",
+          "targetLocationId": "loc_aurelia_depths",
+          "notes": "Accessed during final assault"
+        }
+      ]
+    },
+    "loc_starlit_market": {
+      "locationId": "loc_starlit_market",
+      "name": "Starlit Market",
+      "summary": "Night bazaar that travels between islands.",
+      "fullDescription": "Floating lanterns and mobile shops provide rare wares and rumors.",
+      "region": "Aurelia Archipelago",
+      "tags": [
+        "market",
+        "social"
+      ],
+      "factionsPresent": [
+        "faction_companion_network"
+      ],
+      "pointsOfInterest": [
+        {
+          "id": "poi_lyra_stage",
+          "name": "Lyra's Pop-Up Stage",
+          "description": "Lyra shares songs that reveal hidden knowledge.",
+          "relatedNpcIds": [
+            "npc_companion_lyra"
+          ],
+          "relatedItemIds": [
+            "item_luminous_pass"
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "encounterId": "encounter_market_storycircle",
+          "type": "Social",
+          "trigger": "Join the nightly story circle.",
+          "difficulty": "Easy",
+          "narrative": "Companions and locals exchange tales providing clues for quests.",
+          "participants": [
+            "npc_companion_lyra",
+            "npc_companion_dex"
+          ],
+          "outcomes": [
+            {
+              "description": "Unlocks vector notes for future sessions and deepens companion bonds.",
+              "resultingChanges": [
+                {
+                  "changeType": "AddNote",
+                  "targetType": "session",
+                  "targetId": "note_market_story",
+                  "payload": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "connectedLocations": [
+        {
+          "direction": "itinerant",
+          "targetLocationId": "loc_coral_causeway",
+          "notes": "Appears weekly"
+        }
+      ]
+    }
+  },
+  "npcs": {
+    "npc_professor_marina": {
+      "npcId": "npc_professor_marina",
+      "name": "Professor Marina Sol",
+      "role": "Head researcher of the Aurelia Research Dome",
+      "motivation": "Ensure sustainable coexistence between technology, trainers, and Solaryn's awakening.",
+      "fullDescription": "Marina is a visionary marine biologist who pioneered solar-harmonic research. She wields calm authority and deep empathy for Pok\u00e9mon.",
+      "stats": {
+        "currentVigor": 18,
+        "maxVigor": 18,
+        "strength": 8,
+        "dexterity": 10,
+        "constitution": 12,
+        "intelligence": 18,
+        "wisdom": 16,
+        "charisma": 14
+      },
+      "characterDetails": {
+        "class": "Researcher",
+        "inventory": [
+          {
+            "itemId": "item_solaryn_keystone",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_ultra_ball",
+            "quantity": 2
+          }
+        ],
+        "money": 5000,
+        "globalRenown": 80,
+        "globalNotoriety": 5
+      },
+      "factions": [
+        "faction_research_coalition",
+        "faction_luminance_league"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_gym_leader_solaris",
+          "type": "Collaborator",
+          "summary": "Co-develop solar conduit technology."
+        },
+        {
+          "targetId": "npc_shadow_cartel_boss",
+          "type": "Adversary",
+          "summary": "Opposes the cartel's exploitation of Solaryn."
+        },
+        {
+          "targetId": "npc_companion_lyra",
+          "type": "Mentor",
+          "summary": "Guides Lyra's investigative reporting."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_marina_briefing",
+          "context": "QuestBriefing",
+          "lines": [
+            {
+              "speaker": "Professor Marina",
+              "content": "Solaryn's pulse is uneven tonight. I need your help to restore the harmony before the Shadow Cartel exploits it.",
+              "notes": "Sets up Solaryn mystery quest."
+            },
+            {
+              "speaker": "Professor Marina",
+              "content": "Trust Lyra's instincts. Her data leads us to the cartel's next move.",
+              "notes": "Links to companion quest."
+            }
+          ]
+        }
+      ]
+    },
+    "npc_gym_leader_solaris": {
+      "npcId": "npc_gym_leader_solaris",
+      "name": "Leader Solaris",
+      "role": "Radiant Gym Leader",
+      "motivation": "Protect the archipelago's solar network and inspire challengers to shine.",
+      "fullDescription": "Solaris is a former engineer who redesigned Sunspire City's solar arrays into an arena that rewards creative tactics. Their radiance encourages challengers to become beacons for others.",
+      "stats": {
+        "currentVigor": 24,
+        "maxVigor": 24,
+        "strength": 14,
+        "dexterity": 12,
+        "constitution": 16,
+        "intelligence": 13,
+        "wisdom": 15,
+        "charisma": 18
+      },
+      "characterDetails": {
+        "class": "GymLeader",
+        "inventory": [
+          {
+            "itemId": "item_full_restore",
+            "quantity": 2
+          },
+          {
+            "itemId": "item_sunflare_badge",
+            "quantity": 3
+          }
+        ],
+        "money": 4500,
+        "globalRenown": 75,
+        "globalNotoriety": 5
+      },
+      "factions": [
+        "faction_luminance_league"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_professor_marina",
+          "type": "Ally",
+          "summary": "Collaborates on solar research to stabilize Solaryn."
+        },
+        {
+          "targetId": "npc_shadow_cartel_boss",
+          "type": "Rival",
+          "summary": "Solaris foils the cartel's attempts to hijack the solar grid."
+        },
+        {
+          "targetId": "npc_rival_set",
+          "type": "Mentor",
+          "summary": "Trains Set to temper ambition with responsibility."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_solaris_intro",
+          "context": "GymBattle",
+          "lines": [
+            {
+              "speaker": "Leader Solaris",
+              "content": "We bend sunlight into a battlefield here. Show me how brightly you can adapt.",
+              "notes": ""
+            },
+            {
+              "speaker": "Leader Solaris",
+              "content": "Victory means guiding others out of the dark\u2014not just basking in your own glow.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_gym_leader_cascade": {
+      "npcId": "npc_gym_leader_cascade",
+      "name": "Leader Cascade",
+      "role": "Tidal Crown Gym Leader",
+      "motivation": "Maintain the archipelago's flow of trade and culture through balanced tides.",
+      "fullDescription": "Cascade conducts tide-synced performances that double as gym battles. She views each challenger as a current feeding the archipelago's shared ocean.",
+      "stats": {
+        "currentVigor": 22,
+        "maxVigor": 22,
+        "strength": 12,
+        "dexterity": 14,
+        "constitution": 14,
+        "intelligence": 12,
+        "wisdom": 15,
+        "charisma": 17
+      },
+      "characterDetails": {
+        "class": "GymLeader",
+        "inventory": [
+          {
+            "itemId": "item_hyper_potion",
+            "quantity": 2
+          },
+          {
+            "itemId": "item_tidal_coronet",
+            "quantity": 3
+          }
+        ],
+        "money": 4200,
+        "globalRenown": 70,
+        "globalNotoriety": 6
+      },
+      "factions": [
+        "faction_luminance_league",
+        "faction_research_coalition"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_companion_lyra",
+          "type": "Confidant",
+          "summary": "Lyra documents Cascade's water dances for investigative broadcasts."
+        },
+        {
+          "targetId": "npc_shadow_cartel_saboteur",
+          "type": "Enemy",
+          "summary": "Saboteur disrupts tide locks to destabilize Cascade's city."
+        },
+        {
+          "targetId": "npc_gym_leader_solaris",
+          "type": "Ally",
+          "summary": "Coordinates energy backup in case of power outages."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_cascade_intro",
+          "context": "GymBattle",
+          "lines": [
+            {
+              "speaker": "Leader Cascade",
+              "content": "Every tide tells a story. Ride the rhythm with me or be swept away.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_gym_leader_thorn": {
+      "npcId": "npc_gym_leader_thorn",
+      "name": "Leader Thorn",
+      "role": "Verdant Cradle Gym Leader",
+      "motivation": "Guard the archipelago's living seedbanks and reward caretakers of the ecosystem.",
+      "fullDescription": "Thorn is a botanist who communicates with plant-partner Pok\u00e9mon via pheromone flutes. They judge challengers by their empathy toward living habitats.",
+      "stats": {
+        "currentVigor": 20,
+        "maxVigor": 20,
+        "strength": 11,
+        "dexterity": 13,
+        "constitution": 15,
+        "intelligence": 14,
+        "wisdom": 17,
+        "charisma": 12
+      },
+      "characterDetails": {
+        "class": "GymLeader",
+        "inventory": [
+          {
+            "itemId": "item_growth_tonic",
+            "quantity": 4
+          },
+          {
+            "itemId": "item_verdant_emblem",
+            "quantity": 3
+          }
+        ],
+        "money": 3800,
+        "globalRenown": 65,
+        "globalNotoriety": 4
+      },
+      "factions": [
+        "faction_research_coalition"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_companion_dex",
+          "type": "Partner",
+          "summary": "Dex supplies drone data to keep Verdant Cradle habitats safe."
+        },
+        {
+          "targetId": "npc_shadow_cartel_commander",
+          "type": "Enemy",
+          "summary": "Commander attempts to seize Thorn's nutrient latticework."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_thorn_trial",
+          "context": "GymBattle",
+          "lines": [
+            {
+              "speaker": "Leader Thorn",
+              "content": "Nurture every move. If your heart strays, the labyrinth will close around you.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_gym_leader_onyx": {
+      "npcId": "npc_gym_leader_onyx",
+      "name": "Leader Onyx",
+      "role": "Bastion Hammer Gym Leader",
+      "motivation": "Forged in the mines, Onyx pushes challengers to prove resilience against adversity.",
+      "fullDescription": "Onyx leads the archipelago guard's engineering corps. Their stoic demeanor hides a warm respect for anyone who stands up to bullies.",
+      "stats": {
+        "currentVigor": 26,
+        "maxVigor": 26,
+        "strength": 18,
+        "dexterity": 10,
+        "constitution": 17,
+        "intelligence": 12,
+        "wisdom": 13,
+        "charisma": 11
+      },
+      "characterDetails": {
+        "class": "GymLeader",
+        "inventory": [
+          {
+            "itemId": "item_max_potion",
+            "quantity": 2
+          },
+          {
+            "itemId": "item_bastion_cog",
+            "quantity": 3
+          }
+        ],
+        "money": 3600,
+        "globalRenown": 60,
+        "globalNotoriety": 8
+      },
+      "factions": [
+        "faction_archipelago_guard"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_shadow_cartel_boss",
+          "type": "Nemesis",
+          "summary": "Noctis targets Onyx's mines to steal molten energy."
+        },
+        {
+          "targetId": "npc_gym_leader_quake",
+          "type": "TrustedAlly",
+          "summary": "Synchronizes seismic sensors with Quake to protect miners."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_onyx_warning",
+          "context": "GymBattle",
+          "lines": [
+            {
+              "speaker": "Leader Onyx",
+              "content": "Steel yourself. The Bastion only yields to trainers who stand firm when the ground splits.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_gym_leader_aeris": {
+      "npcId": "npc_gym_leader_aeris",
+      "name": "Leader Aeris",
+      "role": "Zephyr Cyclone Gym Leader",
+      "motivation": "Keep the skies open for travelers and ensure no one is left grounded.",
+      "fullDescription": "Aeris is a skyfarer who runs aerial rescue drills with her Talonflame squadron. She values creative maneuvers and teamwork in dizzying heights.",
+      "stats": {
+        "currentVigor": 21,
+        "maxVigor": 21,
+        "strength": 12,
+        "dexterity": 18,
+        "constitution": 13,
+        "intelligence": 12,
+        "wisdom": 14,
+        "charisma": 15
+      },
+      "characterDetails": {
+        "class": "GymLeader",
+        "inventory": [
+          {
+            "itemId": "item_zephyr_wing",
+            "quantity": 3
+          },
+          {
+            "itemId": "item_full_restore",
+            "quantity": 1
+          }
+        ],
+        "money": 3400,
+        "globalRenown": 62,
+        "globalNotoriety": 5
+      },
+      "factions": [
+        "faction_luminance_league",
+        "faction_companion_network"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_companion_dex",
+          "type": "Wingmate",
+          "summary": "Dex coordinates drone footage for Aeris's rescue drills."
+        },
+        {
+          "targetId": "npc_rival_set",
+          "type": "Coach",
+          "summary": "Helps Set master aerial strategies for rematches."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_aeris_challenge",
+          "context": "GymBattle",
+          "lines": [
+            {
+              "speaker": "Leader Aeris",
+              "content": "Keep your balance. Every gust can lift you higher or hurl you below.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_gym_leader_mirage": {
+      "npcId": "npc_gym_leader_mirage",
+      "name": "Leader Mirage",
+      "role": "Mirage Refraction Gym Leader",
+      "motivation": "Guide others to see possibilities hidden behind fear and doubt.",
+      "fullDescription": "Mirage is a clairvoyant illusionist who uses mirrors to show challengers the consequences of their choices. Compassion guides every riddle.",
+      "stats": {
+        "currentVigor": 19,
+        "maxVigor": 19,
+        "strength": 9,
+        "dexterity": 13,
+        "constitution": 12,
+        "intelligence": 17,
+        "wisdom": 18,
+        "charisma": 16
+      },
+      "characterDetails": {
+        "class": "GymLeader",
+        "inventory": [
+          {
+            "itemId": "item_mirage_charm",
+            "quantity": 3
+          },
+          {
+            "itemId": "item_full_restore",
+            "quantity": 1
+          }
+        ],
+        "money": 3000,
+        "globalRenown": 68,
+        "globalNotoriety": 7
+      },
+      "factions": [
+        "faction_research_coalition"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_professor_marina",
+          "type": "ResearchPartner",
+          "summary": "Shares psychic readings about Solaryn's dreams."
+        },
+        {
+          "targetId": "npc_shadow_cartel_boss",
+          "type": "Opponent",
+          "summary": "Uses illusions to expose Noctis's hidden operations."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_mirage_reflection",
+          "context": "GymBattle",
+          "lines": [
+            {
+              "speaker": "Leader Mirage",
+              "content": "What you fear will appear before you. Accept it, and the path clarifies.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_gym_leader_quake": {
+      "npcId": "npc_gym_leader_quake",
+      "name": "Leader Quake",
+      "role": "Wasteland Resonance Gym Leader",
+      "motivation": "Channel tremors into protective rhythms that keep communities safe.",
+      "fullDescription": "Quake is a former ranger who reads seismic pulses like a heartbeat. They lead desert caravans to shelter whenever danger roils underground.",
+      "stats": {
+        "currentVigor": 25,
+        "maxVigor": 25,
+        "strength": 17,
+        "dexterity": 11,
+        "constitution": 18,
+        "intelligence": 12,
+        "wisdom": 15,
+        "charisma": 13
+      },
+      "characterDetails": {
+        "class": "GymLeader",
+        "inventory": [
+          {
+            "itemId": "item_quake_plate",
+            "quantity": 3
+          },
+          {
+            "itemId": "item_hyper_potion",
+            "quantity": 2
+          }
+        ],
+        "money": 3300,
+        "globalRenown": 58,
+        "globalNotoriety": 6
+      },
+      "factions": [
+        "faction_archipelago_guard"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_gym_leader_onyx",
+          "type": "Ally",
+          "summary": "Shares seismic intel to shield miners."
+        },
+        {
+          "targetId": "npc_shadow_cartel_commander",
+          "type": "Adversary",
+          "summary": "Counters the commander's sand skimmer raids."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_quake_warning",
+          "context": "GymBattle",
+          "lines": [
+            {
+              "speaker": "Leader Quake",
+              "content": "Feel the tremor, predict the break, and stand unshaken.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_gym_leader_nova": {
+      "npcId": "npc_gym_leader_nova",
+      "name": "Leader Nova",
+      "role": "Starfall Conductor Gym Leader",
+      "motivation": "Harness cosmic energy to empower the archipelago's defenders.",
+      "fullDescription": "Nova is an astronomer who composes symphonies based on aurora data. Gym battles sync to cosmic rhythms, challenging reflexes and strategy.",
+      "stats": {
+        "currentVigor": 21,
+        "maxVigor": 21,
+        "strength": 11,
+        "dexterity": 14,
+        "constitution": 13,
+        "intelligence": 18,
+        "wisdom": 14,
+        "charisma": 16
+      },
+      "characterDetails": {
+        "class": "GymLeader",
+        "inventory": [
+          {
+            "itemId": "item_nova_circuit",
+            "quantity": 3
+          },
+          {
+            "itemId": "item_full_restore",
+            "quantity": 1
+          }
+        ],
+        "money": 3600,
+        "globalRenown": 64,
+        "globalNotoriety": 6
+      },
+      "factions": [
+        "faction_luminance_league",
+        "faction_research_coalition"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_rival_set",
+          "type": "FriendlyRival",
+          "summary": "Analyzes Set's battle data to help them grow."
+        },
+        {
+          "targetId": "npc_shadow_cartel_boss",
+          "type": "Opponent",
+          "summary": "Tracks energy siphoning patterns to predict cartel strikes."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_nova_battle",
+          "context": "GymBattle",
+          "lines": [
+            {
+              "speaker": "Leader Nova",
+              "content": "Tune into the cosmic beat. Let your Pok\u00e9mon resonate with the stars.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_rival_set": {
+      "npcId": "npc_rival_set",
+      "name": "Set Navarro",
+      "role": "Determined rival and tech prodigy",
+      "motivation": "Prove their inventions can protect the islands better than the league status quo.",
+      "fullDescription": "Set is a quick-thinking inventor who modifies battle gear on the fly. Their pride masks a deep desire to keep their home safe.",
+      "stats": {
+        "currentVigor": 20,
+        "maxVigor": 20,
+        "strength": 12,
+        "dexterity": 16,
+        "constitution": 12,
+        "intelligence": 17,
+        "wisdom": 11,
+        "charisma": 14
+      },
+      "characterDetails": {
+        "class": "Innovator",
+        "inventory": [
+          {
+            "itemId": "item_ultra_ball",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_full_restore",
+            "quantity": 1
+          }
+        ],
+        "money": 2200,
+        "globalRenown": 40,
+        "globalNotoriety": 15
+      },
+      "factions": [
+        "faction_companion_network"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_companion_lyra",
+          "type": "Friend",
+          "summary": "Lyra covers Set's experiments and helps humanize their image."
+        },
+        {
+          "targetId": "npc_gym_leader_solaris",
+          "type": "Mentor",
+          "summary": "Solaris pushes Set to consider community impact."
+        },
+        {
+          "targetId": "npc_shadow_cartel_boss",
+          "type": "Enemy",
+          "summary": "Noctis tries to recruit Set's tech for the cartel."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_set_rivalry",
+          "context": "RivalBattle",
+          "lines": [
+            {
+              "speaker": "Set",
+              "content": "I'm not here to slow you down\u2014I'm here to make sure you're strong enough to protect this place.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_shadow_cartel_boss": {
+      "npcId": "npc_shadow_cartel_boss",
+      "name": "Noctis Vale",
+      "role": "Shadow Cartel Boss",
+      "motivation": "Monopolize Solaryn's energy to hold the archipelago hostage.",
+      "fullDescription": "Noctis is a charismatic tactician who grew up in the undercity of Slate Bastion. They harness forbidden tech to siphon solar power for profit.",
+      "stats": {
+        "currentVigor": 28,
+        "maxVigor": 28,
+        "strength": 15,
+        "dexterity": 14,
+        "constitution": 17,
+        "intelligence": 18,
+        "wisdom": 13,
+        "charisma": 19
+      },
+      "characterDetails": {
+        "class": "CrimeLord",
+        "inventory": [
+          {
+            "itemId": "item_shadow_cipher",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_max_potion",
+            "quantity": 3
+          }
+        ],
+        "money": 9000,
+        "globalRenown": 20,
+        "globalNotoriety": 85
+      },
+      "factions": [
+        "faction_shadow_cartel"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_gym_leader_solaris",
+          "type": "Nemesis",
+          "summary": "Seeks to dismantle Solaris's solar barrier safeguards."
+        },
+        {
+          "targetId": "npc_rival_set",
+          "type": "Manipulator",
+          "summary": "Tempts Set with promises of limitless resources."
+        },
+        {
+          "targetId": "npc_professor_marina",
+          "type": "Rival",
+          "summary": "Attempts to steal Marina's research to control Solaryn."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_noctis_confrontation",
+          "context": "BossBattle",
+          "lines": [
+            {
+              "speaker": "Noctis",
+              "content": "Light or shadow\u2014it all bends to whoever holds the conduit. Surrender the keystone.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_shadow_cartel_saboteur": {
+      "npcId": "npc_shadow_cartel_saboteur",
+      "name": "Saboteur Lure",
+      "role": "Shadow Cartel Diver",
+      "motivation": "Earn Noctis's favor by crippling the archipelago's tide networks.",
+      "fullDescription": "Lure is a stealth specialist who plants explosive charges along underwater turbines.",
+      "stats": {
+        "currentVigor": 16,
+        "maxVigor": 16,
+        "strength": 11,
+        "dexterity": 16,
+        "constitution": 12,
+        "intelligence": 13,
+        "wisdom": 10,
+        "charisma": 9
+      },
+      "characterDetails": {
+        "class": "Saboteur",
+        "inventory": [
+          {
+            "itemId": "item_shadow_cipher",
+            "quantity": 1
+          }
+        ],
+        "money": 1200,
+        "globalRenown": 5,
+        "globalNotoriety": 55
+      },
+      "factions": [
+        "faction_shadow_cartel"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_gym_leader_cascade",
+          "type": "Enemy",
+          "summary": "Targets the tide locks under Cascade's protection."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_saboteur_warning",
+          "context": "Encounter",
+          "lines": [
+            {
+              "speaker": "Saboteur Lure",
+              "content": "Floodgates fail, profits surge. That's how business works in Noctis's world.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_shadow_cartel_commander": {
+      "npcId": "npc_shadow_cartel_commander",
+      "name": "Commander Rasp",
+      "role": "Shadow Cartel Field Commander",
+      "motivation": "Oversee cartel extraction teams and break resistance.",
+      "fullDescription": "Rasp is a militant earthbender who pilots sand skimmers through volcanic storms.",
+      "stats": {
+        "currentVigor": 24,
+        "maxVigor": 24,
+        "strength": 16,
+        "dexterity": 12,
+        "constitution": 16,
+        "intelligence": 12,
+        "wisdom": 11,
+        "charisma": 12
+      },
+      "characterDetails": {
+        "class": "Commander",
+        "inventory": [
+          {
+            "itemId": "item_max_potion",
+            "quantity": 2
+          }
+        ],
+        "money": 3000,
+        "globalRenown": 8,
+        "globalNotoriety": 60
+      },
+      "factions": [
+        "faction_shadow_cartel"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_gym_leader_quake",
+          "type": "Nemesis",
+          "summary": "Leads raids against Quake's seismic beacons."
+        },
+        {
+          "targetId": "npc_gym_leader_onyx",
+          "type": "Adversary",
+          "summary": "Attempts to steal ore shipments from Onyx's mines."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_commander_taunt",
+          "context": "Encounter",
+          "lines": [
+            {
+              "speaker": "Commander Rasp",
+              "content": "The cartel doesn't negotiate. We take what the league hoards.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_shadow_cartel_scout": {
+      "npcId": "npc_shadow_cartel_scout",
+      "name": "Scout Nyra",
+      "role": "Shadow Cartel Scout",
+      "motivation": "Map festival routes to smuggle energy cells unnoticed.",
+      "fullDescription": "Nyra blends into markets with sleight of hand and disguised cargo drones.",
+      "stats": {
+        "currentVigor": 14,
+        "maxVigor": 14,
+        "strength": 9,
+        "dexterity": 15,
+        "constitution": 11,
+        "intelligence": 12,
+        "wisdom": 10,
+        "charisma": 13
+      },
+      "characterDetails": {
+        "class": "Scout",
+        "inventory": [
+          {
+            "itemId": "item_shadow_cipher",
+            "quantity": 1
+          }
+        ],
+        "money": 900,
+        "globalRenown": 4,
+        "globalNotoriety": 45
+      },
+      "factions": [
+        "faction_shadow_cartel"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_companion_lyra",
+          "type": "Foil",
+          "summary": "Lyra exposes Nyra's smuggling routes in her broadcasts."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_scout_encounter",
+          "context": "Encounter",
+          "lines": [
+            {
+              "speaker": "Scout Nyra",
+              "content": "The festival lights make perfect cover\u2014unless a nosy reporter gets in the way.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_companion_lyra": {
+      "npcId": "npc_companion_lyra",
+      "name": "Lyra Dawn",
+      "role": "Investigative songstress companion",
+      "motivation": "Expose the cartel and uplift communities with truth and music.",
+      "fullDescription": "Lyra is a singer-reporter whose performances embed hidden data. She joins the player to gather intel in plain sight.",
+      "stats": {
+        "currentVigor": 18,
+        "maxVigor": 18,
+        "strength": 9,
+        "dexterity": 13,
+        "constitution": 12,
+        "intelligence": 15,
+        "wisdom": 14,
+        "charisma": 19
+      },
+      "characterDetails": {
+        "class": "Bard",
+        "inventory": [
+          {
+            "itemId": "item_luminous_pass",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_poke_ball",
+            "quantity": 3
+          }
+        ],
+        "money": 1800,
+        "globalRenown": 55,
+        "globalNotoriety": 12
+      },
+      "factions": [
+        "faction_companion_network",
+        "faction_research_coalition"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_professor_marina",
+          "type": "Prot\u00e9g\u00e9",
+          "summary": "Marina supports Lyra's citizen science broadcasts."
+        },
+        {
+          "targetId": "npc_rival_set",
+          "type": "Friend",
+          "summary": "Helps Set translate tech jargon for the public."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_lyra_support",
+          "context": "Companion",
+          "lines": [
+            {
+              "speaker": "Lyra",
+              "content": "I'll sing the truth so everyone hears it\u2014and you make sure we have a story worth telling.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    },
+    "npc_companion_dex": {
+      "npcId": "npc_companion_dex",
+      "name": "Dex Calder",
+      "role": "Gadgeteer companion and aerial photographer",
+      "motivation": "Use technology to keep travelers safe and document the archipelago's beauty.",
+      "fullDescription": "Dex pilots camera drones and builds rescue gear. They balance caution with daring stunts.",
+      "stats": {
+        "currentVigor": 17,
+        "maxVigor": 17,
+        "strength": 10,
+        "dexterity": 16,
+        "constitution": 12,
+        "intelligence": 16,
+        "wisdom": 12,
+        "charisma": 13
+      },
+      "characterDetails": {
+        "class": "Technician",
+        "inventory": [
+          {
+            "itemId": "item_ultra_ball",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_potion",
+            "quantity": 4
+          }
+        ],
+        "money": 1600,
+        "globalRenown": 48,
+        "globalNotoriety": 10
+      },
+      "factions": [
+        "faction_companion_network"
+      ],
+      "relationships": [
+        {
+          "targetId": "npc_gym_leader_aeris",
+          "type": "Partner",
+          "summary": "Runs aerial rescue drills with Aeris."
+        },
+        {
+          "targetId": "npc_gym_leader_thorn",
+          "type": "Collaborator",
+          "summary": "Deploys scout drones to monitor Verdant Cradle's climate."
+        }
+      ],
+      "dialogueScripts": [
+        {
+          "scriptId": "dialogue_dex_support",
+          "context": "Companion",
+          "lines": [
+            {
+              "speaker": "Dex",
+              "content": "The faster we map the danger, the faster we can get everyone out.",
+              "notes": ""
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "items": {
+    "item_sunflare_badge": {
+      "itemId": "item_sunflare_badge",
+      "name": "Sunflare Badge",
+      "rarity": "Unique",
+      "fullDescription": "Badge granted by Solaris that stores excess solar energy in a protective lattice.",
+      "effects": "Boosts Fire-type moves and restores a small amount of vigor after sunny weather turns.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_sunspire_city",
+          "npcId": "npc_gym_leader_solaris",
+          "notes": "Awarded for defeating the Radiant Gym."
+        }
+      ]
+    },
+    "item_tidal_coronet": {
+      "itemId": "item_tidal_coronet",
+      "name": "Tidal Coronet",
+      "rarity": "Unique",
+      "fullDescription": "Badge shaped like cresting waves symbolizing mastery over fluid tactics.",
+      "effects": "Allows safe passage through tide locks and enhances Water-type accuracy.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_tidal_crown_city",
+          "npcId": "npc_gym_leader_cascade",
+          "notes": "Granted after the tide trial."
+        }
+      ]
+    },
+    "item_verdant_emblem": {
+      "itemId": "item_verdant_emblem",
+      "name": "Verdant Emblem",
+      "rarity": "Unique",
+      "fullDescription": "Badge grown from living crystal that reacts to the holder's empathy.",
+      "effects": "Reduces stamina cost of healing moves and unlocks access to the Rootbound Labyrinth.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_verdant_cradle",
+          "npcId": "npc_gym_leader_thorn",
+          "notes": "Earned by completing Thorn's pollination trial."
+        }
+      ]
+    },
+    "item_bastion_cog": {
+      "itemId": "item_bastion_cog",
+      "name": "Bastion Cog",
+      "rarity": "Unique",
+      "fullDescription": "Badge forged from tempered ore representing perseverance.",
+      "effects": "Increases resistance to terrain hazards and improves Rock-type damage rolls.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_slate_bastion",
+          "npcId": "npc_gym_leader_onyx",
+          "notes": "Given after stabilizing the mine rescue."
+        }
+      ]
+    },
+    "item_zephyr_wing": {
+      "itemId": "item_zephyr_wing",
+      "name": "Zephyr Wing",
+      "rarity": "Unique",
+      "fullDescription": "Badge forged from lightweight alloys tuned to Zephyr Haven's winds.",
+      "effects": "Grants access to aerial travel routes and boosts initiative in windy conditions.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_zephyr_haven",
+          "npcId": "npc_gym_leader_aeris",
+          "notes": "Presented after completing the cyclone rescue."
+        }
+      ]
+    },
+    "item_mirage_charm": {
+      "itemId": "item_mirage_charm",
+      "name": "Mirage Charm",
+      "rarity": "Unique",
+      "fullDescription": "Psychic charm that refracts light based on the holder's intent.",
+      "effects": "Unlocks hidden dialogue options in illusion trials and grants psychic resistance.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_luminous_mirage",
+          "npcId": "npc_gym_leader_mirage",
+          "notes": "Awarded for navigating Mirage's mind trial."
+        }
+      ]
+    },
+    "item_quake_plate": {
+      "itemId": "item_quake_plate",
+      "name": "Quake Plate",
+      "rarity": "Unique",
+      "fullDescription": "Badge carved from resonance stone that vibrates with steady rhythm.",
+      "effects": "Allows safe travel through seismic zones and empowers Ground-type moves.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_emberglow_wastes",
+          "npcId": "npc_gym_leader_quake",
+          "notes": "Earned by defending the seismic beacon network."
+        }
+      ]
+    },
+    "item_nova_circuit": {
+      "itemId": "item_nova_circuit",
+      "name": "Nova Circuit",
+      "rarity": "Unique",
+      "fullDescription": "Badge containing a micro constellation that stores kinetic charge.",
+      "effects": "Unlocks the observatory's teleport pads and amplifies Electric-type burst damage.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_starfall_observatory",
+          "npcId": "npc_gym_leader_nova",
+          "notes": "Granted after syncing with the cosmic array."
+        }
+      ]
+    },
+    "item_solaryn_keystone": {
+      "itemId": "item_solaryn_keystone",
+      "name": "Solaryn Keystone",
+      "rarity": "Legendary",
+      "fullDescription": "Core fragment required to awaken or soothe Solaryn.",
+      "effects": "Acts as a key for the Aurelia Depths and stabilizes Solaryn's temperament during the finale.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_shattered_reef_vault",
+          "npcId": "npc_professor_marina",
+          "notes": "Protected by Marina until the player proves trustworthy."
+        }
+      ]
+    },
+    "item_growth_tonic": {
+      "itemId": "item_growth_tonic",
+      "name": "Growth Tonic",
+      "rarity": "Rare",
+      "fullDescription": "Botanical tonic that accelerates recovery for Grass-type Pok\u00e9mon.",
+      "effects": "Restores vigor and removes status effects from Grass-type allies.",
+      "defaultQuantity": 2,
+      "placement": [
+        {
+          "locationId": "loc_verdant_cradle",
+          "npcId": "npc_gym_leader_thorn",
+          "notes": "Reward for restoring pollination drones."
+        }
+      ]
+    },
+    "item_shadow_cipher": {
+      "itemId": "item_shadow_cipher",
+      "name": "Shadow Cipher",
+      "rarity": "Rare",
+      "fullDescription": "Encoded device used by the Shadow Cartel to siphon and reroute solar energy.",
+      "effects": "Serves as evidence against the cartel and unlocks encrypted intel caches.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_eclipsed_sanctum",
+          "npcId": "npc_shadow_cartel_boss",
+          "notes": "Recovered during the final assault."
+        }
+      ]
+    },
+    "item_luminous_pass": {
+      "itemId": "item_luminous_pass",
+      "name": "Luminous Festival Pass",
+      "rarity": "Uncommon",
+      "fullDescription": "Badge that grants backstage access to the traveling Starlit Market.",
+      "effects": "Provides discounts at festival shops and reveals rotating vendor schedules.",
+      "defaultQuantity": 1,
+      "placement": [
+        {
+          "locationId": "loc_starlit_market",
+          "npcId": "npc_companion_lyra",
+          "notes": "Given after helping Lyra broadcast cartel findings."
+        }
+      ]
+    }
+  },
+  "factions": {
+    "faction_luminance_league": {
+      "factionId": "faction_luminance_league",
+      "name": "Luminance League",
+      "ideology": "Harness shared light to protect and uplift every islander.",
+      "leaders": [
+        "npc_professor_marina",
+        "npc_gym_leader_solaris"
+      ],
+      "fullDescription": "Regional league organization that coordinates gym leaders, researchers, and guardians across the archipelago.",
+      "relationships": [
+        {
+          "targetId": "faction_shadow_cartel",
+          "type": "Enemy",
+          "summary": "The cartel undermines the league's mission and endangers citizens."
+        },
+        {
+          "targetId": "faction_companion_network",
+          "type": "Ally",
+          "summary": "Partners with traveling companions to distribute relief supplies."
+        }
+      ]
+    },
+    "faction_shadow_cartel": {
+      "factionId": "faction_shadow_cartel",
+      "name": "Shadow Cartel",
+      "ideology": "Control Solaryn's energy to secure power and wealth for a select few.",
+      "leaders": [
+        "npc_shadow_cartel_boss"
+      ],
+      "fullDescription": "Crime syndicate operating smuggling rings, mercenary units, and energy theft operations throughout Aurelia.",
+      "relationships": [
+        {
+          "targetId": "faction_luminance_league",
+          "type": "Enemy",
+          "summary": "Constantly attempts to sabotage league infrastructure."
+        },
+        {
+          "targetId": "faction_research_coalition",
+          "type": "Sabotage",
+          "summary": "Steals research data to reverse engineer Solaryn tech."
+        }
+      ]
+    },
+    "faction_archipelago_guard": {
+      "factionId": "faction_archipelago_guard",
+      "name": "Archipelago Guard",
+      "ideology": "Community-led defense rooted in resilience and preparedness.",
+      "leaders": [
+        "npc_gym_leader_onyx",
+        "npc_gym_leader_quake"
+      ],
+      "fullDescription": "Volunteer defenders who patrol mines, deserts, and seaways to keep residents safe.",
+      "relationships": [
+        {
+          "targetId": "faction_shadow_cartel",
+          "type": "Enemy",
+          "summary": "The cartel raids guard-controlled supply lines."
+        },
+        {
+          "targetId": "faction_companion_network",
+          "type": "Ally",
+          "summary": "Companions relay intel and rally public support for the guard."
+        }
+      ]
+    },
+    "faction_research_coalition": {
+      "factionId": "faction_research_coalition",
+      "name": "Research Coalition",
+      "ideology": "Advance sustainable innovations that honor Pok\u00e9mon ecosystems.",
+      "leaders": [
+        "npc_professor_marina",
+        "npc_gym_leader_mirage"
+      ],
+      "fullDescription": "Consortium of scientists, engineers, and psychic scholars who monitor Solaryn activity.",
+      "relationships": [
+        {
+          "targetId": "faction_luminance_league",
+          "type": "Ally",
+          "summary": "Provides the league with research insights and tools."
+        },
+        {
+          "targetId": "faction_shadow_cartel",
+          "type": "Threat",
+          "summary": "Cartel spies seek to weaponize coalition discoveries."
+        }
+      ]
+    },
+    "faction_companion_network": {
+      "factionId": "faction_companion_network",
+      "name": "Companion Network",
+      "ideology": "Travel together, share stories, and make sure no island faces danger alone.",
+      "leaders": [
+        "npc_companion_lyra",
+        "npc_companion_dex"
+      ],
+      "fullDescription": "Loose alliance of performers, engineers, and guides who assist trainers and spread information quickly.",
+      "relationships": [
+        {
+          "targetId": "faction_luminance_league",
+          "type": "Ally",
+          "summary": "Helps the league distribute resources and morale."
+        },
+        {
+          "targetId": "faction_shadow_cartel",
+          "type": "Target",
+          "summary": "Cartel attempts to bribe or threaten network members."
+        }
+      ]
+    }
+  },
+  "loreEntries": {
+    "lore_solaryn_legend": {
+      "entryId": "lore_solaryn_legend",
+      "category": "Legendary",
+      "title": "The Solaryn Convergence",
+      "fullText": "Solaryn emerged when sunlight woven by ancestral guardians fused with the tides to defend Aurelia from cataclysmic storms. The keystone maintains equilibrium between light and sea.",
+      "tags": [
+        "legendary",
+        "solaryn",
+        "history"
+      ]
+    },
+    "lore_shadow_cartel_history": {
+      "entryId": "lore_shadow_cartel_history",
+      "category": "Faction",
+      "title": "Rise of the Shadow Cartel",
+      "fullText": "After mining conglomerates abandoned the undercity, Noctis united smugglers under a promise of energy equality but twisted it into a stranglehold on vital resources.",
+      "tags": [
+        "shadow-cartel",
+        "faction",
+        "conflict"
+      ]
+    },
+    "lore_archipelago_customs": {
+      "entryId": "lore_archipelago_customs",
+      "category": "Culture",
+      "title": "Luminous Festival Traditions",
+      "fullText": "Every equinox the islands exchange lanterns infused with recorded memories to celebrate communal light. Companions carry these lanterns along the Coral Causeway.",
+      "tags": [
+        "culture",
+        "festival",
+        "companion"
+      ]
+    },
+    "lore_guardian_oaths": {
+      "entryId": "lore_guardian_oaths",
+      "category": "Lore",
+      "title": "Oaths of the Archipelago Guard",
+      "fullText": "Guard initiates swear to respond to any alarm within three minutes, regardless of origin, prioritizing evacuation before confrontation.",
+      "tags": [
+        "guard",
+        "duty"
+      ]
+    },
+    "lore_companion_ballads": {
+      "entryId": "lore_companion_ballads",
+      "category": "Narrative",
+      "title": "Ballads of the Companion Network",
+      "fullText": "Lyra's songs encode coordinates and passphrases to guide refugees between safe houses while lifting spirits.",
+      "tags": [
+        "companion",
+        "music",
+        "safehouse"
+      ]
+    }
+  },
+  "events": {
+    "event_shadow_ambush": {
+      "eventId": "event_shadow_ambush",
+      "name": "Shadow Cartel Festival Ambush",
+      "triggerConditions": [
+        "Game start during the Luminous Festival",
+        "Quest quest_shadow_cartel_stage1 active"
+      ],
+      "scenes": [
+        {
+          "sceneId": "scene_ambush_alarm",
+          "description": "Lyra spots tampered fireworks as the Coral Causeway erupts in smoke.",
+          "dialogueScripts": [
+            {
+              "scriptId": "scene_ambush_dialogue",
+              "context": "OpeningScenario",
+              "lines": [
+                {
+                  "speaker": "Lyra",
+                  "content": "Those aren't festival charges\u2014get people clear while I jam their signal!",
+                  "notes": "Encourages immediate action."
+                },
+                {
+                  "speaker": "Scout Nyra",
+                  "content": "Too late. The keystone batteries belong to the cartel now!",
+                  "notes": "Introduces cartel threat."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Cartel plan exposed, player chooses a starter partner to repel the ambush.",
+          "resultingChanges": [
+            {
+              "changeType": "SetStarter",
+              "targetType": "player",
+              "targetId": "pkmn_partner_starter",
+              "payload": "choice"
+            },
+            {
+              "changeType": "UnlockQuestStage",
+              "targetType": "quest",
+              "targetId": "quest_shadow_cartel_stage2",
+              "payload": ""
+            }
+          ]
+        }
+      ]
+    },
+    "event_rival_breakthrough": {
+      "eventId": "event_rival_breakthrough",
+      "name": "Rival's Moment of Clarity",
+      "triggerConditions": [
+        "Player obtains three badges",
+        "Quest quest_rival_arc_stage2 active"
+      ],
+      "scenes": [
+        {
+          "sceneId": "scene_set_confession",
+          "description": "Set admits pressure from Noctis and requests backup to expose the cartel's offer.",
+          "dialogueScripts": [
+            {
+              "scriptId": "dialogue_set_confession",
+              "context": "RivalBattle",
+              "lines": [
+                {
+                  "speaker": "Set",
+                  "content": "He promised me funding to power every island. I almost believed him\u2014until I saw the cost.",
+                  "notes": "Player decides how to respond."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Set provides encrypted coordinates to the Eclipsed Sanctum.",
+          "resultingChanges": [
+            {
+              "changeType": "UnlockLocation",
+              "targetType": "location",
+              "targetId": "loc_eclipsed_sanctum",
+              "payload": "via rival"
+            }
+          ]
+        }
+      ]
+    },
+    "event_solaryn_resonance": {
+      "eventId": "event_solaryn_resonance",
+      "name": "Solaryn Resonance Ceremony",
+      "triggerConditions": [
+        "Quest quest_solaryn_mystery_stage3 completed",
+        "Solaryn Keystone attuned"
+      ],
+      "scenes": [
+        {
+          "sceneId": "scene_resonance_chant",
+          "description": "Gym leaders and companions form a circle in the Aurelia Depths to harmonize with Solaryn.",
+          "dialogueScripts": [
+            {
+              "scriptId": "dialogue_resonance_chant",
+              "context": "LegendaryEncounter",
+              "lines": [
+                {
+                  "speaker": "Professor Marina",
+                  "content": "Let the archipelago sing as one. Solaryn, hear us and choose partnership over fear.",
+                  "notes": "Sets tone for final encounter."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Final alignment grants access to Solaryn's blessing or battle, depending on player choices.",
+          "resultingChanges": [
+            {
+              "changeType": "ResolveLegendary",
+              "targetType": "quest",
+              "targetId": "quest_solaryn_mystery_stage4",
+              "payload": ""
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "quests": {
+    "quest_pokemon_league": {
+      "questId": "quest_pokemon_league",
+      "name": "Aurelia League Circuit",
+      "summary": "Challenge all eight gyms, stabilize the solar network, and earn the right to face the Elite Wave.",
+      "stages": [
+        {
+          "stageId": "quest_pokemon_league_stage1",
+          "objective": "Assist Sunspire City during the festival crisis and earn the Sunflare Badge.",
+          "description": "Investigate the Coral Causeway sabotage, then defeat Leader Solaris.",
+          "recommendedNpcIds": [
+            "npc_gym_leader_solaris",
+            "npc_companion_lyra"
+          ],
+          "recommendedLocationIds": [
+            "loc_coral_causeway",
+            "loc_sunspire_city"
+          ],
+          "rewards": [
+            "Sunflare Badge",
+            "Access to Radiant Gym archives"
+          ]
+        },
+        {
+          "stageId": "quest_pokemon_league_stage2",
+          "objective": "Earn the next four badges and repair damaged infrastructure.",
+          "description": "Complete gym trials in Tidal Crown, Verdant Cradle, Slate Bastion, and Zephyr Haven while stopping cartel interference.",
+          "recommendedNpcIds": [
+            "npc_gym_leader_cascade",
+            "npc_gym_leader_thorn",
+            "npc_gym_leader_onyx",
+            "npc_gym_leader_aeris"
+          ],
+          "recommendedLocationIds": [
+            "loc_tidal_crown_city",
+            "loc_verdant_cradle",
+            "loc_slate_bastion",
+            "loc_zephyr_haven"
+          ],
+          "rewards": [
+            "Mid-tier equipment",
+            "Expanded travel routes"
+          ]
+        },
+        {
+          "stageId": "quest_pokemon_league_stage3",
+          "objective": "Collect the final badges and unlock the Elite Wave gauntlet.",
+          "description": "Face Mirage, Quake, and Nova while foiling the cartel's final gambits.",
+          "recommendedNpcIds": [
+            "npc_gym_leader_mirage",
+            "npc_gym_leader_quake",
+            "npc_gym_leader_nova"
+          ],
+          "recommendedLocationIds": [
+            "loc_luminous_mirage",
+            "loc_emberglow_wastes",
+            "loc_starfall_observatory"
+          ],
+          "rewards": [
+            "Nova Circuit",
+            "Elite Wave invitation"
+          ]
+        },
+        {
+          "stageId": "quest_pokemon_league_stage4",
+          "objective": "Face the Elite Wave atop a sea-swept coliseum.",
+          "description": "Culminating series of battles once the cartel threat subsides.",
+          "recommendedNpcIds": [
+            "npc_professor_marina",
+            "npc_gym_leader_solaris"
+          ],
+          "recommendedLocationIds": [
+            "loc_aurelia_depths"
+          ],
+          "rewards": [
+            "Champion title",
+            "Solaryn's blessing"
+          ]
+        }
+      ]
+    },
+    "quest_rival_arc": {
+      "questId": "quest_rival_arc",
+      "name": "Set's Redemption",
+      "summary": "Help Set resist the cartel's influence and realize their innovations can serve everyone.",
+      "stages": [
+        {
+          "stageId": "quest_rival_arc_stage1",
+          "objective": "Compete with Set during the opening crisis.",
+          "description": "Race Set to secure the Solaryn Keystone fragments and defuse sabotage.",
+          "recommendedNpcIds": [
+            "npc_rival_set"
+          ],
+          "recommendedLocationIds": [
+            "loc_coral_causeway"
+          ],
+          "rewards": [
+            "Respect boost with Set",
+            "Access to experimental gadgets"
+          ]
+        },
+        {
+          "stageId": "quest_rival_arc_stage2",
+          "objective": "Investigate cartel offers targeting Set.",
+          "description": "Gather audio logs with Lyra and confront Set about Noctis's promises.",
+          "recommendedNpcIds": [
+            "npc_companion_lyra",
+            "npc_shadow_cartel_boss"
+          ],
+          "recommendedLocationIds": [
+            "loc_starlit_market",
+            "loc_starfall_observatory"
+          ],
+          "rewards": [
+            "Rival training montage",
+            "Improved random encounter outcomes"
+          ]
+        },
+        {
+          "stageId": "quest_rival_arc_stage3",
+          "objective": "Aid Set in sabotaging the Eclipsed Sanctum's energy siphon.",
+          "description": "Plan a joint strike using Set's inventions to disable the cartel's mainframe.",
+          "recommendedNpcIds": [
+            "npc_rival_set",
+            "npc_gym_leader_nova"
+          ],
+          "recommendedLocationIds": [
+            "loc_eclipsed_sanctum"
+          ],
+          "rewards": [
+            "Set's prototype gear",
+            "Set becomes an ally in finale"
+          ]
+        }
+      ]
+    },
+    "quest_shadow_cartel": {
+      "questId": "quest_shadow_cartel",
+      "name": "Shadow Cartel Uprising",
+      "summary": "Expose and dismantle the cartel's operations before they seize Solaryn.",
+      "stages": [
+        {
+          "stageId": "quest_shadow_cartel_stage1",
+          "objective": "Identify cartel operatives at the festival.",
+          "description": "Track shipments and intercept encoded messages during the opening ambush.",
+          "recommendedNpcIds": [
+            "npc_shadow_cartel_scout",
+            "npc_companion_lyra"
+          ],
+          "recommendedLocationIds": [
+            "loc_coral_causeway"
+          ],
+          "rewards": [
+            "Shadow Cipher intel",
+            "Festival allies"
+          ]
+        },
+        {
+          "stageId": "quest_shadow_cartel_stage2",
+          "objective": "Sabotage cartel energy siphons across multiple islands.",
+          "description": "Coordinate with gym leaders to shut down siphon devices and rescue hostages.",
+          "recommendedNpcIds": [
+            "npc_gym_leader_onyx",
+            "npc_gym_leader_quake",
+            "npc_shadow_cartel_commander"
+          ],
+          "recommendedLocationIds": [
+            "loc_slate_bastion",
+            "loc_emberglow_wastes",
+            "loc_solaris_forge"
+          ],
+          "rewards": [
+            "Increased faction reputation",
+            "Access to forge defenses"
+          ]
+        },
+        {
+          "stageId": "quest_shadow_cartel_stage3",
+          "objective": "Infiltrate the Eclipsed Sanctum and gather evidence against Noctis.",
+          "description": "Sneak through the cartel's headquarters with Lyra and Set to broadcast their crimes.",
+          "recommendedNpcIds": [
+            "npc_shadow_cartel_boss",
+            "npc_companion_lyra",
+            "npc_rival_set"
+          ],
+          "recommendedLocationIds": [
+            "loc_eclipsed_sanctum"
+          ],
+          "rewards": [
+            "Shadow Cipher decryption",
+            "Sanctum travel key"
+          ]
+        },
+        {
+          "stageId": "quest_shadow_cartel_stage4",
+          "objective": "Lead the final assault on Noctis and liberate the stolen energy.",
+          "description": "Rally every ally for the climactic battle beneath the archipelago.",
+          "recommendedNpcIds": [
+            "npc_shadow_cartel_boss",
+            "npc_companion_lyra",
+            "npc_gym_leader_nova"
+          ],
+          "recommendedLocationIds": [
+            "loc_eclipsed_sanctum",
+            "loc_aurelia_depths"
+          ],
+          "rewards": [
+            "Permanent travel discounts",
+            "Cartel influence reduced to zero"
+          ]
+        }
+      ]
+    },
+    "quest_solaryn_mystery": {
+      "questId": "quest_solaryn_mystery",
+      "name": "Resonance of Solaryn",
+      "summary": "Study the legendary Solaryn and decide how its power will shape Aurelia's future.",
+      "stages": [
+        {
+          "stageId": "quest_solaryn_mystery_stage1",
+          "objective": "Recover Solaryn glyph fragments.",
+          "description": "Explore Shattered Reef and decode messages with Professor Marina.",
+          "recommendedNpcIds": [
+            "npc_professor_marina"
+          ],
+          "recommendedLocationIds": [
+            "loc_shattered_reef_vault"
+          ],
+          "rewards": [
+            "Solaryn lore",
+            "Keystone fragments"
+          ]
+        },
+        {
+          "stageId": "quest_solaryn_mystery_stage2",
+          "objective": "Protect the Keystone from cartel theft.",
+          "description": "Defend the vault alongside Set and Marina.",
+          "recommendedNpcIds": [
+            "npc_shadow_cartel_boss",
+            "npc_rival_set"
+          ],
+          "recommendedLocationIds": [
+            "loc_shattered_reef_vault"
+          ],
+          "rewards": [
+            "Attuned Keystone",
+            "Legendary quest advancement"
+          ]
+        },
+        {
+          "stageId": "quest_solaryn_mystery_stage3",
+          "objective": "Attune the Keystone within Luminescent Caverns.",
+          "description": "Solve resonance puzzles while harmonizing with Carbink fragments.",
+          "recommendedNpcIds": [
+            "npc_professor_marina"
+          ],
+          "recommendedLocationIds": [
+            "loc_luminescent_caverns"
+          ],
+          "rewards": [
+            "Enhanced legendary rapport",
+            "Access to Solaryn ceremony"
+          ]
+        },
+        {
+          "stageId": "quest_solaryn_mystery_stage4",
+          "objective": "Decide Solaryn's fate during the resonance ceremony.",
+          "description": "Choose to ally with, calm, or challenge Solaryn, determining the archipelago's future energy policy.",
+          "recommendedNpcIds": [
+            "npc_professor_marina",
+            "npc_shadow_cartel_boss"
+          ],
+          "recommendedLocationIds": [
+            "loc_aurelia_depths"
+          ],
+          "rewards": [
+            "Legendary ally or artifact",
+            "Permanent world state change"
+          ]
+        }
+      ]
+    },
+    "quest_travel_companions": {
+      "questId": "quest_travel_companions",
+      "name": "Hearts Across the Archipelago",
+      "summary": "Support Lyra and Dex as they rally islanders against the cartel.",
+      "stages": [
+        {
+          "stageId": "quest_travel_companions_stage1",
+          "objective": "Help Lyra broadcast truth from the Coral Causeway.",
+          "description": "Collect testimonies while assisting festival evacuees.",
+          "recommendedNpcIds": [
+            "npc_companion_lyra"
+          ],
+          "recommendedLocationIds": [
+            "loc_coral_causeway"
+          ],
+          "rewards": [
+            "Companion bond boost",
+            "Festival vendor support"
+          ]
+        },
+        {
+          "stageId": "quest_travel_companions_stage2",
+          "objective": "Escort Dex on an aerial relief mission.",
+          "description": "Deliver supplies to Zephyr Haven and record stormfront data in the Gale Ruins.",
+          "recommendedNpcIds": [
+            "npc_companion_dex",
+            "npc_gym_leader_aeris"
+          ],
+          "recommendedLocationIds": [
+            "loc_zephyr_haven",
+            "loc_gale_ruins"
+          ],
+          "rewards": [
+            "Improved travel speed",
+            "Weather profile unlock"
+          ]
+        },
+        {
+          "stageId": "quest_travel_companions_stage3",
+          "objective": "Host a Starlit Market story circle to rally allies.",
+          "description": "Share findings with citizens, inspiring them to join the finale battle.",
+          "recommendedNpcIds": [
+            "npc_companion_lyra",
+            "npc_companion_dex"
+          ],
+          "recommendedLocationIds": [
+            "loc_starlit_market"
+          ],
+          "rewards": [
+            "Network of informants",
+            "Additional session templates"
+          ]
+        }
+      ]
+    }
+  },
+  "mechanics": {
+    "encounterTables": [
+      {
+        "tableId": "table_emberglow_day",
+        "name": "Emberglow Wastes Day Encounters",
+        "locationId": "loc_emberglow_wastes",
+        "entries": [
+          {
+            "rollRange": "1-6",
+            "creatureId": "inst_garchomp_resonance",
+            "description": "Garchomp scouting mission offering escort opportunities."
+          },
+          {
+            "rollRange": "7-12",
+            "creatureId": "inst_magmar_radiant_guard",
+            "description": "Magmar researching seismic vents."
+          },
+          {
+            "rollRange": "13-20",
+            "creatureId": "inst_shadow_lurantis_cell",
+            "description": "Cartel raiding party attempting to steal beacon cores."
+          }
+        ]
+      },
+      {
+        "tableId": "table_shattered_reef",
+        "name": "Shattered Reef Depth Encounters",
+        "locationId": "loc_shattered_reef_vault",
+        "entries": [
+          {
+            "rollRange": "1-5",
+            "creatureId": "inst_milotic_tidal_guardian",
+            "description": "Guardian Milotic guides explorers."
+          },
+          {
+            "rollRange": "6-15",
+            "creatureId": "creature_solaryn_fragment",
+            "description": "Resonant Carbink puzzle encounter."
+          },
+          {
+            "rollRange": "16-20",
+            "creatureId": "inst_shadow_lurantis_cell",
+            "description": "Cartel infiltrators attempt to steal glyph shards."
+          }
+        ]
+      }
+    ],
+    "weatherProfiles": [
+      {
+        "profileId": "weather_tropical_breeze",
+        "description": "Mild trade winds carrying luminous spores across the islands.",
+        "modifiers": {
+          "TravelSpeed": "+1",
+          "FireMoves": "-1 damage"
+        }
+      },
+      {
+        "profileId": "weather_stormfront_alert",
+        "description": "Cyclonic fronts triggered by cartel interference.",
+        "modifiers": {
+          "EncounterRate": "+2",
+          "ElectricMoves": "+2 accuracy",
+          "TravelRestrictions": "Requires Zephyr Wing badge"
+        }
+      }
+    ],
+    "travelRules": [
+      {
+        "ruleId": "travel_sky_paths",
+        "description": "Access wind elevators and sky ferries across Zephyr Haven once the Zephyr Wing badge is earned.",
+        "effects": {
+          "UnlockedBy": "item_zephyr_wing",
+          "FastTravel": "loc_coral_causeway -> loc_zephyr_haven -> loc_skyglass_spire"
+        }
+      },
+      {
+        "ruleId": "travel_storm_passage",
+        "description": "Stabilize Gale Ruins relics to travel safely during stormfront weather.",
+        "effects": {
+          "UnlockedBy": "quest_travel_companions_stage2",
+          "HazardReduction": "-2 damage from storm events"
+        }
+      }
+    ]
+  },
+  "scenarioScripts": [
+    {
+      "scriptId": "scenario_festival_defense",
+      "title": "Festival Aftermath",
+      "scope": "Opening Arc",
+      "goals": [
+        "Stabilize the Coral Causeway and reassure citizens",
+        "Identify Shadow Cartel operatives at the festival",
+        "Prepare to challenge the Radiant Gym"
+      ],
+      "summary": "The player rallies Lyra and local guardians to contain the cartel's opening strike and set up the Radiant Gym showdown.",
+      "linkedQuestIds": [
+        "quest_pokemon_league_stage1",
+        "quest_shadow_cartel_stage1"
+      ]
+    },
+    {
+      "scriptId": "scenario_cartel_counterstrike",
+      "title": "Cartel Countermeasures",
+      "scope": "Midgame Tactical Arc",
+      "goals": [
+        "Disrupt cartel siphons across the industrial islands",
+        "Recruit Set and Dex for coordinated assaults",
+        "Unlock access to the Eclipsed Sanctum"
+      ],
+      "summary": "Allies coordinate simultaneous strikes on cartel outposts in Slate Bastion, Emberglow Wastes, and Solaris Forge.",
+      "linkedQuestIds": [
+        "quest_shadow_cartel_stage2",
+        "quest_rival_arc_stage2"
+      ]
+    },
+    {
+      "scriptId": "scenario_solaryn_resonance",
+      "title": "Solaryn's Choice",
+      "scope": "Legendary Finale",
+      "goals": [
+        "Escort the coalition to the Aurelia Depths",
+        "Complete the resonance ceremony",
+        "Decide Solaryn's role in the archipelago"
+      ],
+      "summary": "Gym leaders and companions assemble for the resonance ritual while the player negotiates Solaryn's future and defeats Noctis' last gambit.",
+      "linkedQuestIds": [
+        "quest_solaryn_mystery_stage4",
+        "quest_shadow_cartel_stage4"
+      ]
+    }
+  ],
+  "creatureInstances": {
+    "inst_magmar_radiant_guard": {
+      "speciesId": "creature_magmar",
+      "nickname": "",
+      "level": 36,
+      "heldItem": "",
+      "moves": [
+        "move_flame_burst",
+        "move_sunny_day",
+        "move_scorching_sands",
+        "move_fire_punch"
+      ],
+      "locationId": "loc_sunspire_city",
+      "ownerNpcId": "npc_gym_leader_solaris",
+      "factionIds": [
+        "faction_luminance_league"
+      ],
+      "tags": [
+        "gym_guardian"
+      ],
+      "notes": "Assigned to the Radiant Gym's defensive rotation.",
+      "fullDescription": "A veteran Magmar assigned to Solaris's defense team, accustomed to regulating forge temperatures."
+    },
+    "inst_milotic_tidal_guardian": {
+      "speciesId": "creature_milotic",
+      "nickname": "",
+      "level": 34,
+      "heldItem": "",
+      "moves": [
+        "move_aqua_ring",
+        "move_surf",
+        "move_ice_beam",
+        "move_recover"
+      ],
+      "locationId": "loc_tidal_crown_city",
+      "ownerNpcId": "npc_gym_leader_cascade",
+      "factionIds": [
+        "faction_luminance_league"
+      ],
+      "tags": [
+        "tide_warden"
+      ],
+      "notes": "Maintains tide-gate stability during ceremonies.",
+      "fullDescription": "Cascade's Milotic wards the tide locks and soothes panicked sailors caught in storm surges."
+    },
+    "inst_trevenant_heartwood": {
+      "speciesId": "creature_trevenant",
+      "nickname": "Heartwood",
+      "level": 32,
+      "heldItem": "item_growth_tonic",
+      "moves": [
+        "move_leech_seed",
+        "move_shadow_claw",
+        "move_horn_leech",
+        "move_forest_s_curse"
+      ],
+      "locationId": "loc_verdant_cradle",
+      "ownerNpcId": "npc_gym_leader_thorn",
+      "factionIds": [
+        "faction_research_coalition"
+      ],
+      "tags": [
+        "labyrinth_guardian"
+      ],
+      "notes": "Guards the Seedling Archive and tests challengers' empathy.",
+      "fullDescription": "A Trevenant that shepherds Verdant Cradle's seedbanks and judges challengers on ecological stewardship."
+    },
+    "inst_garchomp_resonance": {
+      "speciesId": "creature_garchomp",
+      "nickname": "Seismo",
+      "level": 40,
+      "heldItem": "",
+      "moves": [
+        "move_earthquake",
+        "move_dragon_claw",
+        "move_stone_edge",
+        "move_sandstorm"
+      ],
+      "locationId": "loc_emberglow_wastes",
+      "ownerNpcId": "npc_gym_leader_quake",
+      "factionIds": [
+        "faction_archipelago_guard"
+      ],
+      "tags": [
+        "escort"
+      ],
+      "notes": "Guides caravans across sandstorms on Quake's command.",
+      "fullDescription": "Quake's Garchomp wears resonance harnesses to carve safe paths through Emberglow sandstorms."
+    },
+    "inst_shadow_lurantis_cell": {
+      "speciesId": "creature_shadow_lurantis",
+      "nickname": "Prismblade",
+      "level": 28,
+      "heldItem": "item_shadow_cipher",
+      "moves": [
+        "move_leaf_blade",
+        "move_night_slash",
+        "move_solar_blade",
+        "move_x_scissor"
+      ],
+      "locationId": "loc_coral_causeway",
+      "ownerNpcId": "npc_shadow_cartel_scout",
+      "factionIds": [
+        "faction_shadow_cartel"
+      ],
+      "tags": [
+        "smuggler"
+      ],
+      "notes": "Operates beneath the festival stalls during cartel raids.",
+      "fullDescription": "A Shadow Cartel Lurantis wielding stolen prism tech to cloak raids along the Coral Causeway."
+    },
+    "inst_solaryn_radiant_core": {
+      "speciesId": "creature_legend_solaryn",
+      "nickname": "Solaryn",
+      "level": 70,
+      "heldItem": "item_solaryn_keystone",
+      "moves": [
+        "move_radiant_pulse",
+        "move_solar_requiem",
+        "move_luminous_tide",
+        "move_aegis_of_dawn"
+      ],
+      "locationId": "loc_aurelia_depths",
+      "ownerNpcId": "",
+      "factionIds": [
+        "faction_luminance_league"
+      ],
+      "tags": [
+        "legendary"
+      ],
+      "notes": "Dormant guardian awaiting the resonance ceremony.",
+      "fullDescription": "Solaryn lies dormant in the Aurelia Depths, awaiting a guide who can balance sunlight and tide."
+    }
+  },
+  "bestiary": {
+    "creature_magmar": {
+      "habitats": [
+        "loc_sunspire_city",
+        "loc_solaris_forge"
+      ],
+      "defaultMoves": [
+        "move_flame_burst",
+        "move_sunny_day",
+        "move_scorching_sands"
+      ],
+      "behaviorNotes": "Flare brighter when solar conduits spike, keeping furnace temperatures stable.",
+      "baseLevel": 36,
+      "baseStats": {
+        "currentVigor": 24,
+        "maxVigor": 24,
+        "strength": 16,
+        "dexterity": 14,
+        "constitution": 13,
+        "intelligence": 12,
+        "wisdom": 11,
+        "charisma": 12
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_ember"
+        ],
+        "16": [
+          "move_flame_wheel"
+        ],
+        "28": [
+          "move_fire_punch"
+        ],
+        "40": [
+          "move_flamethrower"
+        ]
+      },
+      "evolutionConditions": [
+        "Evolves to Magmortar when traded holding a Magmarizer"
+      ],
+      "description": "Magmar trained to regulate Aurelia's solar furnaces and forgeworks, thriving amid intense heat.",
+      "abilityIds": [
+        "ability_flame_body"
+      ]
+    },
+    "creature_milotic": {
+      "habitats": [
+        "loc_tidal_crown_city",
+        "loc_shattered_reef_vault"
+      ],
+      "defaultMoves": [
+        "move_aqua_ring",
+        "move_surf",
+        "move_hypnosis"
+      ],
+      "behaviorNotes": "Hums calming melodies that smooth turbulent tides and reassure sailors.",
+      "baseLevel": 34,
+      "baseStats": {
+        "currentVigor": 30,
+        "maxVigor": 30,
+        "strength": 10,
+        "dexterity": 12,
+        "constitution": 16,
+        "intelligence": 14,
+        "wisdom": 15,
+        "charisma": 18
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_water_pulse"
+        ],
+        "20": [
+          "move_ice_beam"
+        ],
+        "30": [
+          "move_aqua_tail"
+        ],
+        "45": [
+          "move_recover"
+        ]
+      },
+      "evolutionConditions": [
+        "Evolves from Feebas with high beauty or holding a Prism Scale"
+      ],
+      "description": "Milotic native to Aurelia's tide locks, renowned for calming storms and guiding ocean traffic.",
+      "abilityIds": [
+        "ability_marvel_scale"
+      ]
+    },
+    "creature_trevenant": {
+      "habitats": [
+        "loc_verdant_cradle",
+        "loc_rootbound_labyrinth"
+      ],
+      "defaultMoves": [
+        "move_horn_leech",
+        "move_phantom_force",
+        "move_forest_s_curse"
+      ],
+      "behaviorNotes": "Communicates through spore patterns that recount the grove's ecological memory.",
+      "baseLevel": 32,
+      "baseStats": {
+        "currentVigor": 26,
+        "maxVigor": 26,
+        "strength": 15,
+        "dexterity": 10,
+        "constitution": 14,
+        "intelligence": 11,
+        "wisdom": 16,
+        "charisma": 9
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_astonish"
+        ],
+        "19": [
+          "move_leech_seed"
+        ],
+        "28": [
+          "move_shadow_claw"
+        ],
+        "42": [
+          "move_horn_leech"
+        ]
+      },
+      "evolutionConditions": [
+        "Evolves from Phantump when traded"
+      ],
+      "description": "Trevenant that steward Verdant Cradle's seedbanks and judge visitors' respect for living habitats.",
+      "abilityIds": [
+        "ability_harvest"
+      ]
+    },
+    "creature_aggron": {
+      "habitats": [
+        "loc_slate_bastion",
+        "loc_solaris_forge"
+      ],
+      "defaultMoves": [
+        "move_iron_tail",
+        "move_stone_edge",
+        "move_heavy_slam"
+      ],
+      "behaviorNotes": "Patrols reinforced tunnels and absorbs stray seismic vibrations.",
+      "baseLevel": 38,
+      "baseStats": {
+        "currentVigor": 28,
+        "maxVigor": 28,
+        "strength": 18,
+        "dexterity": 9,
+        "constitution": 17,
+        "intelligence": 10,
+        "wisdom": 11,
+        "charisma": 8
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_tackle"
+        ],
+        "20": [
+          "move_iron_defense"
+        ],
+        "30": [
+          "move_iron_tail"
+        ],
+        "45": [
+          "move_heavy_slam"
+        ]
+      },
+      "evolutionConditions": [
+        "Evolves from Lairon at level 42"
+      ],
+      "description": "Aggron that patrol Slate Bastion's basalt tunnels, reinforcing mining routes against collapse.",
+      "abilityIds": [
+        "ability_sturdy"
+      ]
+    },
+    "creature_talonflame": {
+      "habitats": [
+        "loc_zephyr_haven",
+        "loc_skyglass_spire"
+      ],
+      "defaultMoves": [
+        "move_brave_bird",
+        "move_tailwind",
+        "move_flare_blitz"
+      ],
+      "behaviorNotes": "Paints spark trails in the air to signal safe glide paths.",
+      "baseLevel": 30,
+      "baseStats": {
+        "currentVigor": 22,
+        "maxVigor": 22,
+        "strength": 13,
+        "dexterity": 18,
+        "constitution": 12,
+        "intelligence": 12,
+        "wisdom": 12,
+        "charisma": 13
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_peck"
+        ],
+        "17": [
+          "move_flame_charge"
+        ],
+        "35": [
+          "move_acrobatics"
+        ],
+        "44": [
+          "move_brave_bird"
+        ]
+      },
+      "evolutionConditions": [
+        "Evolves from Fletchinder at level 35"
+      ],
+      "description": "Talonflame accustomed to Zephyr Haven's gale corridors, serving as swift aerial rescue escorts.",
+      "abilityIds": [
+        "ability_gale_wings"
+      ]
+    },
+    "creature_gardevoir": {
+      "habitats": [
+        "loc_luminous_mirage"
+      ],
+      "defaultMoves": [
+        "move_psychic",
+        "move_moonblast",
+        "move_reflect"
+      ],
+      "behaviorNotes": "Projects tranquil future echoes to help challengers center themselves.",
+      "baseLevel": 33,
+      "baseStats": {
+        "currentVigor": 24,
+        "maxVigor": 24,
+        "strength": 9,
+        "dexterity": 13,
+        "constitution": 12,
+        "intelligence": 18,
+        "wisdom": 16,
+        "charisma": 17
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_confusion"
+        ],
+        "17": [
+          "move_calm_mind"
+        ],
+        "25": [
+          "move_psychic"
+        ],
+        "40": [
+          "move_moonblast"
+        ]
+      },
+      "evolutionConditions": [
+        "Evolves from Kirlia at level 30"
+      ],
+      "description": "Gardevoir partnered with Mirage to project tranquil visions and mentor challengers through reflective trials.",
+      "abilityIds": [
+        "ability_trace"
+      ]
+    },
+    "creature_garchomp": {
+      "habitats": [
+        "loc_emberglow_wastes"
+      ],
+      "defaultMoves": [
+        "move_earthquake",
+        "move_dragon_claw",
+        "move_sandstorm"
+      ],
+      "behaviorNotes": "Uses resonance harnesses to sense and pre-empt shifting dunes.",
+      "baseLevel": 40,
+      "baseStats": {
+        "currentVigor": 30,
+        "maxVigor": 30,
+        "strength": 19,
+        "dexterity": 16,
+        "constitution": 17,
+        "intelligence": 12,
+        "wisdom": 12,
+        "charisma": 11
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_sand_attack"
+        ],
+        "24": [
+          "move_dragon_claw"
+        ],
+        "40": [
+          "move_earthquake"
+        ],
+        "50": [
+          "move_stone_edge"
+        ]
+      },
+      "evolutionConditions": [
+        "Evolves from Gabite at level 48"
+      ],
+      "description": "Garchomp adapted to Emberglow Wastes, carving resonant pathways through volatile sandstorms.",
+      "abilityIds": [
+        "ability_sand_veil"
+      ]
+    },
+    "creature_magnezone": {
+      "habitats": [
+        "loc_starfall_observatory"
+      ],
+      "defaultMoves": [
+        "move_thunder",
+        "move_flash_cannon",
+        "move_magnet_rise"
+      ],
+      "behaviorNotes": "Orbits charged pylons to modulate auroral energy bursts.",
+      "baseLevel": 35,
+      "baseStats": {
+        "currentVigor": 26,
+        "maxVigor": 26,
+        "strength": 10,
+        "dexterity": 10,
+        "constitution": 16,
+        "intelligence": 18,
+        "wisdom": 14,
+        "charisma": 10
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_thunder_shock"
+        ],
+        "20": [
+          "move_spark"
+        ],
+        "34": [
+          "move_flash_cannon"
+        ],
+        "50": [
+          "move_thunder"
+        ]
+      },
+      "evolutionConditions": [
+        "Evolves from Magneton when leveled in a strong magnetic field"
+      ],
+      "description": "Magnezone attuned to Starfall Observatory's cosmic arrays, amplifying charged auroral currents.",
+      "abilityIds": [
+        "ability_magnet_pull"
+      ]
+    },
+    "creature_shadow_lurantis": {
+      "habitats": [
+        "loc_coral_causeway",
+        "loc_eclipsed_sanctum"
+      ],
+      "defaultMoves": [
+        "move_leaf_blade",
+        "move_night_slash",
+        "move_poison_jab"
+      ],
+      "behaviorNotes": "Employs refracted light patterns to fade in and out of sight.",
+      "baseLevel": 28,
+      "baseStats": {
+        "currentVigor": 22,
+        "maxVigor": 22,
+        "strength": 14,
+        "dexterity": 15,
+        "constitution": 12,
+        "intelligence": 12,
+        "wisdom": 11,
+        "charisma": 13
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_leaf_blade"
+        ],
+        "14": [
+          "move_x_scissor"
+        ],
+        "26": [
+          "move_night_slash"
+        ],
+        "38": [
+          "move_solar_blade"
+        ]
+      },
+      "evolutionConditions": [
+        "Variant enhancements supplied by the Shadow Cartel"
+      ],
+      "description": "Lurantis equipped with illicit prism tech, used by the Shadow Cartel for covert operations.",
+      "abilityIds": [
+        "ability_prism_cloak"
+      ]
+    },
+    "creature_solaryn_fragment": {
+      "habitats": [
+        "loc_luminescent_caverns"
+      ],
+      "defaultMoves": [
+        "move_ancient_power",
+        "move_guard_split",
+        "move_light_screen"
+      ],
+      "behaviorNotes": "Vibrates in harmony with keystone pulses to guide respectful explorers.",
+      "baseLevel": 20,
+      "baseStats": {
+        "currentVigor": 18,
+        "maxVigor": 18,
+        "strength": 10,
+        "dexterity": 10,
+        "constitution": 16,
+        "intelligence": 12,
+        "wisdom": 14,
+        "charisma": 12
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_ancient_power"
+        ],
+        "20": [
+          "move_guard_split"
+        ],
+        "28": [
+          "move_power_gem"
+        ],
+        "34": [
+          "move_light_screen"
+        ]
+      },
+      "evolutionConditions": [
+        "Does not evolve"
+      ],
+      "description": "Carbink fragments suffused with Solaryn's hymn, guiding respectful explorers through luminescent caverns.",
+      "abilityIds": [
+        "ability_resonance_pulse"
+      ]
+    },
+    "creature_legend_solaryn": {
+      "habitats": [
+        "loc_aurelia_depths"
+      ],
+      "defaultMoves": [
+        "move_solar_requiem",
+        "move_photon_burst",
+        "move_luminous_tide"
+      ],
+      "behaviorNotes": "Illuminates the depths with radiant tides when harmony and resolve align.",
+      "baseLevel": 70,
+      "baseStats": {
+        "currentVigor": 60,
+        "maxVigor": 60,
+        "strength": 20,
+        "dexterity": 18,
+        "constitution": 20,
+        "intelligence": 19,
+        "wisdom": 20,
+        "charisma": 22
+      },
+      "levelUpMoves": {
+        "1": [
+          "move_radiant_pulse"
+        ],
+        "40": [
+          "move_solar_requiem"
+        ],
+        "60": [
+          "move_luminous_tide"
+        ],
+        "70": [
+          "move_aegis_of_dawn"
+        ]
+      },
+      "evolutionConditions": [
+        "Legendary Pok\u00e9mon\u2014does not evolve"
+      ],
+      "description": "Solaryn, the radiant convergence of sunlight and tide that safeguards the archipelago's equilibrium.",
+      "abilityIds": [
+        "ability_radiant_harmony"
+      ]
+    }
+  },
+  "abilities": {
+    "ability_flame_body": {
+      "name": "Flame Body",
+      "description": "The Pok\u00e9mon radiates intense heat; contact attackers risk burning while nearby forgework stays ignited.",
+      "effects": ""
+    },
+    "ability_marvel_scale": {
+      "name": "Marvel Scale",
+      "description": "Defensive scales shimmer under pressure, raising resilience whenever the Pok\u00e9mon is impaired.",
+      "effects": ""
+    },
+    "ability_harvest": {
+      "name": "Harvest",
+      "description": "Reclaims restorative resources during calm weather, allowing repeated use of nourishment items.",
+      "effects": ""
+    },
+    "ability_sturdy": {
+      "name": "Sturdy",
+      "description": "Immovable plating lets the Pok\u00e9mon withstand otherwise overwhelming blows from full health.",
+      "effects": ""
+    },
+    "ability_gale_wings": {
+      "name": "Gale Wings",
+      "description": "Harnesses tailwinds to act first whenever launching Flying-type tactics.",
+      "effects": ""
+    },
+    "ability_trace": {
+      "name": "Trace",
+      "description": "Copies an opponent\u2019s battlefield ability for a short duration when entering the fray.",
+      "effects": ""
+    },
+    "ability_sand_veil": {
+      "name": "Sand Veil",
+      "description": "Shrouds the Pok\u00e9mon in sandstorms, heightening evasiveness amid harsh grit.",
+      "effects": ""
+    },
+    "ability_magnet_pull": {
+      "name": "Magnet Pull",
+      "description": "Generates electromagnetic locks that prevent Steel-type foes from retreating.",
+      "effects": ""
+    },
+    "ability_prism_cloak": {
+      "name": "Prism Cloak",
+      "description": "Diffuses light through stolen prism tech, intermittently rendering the user translucent.",
+      "effects": ""
+    },
+    "ability_resonance_pulse": {
+      "name": "Resonance Pulse",
+      "description": "Vibrates with Solaryn\u2019s hymn, projecting harmonic shields when allies coordinate.",
+      "effects": ""
+    },
+    "ability_radiant_harmony": {
+      "name": "Radiant Harmony",
+      "description": "Balances sunlight and tides, amplifying allies when battle conditions are stabilized.",
+      "effects": ""
+    },
+    "ability_signal_beacon": {
+      "name": "Signal Beacon",
+      "description": "Project a flare of coherent light that boosts allies\u2019 perception in exploration scenes.",
+      "effects": "Allies gain advantage on navigation and awareness checks for the next scene."
+    },
+    "ability_rescue_coordination": {
+      "name": "Rescue Coordination",
+      "description": "Directs allied actions with pinpoint timing during evacuations or rapid response.",
+      "effects": "When orchestrating rescues, allies may reroll a failed skill check once per scene."
+    },
+    "ability_solar_insight": {
+      "name": "Solar Insight",
+      "description": "Reads subtle shifts in solar arrays to anticipate environmental hazards.",
+      "effects": "Gain early warning of ambient threats; party may reposition before hazards trigger."
+    },
+    "ability_tidal_guardian": {
+      "name": "Tidal Guardian",
+      "description": "Summons gentle currents that steady allies against oncoming force.",
+      "effects": "Allies gain temporary vigor equal to the channeler\u2019s Wisdom modifier."
+    },
+    "ability_currents_embrace": {
+      "name": "Current's Embrace",
+      "description": "Wraps the party in restorative tides that purge minor afflictions.",
+      "effects": "Once per rest, remove a status effect from each ally in range."
+    },
+    "ability_oceanic_resolve": {
+      "name": "Oceanic Resolve",
+      "description": "Draws strength from deep ocean pressure to resist overwhelming odds.",
+      "effects": "Allies within 30 feet gain resistance to damage from large foes for one round."
+    },
+    "ability_wind_reader": {
+      "name": "Wind Reader",
+      "description": "Senses microcurrents to predict enemy movement and optimize positioning.",
+      "effects": "Gain a bonus to initiative checks and ignore difficult aerial terrain."
+    },
+    "ability_tempest_drive": {
+      "name": "Tempest Drive",
+      "description": "Harnesses storm force to propel sudden strikes without losing balance.",
+      "effects": "Once per encounter, make an additional movement and attack after using a Flying-type move."
+    },
+    "ability_eye_of_the_storm": {
+      "name": "Eye of the Storm",
+      "description": "Establishes a calm center that shields allies amidst chaotic weather.",
+      "effects": "Allies within the eye gain advantage on saving throws against environmental hazards."
+    }
+  },
+  "moves": {
+    "move_acrobatics": {
+      "name": "Acrobatics",
+      "type": "Flying",
+      "category": "Physical",
+      "damageDice": "3d6",
+      "vigorCost": 2,
+      "description": "Executes agile aerial maneuvers that strike harder if the user is unburdened."
+    },
+    "move_aegis_of_dawn": {
+      "name": "Aegis of Dawn",
+      "type": "Radiant",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 3,
+      "description": "Erects a shimmering barrier that halves incoming damage for one round."
+    },
+    "move_ancient_power": {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "damageDice": "2d8",
+      "vigorCost": 2,
+      "description": "Launches ancient stones that may raise all stats."
+    },
+    "move_aqua_ring": {
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 1,
+      "description": "Surrounds the user with healing water that restores vigor each round."
+    },
+    "move_aqua_tail": {
+      "name": "Aqua Tail",
+      "type": "Water",
+      "category": "Physical",
+      "damageDice": "3d8",
+      "vigorCost": 3,
+      "description": "A sweeping tail attack infused with surging water."
+    },
+    "move_astonish": {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "damageDice": "1d6",
+      "vigorCost": 1,
+      "description": "A startling strike that can briefly flinch the target."
+    },
+    "move_brave_bird": {
+      "name": "Brave Bird",
+      "type": "Flying",
+      "category": "Physical",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "A reckless dive that hits hard but harms the user from recoil."
+    },
+    "move_calm_mind": {
+      "name": "Calm Mind",
+      "type": "Psychic",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "Centers the user, raising mental offense and defense."
+    },
+    "move_confusion": {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "damageDice": "2d6",
+      "vigorCost": 1,
+      "description": "Emits telekinetic waves that may befuddle the opponent."
+    },
+    "move_dragon_claw": {
+      "name": "Dragon Claw",
+      "type": "Dragon",
+      "category": "Physical",
+      "damageDice": "3d8",
+      "vigorCost": 3,
+      "description": "Slashes the foe with draconic claws."
+    },
+    "move_earthquake": {
+      "name": "Earthquake",
+      "type": "Ground",
+      "category": "Physical",
+      "damageDice": "5d6",
+      "vigorCost": 3,
+      "description": "A massive tremor that strikes all adjacent combatants."
+    },
+    "move_ember": {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "damageDice": "1d6",
+      "vigorCost": 1,
+      "description": "A small flame projectile that may ignite the target."
+    },
+    "move_fire_punch": {
+      "name": "Fire Punch",
+      "type": "Fire",
+      "category": "Physical",
+      "damageDice": "3d6",
+      "vigorCost": 3,
+      "description": "A flaming fist strike that delivers searing damage."
+    },
+    "move_flame_burst": {
+      "name": "Flame Burst",
+      "type": "Fire",
+      "category": "Special",
+      "damageDice": "3d6",
+      "vigorCost": 2,
+      "description": "A gout of fire that erupts and scorches nearby foes."
+    },
+    "move_flame_charge": {
+      "name": "Flame Charge",
+      "type": "Fire",
+      "category": "Physical",
+      "damageDice": "2d6",
+      "vigorCost": 2,
+      "description": "Engulfs the user in flames, boosting speed after impact."
+    },
+    "move_flame_wheel": {
+      "name": "Flame Wheel",
+      "type": "Fire",
+      "category": "Physical",
+      "damageDice": "2d6",
+      "vigorCost": 2,
+      "description": "The user cloaks itself in fire and charges, potentially burning the opponent."
+    },
+    "move_flamethrower": {
+      "name": "Flamethrower",
+      "type": "Fire",
+      "category": "Special",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "A sustained jet of intense flames that may leave burns."
+    },
+    "move_flare_blitz": {
+      "name": "Flare Blitz",
+      "type": "Fire",
+      "category": "Physical",
+      "damageDice": "5d6",
+      "vigorCost": 3,
+      "description": "A blazing tackle that deals recoil to the user."
+    },
+    "move_flash_cannon": {
+      "name": "Flash Cannon",
+      "type": "Steel",
+      "category": "Special",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "Fires condensed light that can erode defenses."
+    },
+    "move_forest_s_curse": {
+      "name": "Forest's Curse",
+      "type": "Grass",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "Enshrouds the target, granting it the Grass type in addition to its own."
+    },
+    "move_guard_split": {
+      "name": "Guard Split",
+      "type": "Psychic",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "Balances defensive stats between the user and target."
+    },
+    "move_heavy_slam": {
+      "name": "Heavy Slam",
+      "type": "Steel",
+      "category": "Physical",
+      "damageDice": "Variable",
+      "vigorCost": 3,
+      "description": "A crushing body slam whose power scales with the user's weight."
+    },
+    "move_horn_leech": {
+      "name": "Horn Leech",
+      "type": "Grass",
+      "category": "Physical",
+      "damageDice": "3d6",
+      "vigorCost": 2,
+      "description": "A draining charge that restores the user with stolen energy."
+    },
+    "move_hypnosis": {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "A soothing gaze that can lull a target into sleep."
+    },
+    "move_ice_beam": {
+      "name": "Ice Beam",
+      "type": "Ice",
+      "category": "Special",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "A freezing beam that may immobilize the target in ice."
+    },
+    "move_iron_defense": {
+      "name": "Iron Defense",
+      "type": "Normal",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 1,
+      "description": "A technique awaiting detailed mechanical notes."
+    },
+    "move_iron_tail": {
+      "name": "Iron Tail",
+      "type": "Steel",
+      "category": "Physical",
+      "damageDice": "3d8",
+      "vigorCost": 3,
+      "description": "A hardened tail strike that can erode defenses."
+    },
+    "move_leaf_blade": {
+      "name": "Leaf Blade",
+      "type": "Grass",
+      "category": "Physical",
+      "damageDice": "3d8",
+      "vigorCost": 2,
+      "description": "Strikes with a sharp leafy blade, boasting high critical chance."
+    },
+    "move_leech_seed": {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 1,
+      "description": "Plants parasitic seeds that siphon vigor each turn."
+    },
+    "move_light_screen": {
+      "name": "Light Screen",
+      "type": "Psychic",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "Raises a barrier that softens incoming special damage for allies."
+    },
+    "move_luminous_tide": {
+      "name": "Luminous Tide",
+      "type": "Radiant",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 3,
+      "description": "Floods the field in radiant water, cleansing allies of ailments."
+    },
+    "move_magnet_rise": {
+      "name": "Magnet Rise",
+      "type": "Electric",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 1,
+      "description": "Manipulates magnetism to levitate and avoid ground attacks."
+    },
+    "move_moonblast": {
+      "name": "Moonblast",
+      "type": "Fairy",
+      "category": "Special",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "Harnesses moonlight to strike and potentially sap special attack."
+    },
+    "move_night_slash": {
+      "name": "Night Slash",
+      "type": "Dark",
+      "category": "Physical",
+      "damageDice": "3d6",
+      "vigorCost": 2,
+      "description": "A swift dark strike with elevated critical odds."
+    },
+    "move_peck": {
+      "name": "Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "damageDice": "1d6",
+      "vigorCost": 1,
+      "description": "A quick jab with the beak."
+    },
+    "move_phantom_force": {
+      "name": "Phantom Force",
+      "type": "Normal",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 1,
+      "description": "A technique awaiting detailed mechanical notes."
+    },
+    "move_photon_burst": {
+      "name": "Photon Burst",
+      "type": "Radiant",
+      "category": "Special",
+      "damageDice": "4d8",
+      "vigorCost": 4,
+      "description": "Fires condensed photons in a piercing beam of light."
+    },
+    "move_poison_jab": {
+      "name": "Poison Jab",
+      "type": "Poison",
+      "category": "Physical",
+      "damageDice": "3d6",
+      "vigorCost": 2,
+      "description": "A poisoned jab that may badly poison the target."
+    },
+    "move_power_gem": {
+      "name": "Power Gem",
+      "type": "Rock",
+      "category": "Special",
+      "damageDice": "3d8",
+      "vigorCost": 3,
+      "description": "Fires glittering rays that strike with precise force."
+    },
+    "move_psychic": {
+      "name": "Psychic",
+      "type": "Psychic",
+      "category": "Special",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "A mental assault that may reduce the target's resolve."
+    },
+    "move_radiant_pulse": {
+      "name": "Radiant Pulse",
+      "type": "Radiant",
+      "category": "Special",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "Emits a wave of balanced light that revitalizes allies slightly."
+    },
+    "move_recover": {
+      "name": "Recover",
+      "type": "Normal",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "Harnesses internal energy to restore lost vigor."
+    },
+    "move_reflect": {
+      "name": "Reflect",
+      "type": "Psychic",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "Creates a barrier that reduces physical damage for allies."
+    },
+    "move_sand_attack": {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 1,
+      "description": "Flings sand to obscure the target's vision, lowering accuracy."
+    },
+    "move_sandstorm": {
+      "name": "Sandstorm",
+      "type": "Rock",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "Summons a sandstorm that chips away at non-grounded foes."
+    },
+    "move_scorching_sands": {
+      "name": "Scorching Sands",
+      "type": "Ground",
+      "category": "Special",
+      "damageDice": "3d6",
+      "vigorCost": 2,
+      "description": "Superheated sandstorm that may sear foes while striking from afar."
+    },
+    "move_shadow_claw": {
+      "name": "Shadow Claw",
+      "type": "Ghost",
+      "category": "Physical",
+      "damageDice": "3d6",
+      "vigorCost": 2,
+      "description": "A chilling slash that strikes with high critical force."
+    },
+    "move_solar_blade": {
+      "name": "Solar Blade",
+      "type": "Grass",
+      "category": "Physical",
+      "damageDice": "5d6",
+      "vigorCost": 3,
+      "description": "Charges on the first turn, unleashes a sweeping slash of sunlight."
+    },
+    "move_solar_requiem": {
+      "name": "Solar Requiem",
+      "type": "Radiant",
+      "category": "Special",
+      "damageDice": "5d6",
+      "vigorCost": 4,
+      "description": "Channels solar tides to strike all foes with overwhelming radiance."
+    },
+    "move_spark": {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "damageDice": "2d8",
+      "vigorCost": 2,
+      "description": "An electrified tackle that may paralyze the target."
+    },
+    "move_stone_edge": {
+      "name": "Stone Edge",
+      "type": "Rock",
+      "category": "Physical",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "Razor-edged stones erupt dealing heavy critical damage."
+    },
+    "move_sunny_day": {
+      "name": "Sunny Day",
+      "type": "Fire",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 1,
+      "description": "Floods the field with harsh sunlight, empowering Fire techniques and weakening Water."
+    },
+    "move_surf": {
+      "name": "Surf",
+      "type": "Water",
+      "category": "Special",
+      "damageDice": "4d6",
+      "vigorCost": 3,
+      "description": "A powerful tidal wave that strikes all nearby foes."
+    },
+    "move_tackle": {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 1,
+      "description": "A technique awaiting detailed mechanical notes."
+    },
+    "move_tailwind": {
+      "name": "Tailwind",
+      "type": "Flying",
+      "category": "Status",
+      "damageDice": "",
+      "vigorCost": 2,
+      "description": "Summons a supportive gale that doubles the team's speed briefly."
+    },
+    "move_thunder": {
+      "name": "Thunder",
+      "type": "Electric",
+      "category": "Special",
+      "damageDice": "5d6",
+      "vigorCost": 4,
+      "description": "A booming thunderbolt with massive power but erratic accuracy."
+    },
+    "move_thunder_shock": {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "damageDice": "1d8",
+      "vigorCost": 1,
+      "description": "A jolt of electricity that may paralyze."
+    },
+    "move_water_pulse": {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "damageDice": "2d8",
+      "vigorCost": 2,
+      "description": "A pulsing wave that can leave foes disoriented."
+    },
+    "move_x_scissor": {
+      "name": "X-Scissor",
+      "type": "Bug",
+      "category": "Physical",
+      "damageDice": "3d6",
+      "vigorCost": 2,
+      "description": "Crosses bladelike limbs to cleave the foe."
+    }
+  },
+  "characterClasses": {
+    "class_solar_scout": {
+      "name": "Solar Scout",
+      "description": "Light-guiding navigators who chart safe routes and rally evac teams across the archipelago.",
+      "statModifiers": {
+        "Dexterity": 1,
+        "Wisdom": 1,
+        "Charisma": 1
+      },
+      "startingAbilities": [
+        "ability_signal_beacon"
+      ],
+      "levelUpAbilities": {
+        "4": [
+          "ability_rescue_coordination"
+        ],
+        "6": [
+          "ability_solar_insight"
+        ]
+      },
+      "tags": [
+        "support",
+        "exploration"
+      ]
+    },
+    "class_tide_channeler": {
+      "name": "Tide Channeler",
+      "description": "Mystics who weave restorative tides and shield crews from the Shadow Cartel\u2019s sabotage.",
+      "statModifiers": {
+        "Constitution": 1,
+        "Wisdom": 2
+      },
+      "startingAbilities": [
+        "ability_tidal_guardian"
+      ],
+      "levelUpAbilities": {
+        "4": [
+          "ability_currents_embrace"
+        ],
+        "7": [
+          "ability_oceanic_resolve"
+        ]
+      },
+      "tags": [
+        "support",
+        "defender"
+      ]
+    },
+    "class_storm_rider": {
+      "name": "Storm Rider",
+      "description": "Aerial tacticians who master wind lanes and strike with precision during volatile weather.",
+      "statModifiers": {
+        "Dexterity": 2,
+        "Strength": 1
+      },
+      "startingAbilities": [
+        "ability_wind_reader"
+      ],
+      "levelUpAbilities": {
+        "5": [
+          "ability_tempest_drive"
+        ],
+        "8": [
+          "ability_eye_of_the_storm"
+        ]
+      },
+      "tags": [
+        "offense",
+        "mobility"
+      ]
+    }
+  }
+}
