@@ -1,37 +1,33 @@
 using Microsoft.SemanticKernel;
 using System.ComponentModel;
 using System.Text.Json;
+using System.IO;
+using System.Linq;
 using System.Text.Json.Serialization;
 using PokeLLM.Game.GameLogic;
+using PokeLLM.GameState;
 using PokeLLM.GameState.Models;
-using PokeLLM.Game.Plugins.Models;
 
 namespace PokeLLM.Game.Plugins;
 
 /// <summary>
-/// Combined game and character setup phase - handles region selection and mechanical character creation
+/// Handles the adventure setup phase, orchestrating module authoring and player customization without external vector dependencies.
 /// </summary>
 public class GameSetupPhasePlugin
 {
     private readonly IGameStateRepository _gameStateRepo;
-    private readonly IWorldManagementService _worldManagementService;
-    private readonly IInformationManagementService _informationManagementService;
+    private readonly IAdventureModuleRepository _moduleRepository;
     private readonly ICharacterManagementService _characterManagementService;
-    private readonly IGameLogicService _gameLogicService;
     private readonly JsonSerializerOptions _jsonOptions;
 
     public GameSetupPhasePlugin(
         IGameStateRepository gameStateRepo,
-        IWorldManagementService worldManagementService,
-        IInformationManagementService informationManagementService,
-        ICharacterManagementService characterManagementService,
-        IGameLogicService gameLogicService)
+        IAdventureModuleRepository moduleRepository,
+        ICharacterManagementService characterManagementService)
     {
         _gameStateRepo = gameStateRepo;
-        _worldManagementService = worldManagementService;
-        _informationManagementService = informationManagementService;
+        _moduleRepository = moduleRepository;
         _characterManagementService = characterManagementService;
-        _gameLogicService = gameLogicService;
         _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -41,307 +37,311 @@ public class GameSetupPhasePlugin
         };
     }
 
-    // === REGION SETUP FUNCTIONS ===
+    #region Setup State Helpers
 
-    [KernelFunction("search_existing_region_knowledge")]
-    [Description("Search for existing region information in the vector database")]
-    public async Task<string> SearchExistingRegionKnowledge(
-        [Description("Search Query for stored region information")] string query)
+    [KernelFunction("get_setup_state")]
+    [Description("Retrieve the current session, module, and player setup state for planning the next setup step.")]
+    public async Task<string> GetSetupState()
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(query))
+            var session = await _gameStateRepo.LoadLatestStateAsync();
+            var module = await LoadModuleAsync();
+
+            var result = new
             {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Search query cannot be empty"
-                }, _jsonOptions);
-            }
-
-            var loreResults = await _informationManagementService.SearchLoreAsync(
-                new List<string> { query, $"{query} region", $"{query} area" },
-                "Region"
-            );
-
-            return JsonSerializer.Serialize(new {
-                success = true,
-                query = query,
-                resultsCount = loreResults.Count(),
-                results = loreResults.Select(r => new
+                session = new
                 {
-                    entryId = r.EntryId,
-                    entryType = r.EntryType,
-                    title = r.Title,
-                    content = r.Content,
-                    tags = r.Tags
-                }).ToList()
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("set_region")]
-    [Description("Sets the Region chosen by the player")]
-    public async Task<string> SetRegion(
-        [Description("Region name to set")] string regionName,
-        [Description("Full Details to be stored in the vector database")] LoreVectorRecordDto regionRecord)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(regionName))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Region name cannot be empty"
-                }, _jsonOptions);
-            }
-
-            if (regionRecord == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Region record cannot be null"
-                }, _jsonOptions);
-            }
-
-            // Set the region in the game state
-            var setRegionResult = await _worldManagementService.SetRegionAsync(regionName);
-            
-            // Store the region details in the vector database
-            var upsertResult = await _informationManagementService.UpsertLoreAsync(
-                regionRecord.EntryId, 
-                regionRecord.EntryType, 
-                regionRecord.Title, 
-                regionRecord.Content, 
-                regionRecord.Tags?.ToList(),
-                null
-            );
-
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
-            
-            // Log the region selection event
-            await _informationManagementService.LogNarrativeEventAsync(
-                "region_selected",
-                $"Player selected the {regionName} region for their adventure",
-                $"Region: {regionName}\nDescription: {regionRecord.Content}",
-                new List<string> { "player" },
-                "",
-                null,
-                gameState.GameTurnNumber
-            );
-            
-            return JsonSerializer.Serialize(new { 
-                success = true,
-                message = $"Region {regionName} selected successfully",
-                regionName = regionName,
-                gameStateResult = setRegionResult,
-                vectorStoreResult = upsertResult,
-                sessionId = gameState.SessionId
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    // === TRAINER CLASS FUNCTIONS ===
-
-    [KernelFunction("search_trainer_classes")]
-    [Description("Search for available trainer class data")]
-    public async Task<string> SearchTrainerClasses([Description("Class name or type to search for")] string query)
-    {
-        try
-        {
-            var results = await _informationManagementService.SearchGameRulesAsync(new List<string> { query, "class", "trainer class" }, "TrainerClass");
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                query = query,
-                results = results.Select(r => new
+                    session.SessionId,
+                    session.SessionName,
+                    session.IsSetupComplete,
+                    session.CurrentPhase,
+                    session.Region,
+                    session.Metadata.SessionStartTime,
+                    session.Metadata.LastUpdatedTime,
+                    session.Metadata.CurrentContext
+                },
+                module = new
                 {
-                    classId = r.EntryId,
-                    name = r.Title,
-                    description = r.Content,
-                    tags = r.Tags
-                }).ToList()
-            }, _jsonOptions);
+                    module.Metadata.ModuleId,
+                    module.Metadata.Title,
+                    module.Metadata.Summary,
+                    module.Metadata.IsSetupComplete,
+                    module.World.Setting,
+                    module.World.TimePeriod,
+                    module.World.MaturityRating,
+                    module.World.Themes,
+                    module.World.AdventureHooks,
+                    module.World.SafetyConsiderations,
+                    classCount = module.CharacterClasses.Count
+                },
+                player = new
+                {
+                    session.Player.Name,
+                    ClassId = session.Player.CharacterDetails.Class,
+                    session.Player.Level,
+                    Stats = new
+                    {
+                        session.Player.Stats.Strength,
+                        session.Player.Stats.Dexterity,
+                        session.Player.Stats.Constitution,
+                        session.Player.Stats.Intelligence,
+                        session.Player.Stats.Wisdom,
+                        session.Player.Stats.Charisma
+                    }
+                }
+            };
+
+            return JsonSerializer.Serialize(new { success = true, data = result }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
 
-    [KernelFunction("create_trainer_class")]
-    [Description("Create a new trainer class and store it")]
-    public async Task<string> CreateTrainerClass([Description("Complete trainer class data")] TrainerClass classData)
-    {
-        try
-        {
-            // Store in vector database using existing TrainerClass structure
-            var vectorResult = await _informationManagementService.UpsertGameRuleAsync(
-                classData.Id,
-                "TrainerClass", 
-                classData.Name,
-                JsonSerializer.Serialize(classData, _jsonOptions),
-                classData.Tags?.ToList()
-            );
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                classId = classData.Id,
-                name = classData.Name,
-                result = vectorResult
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
+    #endregion
 
-    [KernelFunction("set_player_trainer_class")]
-    [Description("Set the player's trainer class with full class data integration")]
-    public async Task<string> SetPlayerTrainerClass([Description("Trainer class ID")] string classId)
+    #region Module Overview
+
+    [KernelFunction("update_module_overview")]
+    [Description("Update top-level module overview metadata like title, summary, setting, tone, time period, and safety notes.")]
+    public async Task<string> UpdateModuleOverview([Description("Overview fields to upsert")] ModuleOverviewUpdate update)
     {
         try
         {
-            // Get class data from vector database
-            var classData = await _informationManagementService.SearchGameRulesAsync(new List<string> { classId }, "TrainerClass");
-            var classInfo = classData.FirstOrDefault();
-            
-            if (classInfo == null)
+            if (update is null)
             {
-                return JsonSerializer.Serialize(new { success = false, error = $"Trainer class {classId} not found" }, _jsonOptions);
+                return JsonSerializer.Serialize(new { success = false, error = "Update payload cannot be null" }, _jsonOptions);
             }
-            
-            // Parse class data using existing TrainerClass structure
-            var trainerClass = JsonSerializer.Deserialize<TrainerClass>(classInfo.Content);
-            
-            // Update player with full class integration
-            await _characterManagementService.SetPlayerClass(classId);
-            
-            // Store full TrainerClass data in player
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
-            gameState.Player.TrainerClassData = trainerClass;
-            await _gameStateRepo.SaveStateAsync(gameState);
-            
-            return JsonSerializer.Serialize(new 
-            { 
+
+            var session = await _gameStateRepo.LoadLatestStateAsync();
+            var module = await LoadModuleAsync();
+
+            if (!string.IsNullOrWhiteSpace(update.Title))
+            {
+                module.Metadata.Title = update.Title.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(update.Summary))
+            {
+                module.Metadata.Summary = update.Summary.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(update.Setting))
+            {
+                module.World.Setting = update.Setting.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(update.Tone))
+            {
+                module.World.Tone = update.Tone.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(update.TimePeriod))
+            {
+                module.World.TimePeriod = update.TimePeriod.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(update.MaturityRating))
+            {
+                module.World.MaturityRating = update.MaturityRating.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(update.StartingContext))
+            {
+                module.World.StartingContext = update.StartingContext.Trim();
+            }
+
+            if (update.Themes is not null)
+            {
+                module.World.Themes = update.Themes.Where(static t => !string.IsNullOrWhiteSpace(t))
+                    .Select(static t => t.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+
+            if (update.AdventureHooks is not null)
+            {
+                module.World.AdventureHooks = update.AdventureHooks.Where(static h => !string.IsNullOrWhiteSpace(h))
+                    .Select(static h => h.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+
+            await SaveModuleAsync(module, session);
+
+
+            return JsonSerializer.Serialize(new
+            {
                 success = true,
-                classId = classId,
-                className = trainerClass.Name,
-                statModifiers = trainerClass.StatModifiers,
-                startingAbilities = trainerClass.StartingAbilities,
-                startingMoney = trainerClass.StartingMoney,
-                startingItems = trainerClass.StartingItems
+                moduleTitle = module.Metadata.Title,
+                region = session.Region,
+                summary = module.Metadata.Summary
             }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
 
-    // === CHARACTER CREATION FUNCTIONS ===
+    [KernelFunction("remove_character_class")]
+    [Description("Remove a character class from the module.")]
+    public async Task<string> RemoveCharacterClass([Description("Class id to remove")] string classId)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(classId))
+            {
+                return JsonSerializer.Serialize(new { success = false, error = "Class id cannot be empty" }, _jsonOptions);
+            }
+
+            var module = await LoadModuleAsync();
+            var removed = module.CharacterClasses.Remove(classId.Trim());
+
+            if (removed)
+            {
+                await SaveModuleAsync(module);
+            }
+
+            return JsonSerializer.Serialize(new
+            {
+                success = removed,
+                classId,
+                moduleClassCount = module.CharacterClasses.Count
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("list_character_classes")]
+    [Description("List all character classes currently defined in the module.")]
+    public async Task<string> ListCharacterClasses()
+    {
+        try
+        {
+            var module = await LoadModuleAsync();
+            var classes = module.CharacterClasses.Select(pair => new
+            {
+                id = pair.Key,
+                pair.Value.Name,
+                pair.Value.Description,
+                statModifiers = pair.Value.StatModifiers,
+                startingAbilities = pair.Value.StartingAbilities,
+                tags = pair.Value.Tags
+            });
+
+            return JsonSerializer.Serialize(new { success = true, classes }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    [KernelFunction("set_player_class_choice")]
+    [Description("Assign the player's chosen class based on a module class id and update their trainer data.")]
+    public async Task<string> SetPlayerClassChoice([Description("Class id to assign")] string classId)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(classId))
+            {
+                return JsonSerializer.Serialize(new { success = false, error = "Class id cannot be empty" }, _jsonOptions);
+            }
+
+            var module = await LoadModuleAsync();
+            if (!module.CharacterClasses.TryGetValue(classId.Trim(), out var classData))
+            {
+                return JsonSerializer.Serialize(new { success = false, error = $"Class '{classId}' not found in module." }, _jsonOptions);
+            }
+
+            var session = await _gameStateRepo.LoadLatestStateAsync();
+            session.Player.CharacterDetails.Class = classId.Trim();
+            session.Player.TrainerClassData = ConvertModuleClass(classId.Trim(), classData);
+            session.Player.Abilities = classData.StartingAbilities?.ToList() ?? new List<string>();
+
+            await _characterManagementService.SetPlayerClass(classId.Trim());
+            await _gameStateRepo.SaveStateAsync(session);
+
+            return JsonSerializer.Serialize(new
+            {
+                success = true,
+                classId = classId.Trim(),
+                className = classData.Name,
+                startingAbilities = session.Player.Abilities
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    #endregion
+
+    #region Player Customization
 
     [KernelFunction("set_player_name")]
-    [Description("Set the player's trainer name")]
-    public async Task<string> SetPlayerName([Description("The chosen trainer name")] string name)
+    [Description("Set the player's trainer name.")]
+    public async Task<string> SetPlayerName([Description("Trainer name")] string name)
     {
         try
         {
             await _characterManagementService.SetPlayerName(name);
-            return JsonSerializer.Serialize(new { 
-                success = true, 
-                message = $"Player name set to: {name}",
-                playerName = name
-            }, _jsonOptions);
+            var session = await _gameStateRepo.LoadLatestStateAsync();
+            return JsonSerializer.Serialize(new { success = true, playerName = session.Player.Name }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = $"Error setting player name: {ex.Message}"
-            }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = false, error = $"Error setting player name: {ex.Message}" }, _jsonOptions);
         }
     }
 
     [KernelFunction("set_player_stats")]
-    [Description("Set the player's ability scores")]
-    public async Task<string> SetPlayerStats(
-        [Description("Array of 6 ability scores: [Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma]")] int[] stats)
+    [Description("Set the player's ability scores using the order Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma.")]
+    public async Task<string> SetPlayerStats([Description("Array of 6 ability scores")] int[] stats)
     {
         try
         {
-            if (stats.Length != 6)
+            if (stats is null || stats.Length != 6)
             {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Must provide exactly 6 ability scores"
-                }, _jsonOptions);
+                return JsonSerializer.Serialize(new { success = false, error = "Must provide exactly 6 ability scores" }, _jsonOptions);
             }
-            
+
             foreach (var stat in stats)
             {
                 if (stat < 3 || stat > 20)
                 {
-                    return JsonSerializer.Serialize(new { 
-                        success = false,
-                        error = $"Ability scores must be between 3 and 20. Invalid value: {stat}"
-                    }, _jsonOptions);
+                    return JsonSerializer.Serialize(new { success = false, error = $"Ability scores must be between 3 and 20. Invalid value: {stat}" }, _jsonOptions);
                 }
             }
-            
+
             await _characterManagementService.SetPlayerStats(stats);
-            
+
             var statNames = new[] { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
             var statDict = statNames.Zip(stats, (name, value) => new { name, value }).ToDictionary(x => x.name, x => x.value);
-            
-            return JsonSerializer.Serialize(new { 
-                success = true,
-                message = "Player stats set successfully",
-                stats = statDict
-            }, _jsonOptions);
+
+            return JsonSerializer.Serialize(new { success = true, stats = statDict }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = $"Error setting player stats: {ex.Message}"
-            }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = false, error = $"Error setting player stats: {ex.Message}" }, _jsonOptions);
         }
     }
 
     [KernelFunction("generate_random_stats")]
-    [Description("Generate random ability scores using 4d6 drop lowest method")]
+    [Description("Generate random ability scores using the 4d6 drop lowest method.")]
     public async Task<string> GenerateRandomStats()
     {
         try
         {
             var stats = await _characterManagementService.GenerateRandomStats();
-            
+
             var result = new
             {
                 success = true,
@@ -350,87 +350,222 @@ public class GameSetupPhasePlugin
                 average = stats.Average(),
                 description = "Generated using 4d6 drop lowest method"
             };
-            
+
             return JsonSerializer.Serialize(result, _jsonOptions);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
 
     [KernelFunction("generate_standard_stats")]
-    [Description("Generate standard ability score array (15, 14, 13, 12, 10, 8) for balanced characters")]
+    [Description("Provide the standard ability score array (15, 14, 13, 12, 10, 8).")]
     public async Task<string> GenerateStandardStats()
     {
         try
         {
             var stats = await _characterManagementService.GenerateStandardStats();
-            
             var result = new
             {
                 success = true,
                 stats,
                 total = stats.Sum(),
-                description = "Standard array: 15, 14, 13, 12, 10, 8 (assign to desired abilities)"
+                description = "Standard array: 15, 14, 13, 12, 10, 8"
             };
-            
+
             return JsonSerializer.Serialize(result, _jsonOptions);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
 
-    [KernelFunction("finalize_game_setup")]
-    [Description("Complete game setup - and signal for transition to World Generation phase")]
-    public async Task<string> FinalizeGameSetup([Description("Summary of setup choices made")] string setupSummary)
+    #endregion
+
+    #region Setup Completion
+
+    [KernelFunction("mark_setup_complete")]
+    [Description("Mark setup as complete after confirming the player and module metadata are ready. This transitions to WorldGeneration.")]
+    public async Task<string> MarkSetupComplete([Description("Summary of setup choices")] string setupSummary)
     {
         try
         {
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
-            var player = gameState.Player;
-            
-            // Validate setup is complete
-            if (string.IsNullOrEmpty(gameState.Region) || 
-                string.IsNullOrEmpty(player.Name) || 
-                string.IsNullOrEmpty(player.CharacterDetails.Class))
+            var session = await _gameStateRepo.LoadLatestStateAsync();
+            var module = await LoadModuleAsync();
+
+            var missing = new List<string>();
+            if (string.IsNullOrWhiteSpace(session.Region)) missing.Add("region");
+            if (string.IsNullOrWhiteSpace(session.Player.Name)) missing.Add("playerName");
+            if (string.IsNullOrWhiteSpace(session.Player.CharacterDetails.Class)) missing.Add("playerClass");
+            if (session.Player.Stats.Strength == 0 && session.Player.Stats.Dexterity == 0 && session.Player.Stats.Constitution == 0)
             {
-                return JsonSerializer.Serialize(new { 
-                    success = false, 
-                    error = "Setup incomplete - region, name, and class required"
-                }, _jsonOptions);
+                missing.Add("playerStats");
             }
-            
-            // Update adventure summary and transition to WorldGeneration phase
-            gameState.AdventureSummary = $"A new Pokemon adventure begins with {player.Name}, a {player.CharacterDetails.Class} trainer in the {gameState.Region} region. {setupSummary}";
-            gameState.CurrentPhase = GamePhase.WorldGeneration;
-            gameState.PhaseChangeSummary = $"Game setup completed successfully. {setupSummary}";
-            await _gameStateRepo.SaveStateAsync(gameState);
-            
-            return JsonSerializer.Serialize(new 
-            { 
+            if (string.IsNullOrWhiteSpace(module.World.Setting)) missing.Add("moduleSetting");
+            if (module.CharacterClasses.Count == 0) missing.Add("characterClasses");
+
+            if (missing.Count > 0)
+            {
+                return JsonSerializer.Serialize(new { success = false, error = "Setup incomplete", missing }, _jsonOptions);
+            }
+
+            await SaveModuleAsync(module, session);
+
+            session.IsSetupComplete = true;
+            session.Metadata.PhaseChangeSummary = string.IsNullOrWhiteSpace(setupSummary)
+                ? "Game setup completed."
+                : setupSummary;
+            session.CurrentPhase = GamePhase.WorldGeneration;
+            session.AdventureSummary = string.IsNullOrWhiteSpace(setupSummary)
+                ? module.Metadata.Summary
+                : setupSummary;
+
+            await _gameStateRepo.SaveStateAsync(session);
+
+            return JsonSerializer.Serialize(new
+            {
                 success = true,
-                message = "Game setup completed successfully",
-                playerName = player.Name,
-                trainerClass = player.CharacterDetails.Class,
-                region = gameState.Region,
-                setupComplete = true
+                message = "Setup complete. Transitioning to WorldGeneration phase.",
+                session.SessionName,
+                session.CurrentPhase
             }, _jsonOptions);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
+
+    #endregion
+
+    #region Internal Helpers
+
+    private async Task<AdventureModule> LoadModuleAsync()
+    {
+        var session = await _gameStateRepo.LoadLatestStateAsync();
+        var moduleFileName = !string.IsNullOrWhiteSpace(session.Module.ModuleFileName)
+            ? session.Module.ModuleFileName
+            : session.Module.ModuleId;
+
+        return await _moduleRepository.LoadByFileNameAsync(moduleFileName);
+    }
+
+    private async Task SaveModuleAsync(AdventureModule module, AdventureSessionState? sessionOverride = null)
+    {
+        var session = sessionOverride ?? await _gameStateRepo.LoadLatestStateAsync();
+        var moduleFileName = !string.IsNullOrWhiteSpace(session.Module.ModuleFileName)
+            ? session.Module.ModuleFileName
+            : module.Metadata.ModuleId;
+        var modulePath = _moduleRepository.GetModuleFilePath(moduleFileName);
+        await _moduleRepository.SaveAsync(module, modulePath);
+
+        var resolvedFileName = Path.GetFileName(modulePath);
+        if (!string.Equals(session.Module.ModuleFileName, resolvedFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            session.Module.ModuleFileName = resolvedFileName;
+            if (sessionOverride is null)
+            {
+                await _gameStateRepo.SaveStateAsync(session);
+            }
+        }
+    }
+
+    private static TrainerClass ConvertModuleClass(string classId, AdventureModuleCharacterClass classData)
+    {
+        return new TrainerClass
+        {
+            Id = classId,
+            Name = classData.Name,
+            Description = classData.Description,
+            StatModifiers = classData.StatModifiers != null
+                ? new Dictionary<string, int>(classData.StatModifiers, StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase),
+            StartingAbilities = classData.StartingAbilities?.ToList() ?? new List<string>(),
+            StartingItems = new List<string>(),
+            Tags = classData.Tags?.ToList() ?? new List<string>(),
+            LevelUpTable = ConvertLevelUpTable(classData.LevelUpAbilities)
+        };
+    }
+
+    private static Dictionary<int, string> ConvertLevelUpTable(Dictionary<int, List<string>>? source)
+    {
+        if (source is null)
+        {
+            return new Dictionary<int, string>();
+        }
+
+        var table = new Dictionary<int, string>();
+        foreach (var entry in source)
+        {
+            var value = entry.Value != null ? string.Join(", ", entry.Value) : string.Empty;
+            table[entry.Key] = value;
+        }
+
+        return table;
+    }
+
+    #endregion
+
+    #region DTOs
+
+    public class ModuleOverviewUpdate
+    {
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
+
+        [JsonPropertyName("summary")]
+        public string? Summary { get; set; }
+
+        [JsonPropertyName("setting")]
+        public string? Setting { get; set; }
+
+        [JsonPropertyName("tone")]
+        public string? Tone { get; set; }
+
+        [JsonPropertyName("timePeriod")]
+        public string? TimePeriod { get; set; }
+
+        [JsonPropertyName("maturityRating")]
+        public string? MaturityRating { get; set; }
+
+        [JsonPropertyName("startingContext")]
+        public string? StartingContext { get; set; }
+
+        [JsonPropertyName("themes")]
+        public List<string>? Themes { get; set; }
+
+        [JsonPropertyName("adventureHooks")]
+        public List<string>? AdventureHooks { get; set; }
+
+        [JsonPropertyName("safetyConsiderations")]
+        public List<string>? SafetyConsiderations { get; set; }
+    }
+
+    public class CharacterClassDefinition
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        [JsonPropertyName("statModifiers")]
+        public Dictionary<string, int>? StatModifiers { get; set; }
+
+        [JsonPropertyName("startingAbilities")]
+        public List<string>? StartingAbilities { get; set; }
+
+        [JsonPropertyName("levelUpAbilities")]
+        public Dictionary<int, List<string>>? LevelUpAbilities { get; set; }
+
+        [JsonPropertyName("tags")]
+        public List<string>? Tags { get; set; }
+    }
+
+    #endregion
 }

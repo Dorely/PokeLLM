@@ -18,6 +18,7 @@ public class PluginExceptionHandlingTests
     private readonly Mock<IGameStateRepository> _mockGameStateRepo;
     private readonly Mock<IInformationManagementService> _mockInfoService;
     private readonly Mock<IWorldManagementService> _mockWorldService;
+    private readonly Mock<IAdventureModuleRepository> _mockModuleRepository;
     private readonly Mock<INpcManagementService> _mockNpcService;
     private readonly Mock<IPokemonManagementService> _mockPokemonService;
     private readonly Mock<IPlayerPokemonManagementService> _mockPlayerPokemonService;
@@ -32,6 +33,7 @@ public class PluginExceptionHandlingTests
         _mockGameStateRepo = new Mock<IGameStateRepository>();
         _mockInfoService = new Mock<IInformationManagementService>();
         _mockWorldService = new Mock<IWorldManagementService>();
+        _mockModuleRepository = new Mock<IAdventureModuleRepository>();
         _mockNpcService = new Mock<INpcManagementService>();
         _mockPokemonService = new Mock<IPokemonManagementService>();
         _mockPlayerPokemonService = new Mock<IPlayerPokemonManagementService>();
@@ -42,6 +44,7 @@ public class PluginExceptionHandlingTests
         services.AddSingleton(_mockGameStateRepo.Object);
         services.AddSingleton(_mockInfoService.Object);
         services.AddSingleton(_mockWorldService.Object);
+        services.AddSingleton(_mockModuleRepository.Object);
         services.AddSingleton(_mockNpcService.Object);
         services.AddSingleton(_mockPokemonService.Object);
         services.AddSingleton(_mockPlayerPokemonService.Object);
@@ -121,27 +124,29 @@ public class PluginExceptionHandlingTests
     #region GameSetupPhasePlugin Tests
 
     [Fact]
-    public async Task GameSetupPhasePlugin_SearchExistingRegionKnowledge_HandlesExceptions()
+    public async Task GameSetupPhasePlugin_UpdateModuleOverview_HandlesExceptions()
     {
-        // Arrange
-        _mockInfoService.Setup(x => x.SearchLoreAsync(It.IsAny<List<string>>(), It.IsAny<string>()))
-            .ThrowsAsync(new TimeoutException("Search timeout"));
+        var session = new AdventureSessionState();
+        _mockGameStateRepo.Setup(x => x.LoadLatestStateAsync())
+            .ReturnsAsync(session);
+        _mockModuleRepository.Setup(x => x.LoadByFileNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TimeoutException("Module load timeout"));
 
         var plugin = new GameSetupPhasePlugin(
             _mockGameStateRepo.Object,
-            _mockWorldService.Object,
-            _mockInfoService.Object,
-            _mockCharacterService.Object,
-            _mockGameLogicService.Object);
+            _mockModuleRepository.Object,
+            _mockCharacterService.Object);
 
-        // Act
-        var result = await plugin.SearchExistingRegionKnowledge("test region");
+        var result = await plugin.UpdateModuleOverview(new GameSetupPhasePlugin.ModuleOverviewUpdate
+        {
+            Title = "Test Module"
+        });
 
-        // Assert
         var jsonResult = JsonSerializer.Deserialize<JsonElement>(result);
         Assert.False(jsonResult.GetProperty("success").GetBoolean());
-        Assert.Contains("Search timeout", jsonResult.GetProperty("error").GetString());
+        Assert.Contains("Module load timeout", jsonResult.GetProperty("error").GetString());
     }
+
 
     [Fact]
     public async Task GameSetupPhasePlugin_SetPlayerName_HandlesExceptions()
@@ -152,10 +157,8 @@ public class PluginExceptionHandlingTests
 
         var plugin = new GameSetupPhasePlugin(
             _mockGameStateRepo.Object,
-            _mockWorldService.Object,
-            _mockInfoService.Object,
-            _mockCharacterService.Object,
-            _mockGameLogicService.Object);
+            _mockModuleRepository.Object,
+            _mockCharacterService.Object);
 
         // Act
         var result = await plugin.SetPlayerName("TestName");

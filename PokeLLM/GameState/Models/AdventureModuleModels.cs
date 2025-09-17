@@ -79,6 +79,9 @@ public class AdventureModuleMetadata
     [JsonPropertyName("summary")]
     public string Summary { get; set; } = string.Empty;
 
+    [JsonPropertyName("isSetupComplete")]
+    public bool IsSetupComplete { get; set; }
+
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = new();
 }
@@ -112,8 +115,17 @@ public class AdventureModuleWorldOverview
     [JsonPropertyName("tone")]
     public string Tone { get; set; } = string.Empty;
 
+    [JsonPropertyName("timePeriod")]
+    public string TimePeriod { get; set; } = string.Empty;
+
+    [JsonPropertyName("maturityRating")]
+    public string MaturityRating { get; set; } = string.Empty;
+
     [JsonPropertyName("hooks")]
     public List<string> AdventureHooks { get; set; } = new();
+
+    [JsonPropertyName("safetyConsiderations")]
+    public List<string> SafetyConsiderations { get; set; } = new();
 }
 
 public class AdventureModuleLocation

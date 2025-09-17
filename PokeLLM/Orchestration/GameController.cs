@@ -1,4 +1,5 @@
 using PokeLLM.GameState.Models;
+using PokeLLM.GameState;
 using System.Runtime.CompilerServices;
 using PokeLLM.Game.Orchestration;
 using System.Diagnostics;
@@ -14,15 +15,18 @@ public class GameController : IGameController
 {
     private readonly IPhaseServiceProvider _phaseServiceProvider;
     private readonly IGameStateRepository _gameStateRepository;
+    private readonly IAdventureModuleRepository _moduleRepository;
     private readonly IUnifiedContextService _unifiedContextService;
 
     public GameController(
         IPhaseServiceProvider phaseServiceProvider,
         IGameStateRepository gameStateRepository,
+        IAdventureModuleRepository moduleRepository,
         IUnifiedContextService unifiedContextService)
     {
         _phaseServiceProvider = phaseServiceProvider;
         _gameStateRepository = gameStateRepository;
+        _moduleRepository = moduleRepository;
         _unifiedContextService = unifiedContextService;
     }
 
@@ -79,6 +83,16 @@ public class GameController : IGameController
         
         // Universal phase change detection and handling
         var finalGameState = await _gameStateRepository.LoadLatestStateAsync();
+
+        if (initialPhase == GamePhase.WorldGeneration && finalGameState.CurrentPhase != GamePhase.WorldGeneration)
+        {
+            var synced = await SyncSessionWithModuleAsync(finalGameState);
+            if (synced)
+            {
+                finalGameState = await _gameStateRepository.LoadLatestStateAsync();
+            }
+        }
+
         if (finalGameState.CurrentPhase != initialPhase)
         {
             Debug.WriteLine($"[GameController] Phase transition detected: {initialPhase} -> {finalGameState.CurrentPhase}");
@@ -104,6 +118,7 @@ public class GameController : IGameController
                 $"Post-turn context update for {currentPhase} phase. Update CurrentContext field and maintain consistency.", 
                 cancellationToken);
         }
+
     }
 
 
@@ -129,6 +144,33 @@ public class GameController : IGameController
                !string.IsNullOrEmpty(gameState.Player.CharacterDetails.Class);
     }
     
+    private async Task<bool> SyncSessionWithModuleAsync(AdventureSessionState sessionState)
+    {
+        if (string.IsNullOrWhiteSpace(sessionState.Module.ModuleFileName))
+        {
+            return false;
+        }
+
+        try
+        {
+            var modulePath = _moduleRepository.GetModuleFilePath(sessionState.Module.ModuleFileName);
+            var module = await _moduleRepository.LoadAsync(modulePath);
+
+            _moduleRepository.ApplyModuleBaseline(module, sessionState, preservePlayer: true);
+            module.Metadata.IsSetupComplete = true;
+            sessionState.Metadata.IsSetupComplete = true;
+
+            await _moduleRepository.SaveAsync(module, modulePath);
+            await _gameStateRepository.SaveStateAsync(sessionState);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[GameController] Failed to synchronize session with module: {ex.Message}");
+            return false;
+        }
+    }
+
     private string CreatePhaseTransitionMessage(GamePhase fromPhase, GamePhase toPhase, string phaseChangeSummary)
     {
         var baseMessage = $"The adventure has just transitioned from {fromPhase} to {toPhase} phase.";

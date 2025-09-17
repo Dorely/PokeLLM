@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace PokeLLM.GameState.Models;
@@ -25,6 +24,27 @@ public class AdventureSessionState
 
     [JsonIgnore]
     public string SessionId => Metadata.SessionId;
+
+    [JsonIgnore]
+    public string SessionName
+    {
+        get => Metadata.SessionName;
+        set => Metadata.SessionName = value;
+    }
+
+    [JsonIgnore]
+    public bool IsSetupComplete
+    {
+        get => Metadata.IsSetupComplete;
+        set => Metadata.IsSetupComplete = value;
+    }
+
+    [JsonIgnore]
+    public string ModuleFileName
+    {
+        get => Module.ModuleFileName;
+        set => Module.ModuleFileName = value;
+    }
 
     [JsonIgnore]
     public DateTime SessionStartTime => Metadata.SessionStartTime;
@@ -148,6 +168,9 @@ public class AdventureSessionMetadata
     [JsonPropertyName("sessionId")]
     public string SessionId { get; set; } = Guid.NewGuid().ToString();
 
+    [JsonPropertyName("sessionName")]
+    public string SessionName { get; set; } = string.Empty;
+
     [JsonPropertyName("sessionStartTime")]
     public DateTime SessionStartTime { get; set; } = DateTime.UtcNow;
 
@@ -166,6 +189,9 @@ public class AdventureSessionMetadata
     [JsonPropertyName("gameTurnNumber")]
     public int GameTurnNumber { get; set; }
 
+    [JsonPropertyName("isSetupComplete")]
+    public bool IsSetupComplete { get; set; }
+
     [JsonPropertyName("isCompleted")]
     public bool IsCompleted { get; set; }
 }
@@ -183,6 +209,9 @@ public class AdventureSessionModuleReference
 
     [JsonPropertyName("moduleChecksum")]
     public string ModuleChecksum { get; set; } = string.Empty;
+
+    [JsonPropertyName("moduleFileName")]
+    public string ModuleFileName { get; set; } = string.Empty;
 }
 
 public class AdventureSessionBaselineSnapshot

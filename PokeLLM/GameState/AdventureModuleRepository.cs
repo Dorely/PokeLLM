@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -13,8 +13,12 @@ public interface IAdventureModuleRepository
     AdventureModule CreateNewModule(string title = "", string summary = "");
     AdventureModule ApplyChanges(AdventureModule module, Action<AdventureModule> updateAction);
     AdventureSessionState CreateBaselineSession(AdventureModule module);
+    AdventureSessionState ApplyModuleBaseline(AdventureModule module, AdventureSessionState session, bool preservePlayer);
     Task SaveAsync(AdventureModule module, string? filePath = null, CancellationToken cancellationToken = default);
     Task<AdventureModule> LoadAsync(string filePath, CancellationToken cancellationToken = default);
+    Task<AdventureModule> LoadByFileNameAsync(string moduleFileName, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AdventureModuleSummary>> ListModulesAsync(CancellationToken cancellationToken = default);
+    string GetModuleFilePath(string moduleFileName);
 }
 
 public class AdventureModuleRepository : IAdventureModuleRepository
@@ -41,6 +45,52 @@ public class AdventureModuleRepository : IAdventureModuleRepository
         Directory.CreateDirectory(_modulesDirectory);
     }
 
+    public Task<AdventureModule> LoadByFileNameAsync(string moduleFileName, CancellationToken cancellationToken = default)
+    {
+        var fullPath = GetModuleFilePath(moduleFileName);
+        return LoadAsync(fullPath, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AdventureModuleSummary>> ListModulesAsync(CancellationToken cancellationToken = default)
+    {
+        await Task.Yield();
+        var summaries = new List<AdventureModuleSummary>();
+
+        foreach (var file in Directory.EnumerateFiles(_modulesDirectory, $"*{FileExtension}", SearchOption.TopDirectoryOnly))
+        {
+            if (TryReadModuleSummary(file, out var summary))
+            {
+                summaries.Add(summary);
+            }
+        }
+
+        return summaries
+            .OrderByDescending(s => s.LastModifiedUtc)
+            .ThenBy(s => s.Title, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public string GetModuleFilePath(string moduleFileName)
+    {
+        if (string.IsNullOrWhiteSpace(moduleFileName))
+        {
+            throw new ArgumentException("Module file name cannot be null or empty.", nameof(moduleFileName));
+        }
+
+        var normalized = moduleFileName.EndsWith(FileExtension, StringComparison.OrdinalIgnoreCase)
+            ? moduleFileName
+            : $"{moduleFileName}{FileExtension}";
+
+        var combinedPath = Path.Combine(_modulesDirectory, normalized);
+        var fullPath = Path.GetFullPath(combinedPath, _modulesDirectory);
+        if (!fullPath.StartsWith(_modulesDirectory, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Module file path must reside within the configured modules directory.");
+        }
+
+        return fullPath;
+    }
+
     public AdventureModule CreateNewModule(string title = "", string summary = "")
     {
         var module = new AdventureModule
@@ -54,6 +104,50 @@ public class AdventureModuleRepository : IAdventureModuleRepository
         };
 
         return module;
+    }
+
+    public AdventureSessionState ApplyModuleBaseline(AdventureModule module, AdventureSessionState session, bool preservePlayer)
+    {
+        if (module is null)
+        {
+            throw new ArgumentNullException(nameof(module));
+        }
+
+        if (session is null)
+        {
+            throw new ArgumentNullException(nameof(session));
+        }
+
+        PlayerState? preservedPlayer = null;
+        if (preservePlayer)
+        {
+            preservedPlayer = session.Player;
+        }
+
+        session.Module.ModuleId = module.Metadata.ModuleId;
+        session.Module.ModuleTitle = module.Metadata.Title;
+        session.Module.ModuleVersion = module.Metadata.Version;
+        session.Module.ModuleChecksum = module.Metadata.ModuleId;
+
+        PopulateBaselineFromModule(module, session.Baseline);
+
+        session.Metadata.IsSetupComplete = module.Metadata.IsSetupComplete;
+        if (!string.IsNullOrWhiteSpace(module.World.StartingContext))
+        {
+            session.Metadata.CurrentContext = module.World.StartingContext;
+        }
+
+        if (!string.IsNullOrWhiteSpace(module.Metadata.Summary))
+        {
+            session.AdventureSummary = module.Metadata.Summary;
+        }
+
+        if (preservePlayer && preservedPlayer is not null)
+        {
+            session.Player = preservedPlayer;
+        }
+
+        return session;
     }
 
     public AdventureModule ApplyChanges(AdventureModule module, Action<AdventureModule> updateAction)
@@ -81,23 +175,18 @@ public class AdventureModuleRepository : IAdventureModuleRepository
 
         var session = new AdventureSessionState
         {
-            Module =
-            {
-                ModuleId = module.Metadata.ModuleId,
-                ModuleTitle = module.Metadata.Title,
-                ModuleVersion = module.Metadata.Version,
-                ModuleChecksum = module.Metadata.ModuleId // TODO: introduce real checksum hashing
-            },
             Metadata =
             {
                 CurrentPhase = GamePhase.GameSetup,
                 CurrentContext = module.World.StartingContext,
                 PhaseChangeSummary = string.Empty,
-                GameTurnNumber = 0
+                GameTurnNumber = 0,
+                SessionName = string.IsNullOrWhiteSpace(module.Metadata.Title) ? $"Session {DateTime.UtcNow:yyyyMMddHHmmss}" : module.Metadata.Title,
+                IsSetupComplete = module.Metadata.IsSetupComplete
             }
         };
 
-        PopulateBaselineFromModule(module, session.Baseline);
+        ApplyModuleBaseline(module, session, preservePlayer: false);
         return session;
     }
 
@@ -656,8 +745,39 @@ public class AdventureModuleRepository : IAdventureModuleRepository
         return module;
     }
 
+    private bool TryReadModuleSummary(string filePath, out AdventureModuleSummary summary)
+    {
+        summary = default!;
+        try
+        {
+            var json = File.ReadAllText(filePath);
+            var module = JsonSerializer.Deserialize<AdventureModule>(json, _serializerOptions);
+            if (module is null)
+            {
+                return false;
+            }
+
+            summary = new AdventureModuleSummary
+            {
+                ModuleId = module.Metadata.ModuleId,
+                Title = module.Metadata.Title,
+                Version = module.Metadata.Version,
+                IsSetupComplete = module.Metadata.IsSetupComplete,
+                LastModifiedUtc = File.GetLastWriteTimeUtc(filePath),
+                FilePath = filePath
+            };
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private string GetDefaultFilePath(string moduleId)
     {
+
         var safeId = string.IsNullOrWhiteSpace(moduleId) ? Guid.NewGuid().ToString("N") : moduleId;
         var fileName = safeId.EndsWith(FileExtension, StringComparison.OrdinalIgnoreCase)
             ? safeId
