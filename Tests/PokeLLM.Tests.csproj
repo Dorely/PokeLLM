@@ -29,4 +29,8 @@
     <ProjectReference Include="..\PokeLLM\PokeLLM.Game.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="TestData/**/*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

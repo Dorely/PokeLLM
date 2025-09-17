@@ -1,8 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
 using PokeLLM.GameState.Models;
 
 namespace PokeLLM.GameState;
+
 public interface IGameStateRepository
 {
     Task<GameStateModel> CreateNewGameStateAsync();
@@ -10,17 +12,25 @@ public interface IGameStateRepository
     Task<GameStateModel> LoadLatestStateAsync();
     Task<bool> HasGameStateAsync();
 }
+
 public class GameStateRepository : IGameStateRepository
 {
+    public const string DefaultDirectoryName = "GameData";
+
     private readonly string _gameStateDirectory;
     private readonly string _currentStateFile;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public GameStateRepository(string dataDirectory = "GameData")
+    public GameStateRepository(IOptions<GameStateRepositoryOptions>? options = null)
+        : this(options?.Value?.DataDirectory)
     {
-        _gameStateDirectory = dataDirectory;
+    }
+
+    internal GameStateRepository(string? dataDirectory)
+    {
+        _gameStateDirectory = ResolveDirectory(dataDirectory);
         _currentStateFile = Path.Combine(_gameStateDirectory, "game_current_state.json");
-        
+
         _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -32,6 +42,16 @@ public class GameStateRepository : IGameStateRepository
         InitializeDirectories();
     }
 
+    private static string ResolveDirectory(string? dataDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(dataDirectory))
+        {
+            return Directory.GetCurrentDirectory();
+        }
+
+        return Path.GetFullPath(dataDirectory, Directory.GetCurrentDirectory());
+    }
+
     private void InitializeDirectories()
     {
         Directory.CreateDirectory(_gameStateDirectory);
@@ -39,9 +59,11 @@ public class GameStateRepository : IGameStateRepository
 
     public async Task<GameStateModel> CreateNewGameStateAsync()
     {
-        var state = new GameStateModel();
-        state.AdventureSummary = $"New Game - The Region has not been selected. Character Creation is not complete. The Adventure has not yet begun";
-        state.CurrentContext = "Beginning of a new Pokemon adventure. The trainer has not yet chosen a region or created their character.";
+        var state = new GameStateModel
+        {
+            AdventureSummary = "New Game - The Region has not been selected. Character Creation is not complete. The Adventure has not yet begun",
+            CurrentContext = "Beginning of a new Pokemon adventure. The trainer has not yet chosen a region or created their character."
+        };
 
         await SaveStateAsync(state);
 
@@ -59,14 +81,14 @@ public class GameStateRepository : IGameStateRepository
 
     public async Task<GameStateModel> LoadLatestStateAsync()
     {
-        if(!File.Exists(_currentStateFile))
+        if (!File.Exists(_currentStateFile))
         {
             await CreateNewGameStateAsync();
         }
 
         var json = await File.ReadAllTextAsync(_currentStateFile);
         var gameState = JsonSerializer.Deserialize<GameStateModel>(json, _jsonOptions);
-        return gameState;
+        return gameState!;
     }
 
     public async Task<bool> HasGameStateAsync()

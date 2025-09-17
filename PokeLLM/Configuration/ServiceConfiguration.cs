@@ -102,7 +102,9 @@ public static class ServiceConfiguration
         });
 
         // Add core services (order matters to avoid circular dependencies)
+        services.Configure<GameStateRepositoryOptions>(configuration.GetSection("GameState"));
         services.AddSingleton<IGameStateRepository, GameStateRepository>();
+        services.AddSingleton<IAdventureModuleRepository, AdventureModuleRepository>();
         services.AddTransient<IVectorStoreService, QdrantVectorStoreService>();
 
         // Register Game Logic Services
