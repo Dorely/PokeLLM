@@ -467,7 +467,7 @@ public class WorldGenerationPhasePlugin
         [Description("Complete NPC object to create")] NpcDto npcDataDto,
         [Description("Optional location ID to place the NPC")] string locationId = "")
     {
-        var npcData = npcDataDto.ToGameStateModel();
+        var npcData = npcDataDto.ToAdventureNpc();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateNpc called: {npcData?.Id}");
         
         try
@@ -540,7 +540,7 @@ public class WorldGenerationPhasePlugin
         [Description("Pokemon data to create")] PokemonDto pokemonDataDto,
         [Description("Optional location ID to place the Pokemon")] string locationId = "")
     {
-        var pokemonData = pokemonDataDto.ToGameStateModel();
+        var pokemonData = pokemonDataDto.ToAdventurePokemon();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] CreatePokemon called: {pokemonData?.Id}");
         
         try
@@ -612,7 +612,7 @@ public class WorldGenerationPhasePlugin
     public async Task<string> CreateLocation(
         [Description("Location data to create")] LocationDto locationDataDto)
     {
-        var locationData = locationDataDto.ToGameStateModel();
+        var locationData = locationDataDto.ToAdventureLocation();
         Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateLocation called: {locationData?.Id}");
         
         try

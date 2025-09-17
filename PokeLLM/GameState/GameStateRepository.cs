@@ -7,29 +7,27 @@ namespace PokeLLM.GameState;
 
 public interface IGameStateRepository
 {
-    Task<GameStateModel> CreateNewGameStateAsync();
-    Task SaveStateAsync(GameStateModel gameState);
-    Task<GameStateModel> LoadLatestStateAsync();
+    Task<AdventureSessionState> CreateNewGameStateAsync();
+    Task SaveStateAsync(AdventureSessionState sessionState);
+    Task<AdventureSessionState> LoadLatestStateAsync();
     Task<bool> HasGameStateAsync();
 }
 
 public class GameStateRepository : IGameStateRepository
 {
-    public const string DefaultDirectoryName = "GameData";
+    public const string DefaultDirectoryName = "AdventureSessions";
+    private const string SessionFileName = "adventure_session.json";
 
-    private readonly string _gameStateDirectory;
-    private readonly string _currentStateFile;
+    private readonly string _sessionDirectory;
+    private readonly string _currentSessionFile;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public GameStateRepository(IOptions<GameStateRepositoryOptions>? options = null)
-        : this(options?.Value?.DataDirectory)
+    public GameStateRepository(IOptions<AdventureSessionRepositoryOptions>? options = null)
     {
-    }
+        _sessionDirectory = ResolveDirectory(options?.Value?.DataDirectory);
+        Directory.CreateDirectory(_sessionDirectory);
+        _currentSessionFile = Path.Combine(_sessionDirectory, SessionFileName);
 
-    internal GameStateRepository(string? dataDirectory)
-    {
-        _gameStateDirectory = ResolveDirectory(dataDirectory);
-        _currentStateFile = Path.Combine(_gameStateDirectory, "game_current_state.json");
         _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -37,8 +35,42 @@ public class GameStateRepository : IGameStateRepository
             Converters = { new JsonStringEnumConverter() },
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
+    }
 
-        InitializeDirectories();
+    public async Task<AdventureSessionState> CreateNewGameStateAsync()
+    {
+        var sessionState = new AdventureSessionState();
+        await SaveStateAsync(sessionState);
+        return sessionState;
+    }
+
+    public async Task SaveStateAsync(AdventureSessionState sessionState)
+    {
+        if (sessionState == null)
+        {
+            throw new ArgumentNullException(nameof(sessionState));
+        }
+
+        sessionState.Metadata.LastUpdatedTime = DateTime.UtcNow;
+        var json = JsonSerializer.Serialize(sessionState, _jsonOptions);
+        await File.WriteAllTextAsync(_currentSessionFile, json);
+    }
+
+    public async Task<AdventureSessionState> LoadLatestStateAsync()
+    {
+        if (!File.Exists(_currentSessionFile))
+        {
+            return await CreateNewGameStateAsync();
+        }
+
+        var json = await File.ReadAllTextAsync(_currentSessionFile);
+        return JsonSerializer.Deserialize<AdventureSessionState>(json, _jsonOptions)!;
+    }
+
+    public async Task<bool> HasGameStateAsync()
+    {
+        await Task.Yield();
+        return File.Exists(_currentSessionFile);
     }
 
     private static string ResolveDirectory(string? dataDirectory)
@@ -49,50 +81,5 @@ public class GameStateRepository : IGameStateRepository
         }
 
         return Path.GetFullPath(dataDirectory, Directory.GetCurrentDirectory());
-    }
-
-    private void InitializeDirectories()
-    {
-        Directory.CreateDirectory(_gameStateDirectory);
-    }
-
-    public async Task<GameStateModel> CreateNewGameStateAsync()
-    {
-        var state = new GameStateModel
-        {
-            AdventureSummary = "New Game - The Region has not been selected. Character Creation is not complete. The Adventure has not yet begun",
-            CurrentContext = "Beginning of a new Pokemon adventure. The trainer has not yet chosen a region or created their character."
-        };
-
-        await SaveStateAsync(state);
-
-        return state;
-    }
-
-    public async Task SaveStateAsync(GameStateModel gameState)
-    {
-        if (gameState == null)
-            throw new ArgumentNullException(nameof(gameState));
-
-        var json = JsonSerializer.Serialize(gameState, _jsonOptions);
-        await File.WriteAllTextAsync(_currentStateFile, json);
-    }
-
-    public async Task<GameStateModel> LoadLatestStateAsync()
-    {
-        if (!File.Exists(_currentStateFile))
-        {
-            await CreateNewGameStateAsync();
-        }
-
-        var json = await File.ReadAllTextAsync(_currentStateFile);
-        var gameState = JsonSerializer.Deserialize<GameStateModel>(json, _jsonOptions);
-        return gameState!;
-    }
-
-    public async Task<bool> HasGameStateAsync()
-    {
-        await Task.Yield();
-        return File.Exists(_currentStateFile);
     }
 }

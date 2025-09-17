@@ -158,12 +158,12 @@ public static class VectorRecordMappingExtensions
 
     #endregion
 
-    #region GameStateModel Mappings
+    #region Adventure Session Mappings
 
     /// <summary>
     /// Convert NpcDto to Npc
     /// </summary>
-    public static Npc ToGameStateModel(this NpcDto dto)
+    public static Npc ToAdventureNpc(this NpcDto dto)
     {
         var npc = new Npc
         {
@@ -197,7 +197,7 @@ public static class VectorRecordMappingExtensions
     /// <summary>
     /// Convert PokemonDto to Pokemon
     /// </summary>
-    public static Pokemon ToGameStateModel(this PokemonDto dto)
+    public static Pokemon ToAdventurePokemon(this PokemonDto dto)
     {
         var pokemon = new Pokemon
         {
@@ -239,7 +239,7 @@ public static class VectorRecordMappingExtensions
     /// <summary>
     /// Convert LocationDto to Location
     /// </summary>
-    public static Location ToGameStateModel(this LocationDto dto)
+    public static Location ToAdventureLocation(this LocationDto dto)
     {
         var location = new Location
         {

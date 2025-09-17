@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace PokeLLM.GameState.Models;
@@ -21,6 +22,125 @@ public class AdventureSessionState
 
     [JsonPropertyName("history")]
     public AdventureSessionHistory History { get; set; } = new();
+
+    [JsonIgnore]
+    public string SessionId => Metadata.SessionId;
+
+    [JsonIgnore]
+    public DateTime SessionStartTime => Metadata.SessionStartTime;
+
+    [JsonIgnore]
+    public DateTime LastUpdatedTime
+    {
+        get => Metadata.LastUpdatedTime;
+        set => Metadata.LastUpdatedTime = value;
+    }
+
+    [JsonIgnore]
+    public DateTime LastSaveTime
+    {
+        get => Metadata.LastUpdatedTime;
+        set => Metadata.LastUpdatedTime = value;
+    }
+
+    [JsonIgnore]
+    public int GameTurnNumber
+    {
+        get => Metadata.GameTurnNumber;
+        set => Metadata.GameTurnNumber = value;
+    }
+
+    [JsonIgnore]
+    public GamePhase CurrentPhase
+    {
+        get => Metadata.CurrentPhase;
+        set => Metadata.CurrentPhase = value;
+    }
+
+    [JsonIgnore]
+    public string CurrentContext
+    {
+        get => Metadata.CurrentContext;
+        set => Metadata.CurrentContext = value;
+    }
+
+    [JsonIgnore]
+    public string PhaseChangeSummary
+    {
+        get => Metadata.PhaseChangeSummary;
+        set => Metadata.PhaseChangeSummary = value;
+    }
+
+    [JsonIgnore]
+    public PlayerState Player
+    {
+        get => Baseline.Player;
+        set => Baseline.Player = value;
+    }
+
+    [JsonIgnore]
+    public Dictionary<string, Location> WorldLocations => Baseline.WorldLocations;
+
+    [JsonIgnore]
+    public Dictionary<string, Npc> WorldNpcs => Baseline.WorldNpcs;
+
+    [JsonIgnore]
+    public Dictionary<string, Pokemon> WorldPokemon => Baseline.WorldPokemon;
+
+    [JsonIgnore]
+    public Dictionary<string, ItemInstance> Items => Baseline.Items;
+
+    [JsonIgnore]
+    public string Region
+    {
+        get => Baseline.Region;
+        set => Baseline.Region = value;
+    }
+
+    [JsonIgnore]
+    public string CurrentLocationId
+    {
+        get => Baseline.CurrentLocationId;
+        set => Baseline.CurrentLocationId = value;
+    }
+
+    [JsonIgnore]
+    public TimeOfDay TimeOfDay
+    {
+        get => Baseline.TimeOfDay;
+        set => Baseline.TimeOfDay = value;
+    }
+
+    [JsonIgnore]
+    public Weather Weather
+    {
+        get => Baseline.Weather;
+        set => Baseline.Weather = value;
+    }
+
+    [JsonIgnore]
+    public string AdventureSummary
+    {
+        get => Baseline.AdventureSummary;
+        set => Baseline.AdventureSummary = value;
+    }
+
+    [JsonIgnore]
+    public List<EventLog> RecentEvents
+    {
+        get => Baseline.RecentEvents;
+        set => Baseline.RecentEvents = value;
+    }
+
+    [JsonIgnore]
+    public Dictionary<string, string> ActiveQuestStates => Baseline.QuestStates;
+
+    [JsonIgnore]
+    public CombatState? CombatState
+    {
+        get => Overlay.CombatState;
+        set => Overlay.CombatState = value;
+    }
 }
 
 public class AdventureSessionMetadata
@@ -39,6 +159,9 @@ public class AdventureSessionMetadata
 
     [JsonPropertyName("currentContext")]
     public string CurrentContext { get; set; } = string.Empty;
+
+    [JsonPropertyName("phaseChangeSummary")]
+    public string PhaseChangeSummary { get; set; } = string.Empty;
 
     [JsonPropertyName("gameTurnNumber")]
     public int GameTurnNumber { get; set; }
@@ -78,6 +201,27 @@ public class AdventureSessionBaselineSnapshot
 
     [JsonPropertyName("items")]
     public Dictionary<string, ItemInstance> Items { get; set; } = new();
+
+    [JsonPropertyName("region")]
+    public string Region { get; set; } = string.Empty;
+
+    [JsonPropertyName("currentLocationId")]
+    public string CurrentLocationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("timeOfDay")]
+    public TimeOfDay TimeOfDay { get; set; } = TimeOfDay.Morning;
+
+    [JsonPropertyName("weather")]
+    public Weather Weather { get; set; } = Weather.Clear;
+
+    [JsonPropertyName("adventureSummary")]
+    public string AdventureSummary { get; set; } = string.Empty;
+
+    [JsonPropertyName("recentEvents")]
+    public List<EventLog> RecentEvents { get; set; } = new();
+
+    [JsonPropertyName("questStates")]
+    public Dictionary<string, string> QuestStates { get; set; } = new();
 }
 
 public class AdventureSessionOverlay
@@ -114,6 +258,12 @@ public class AdventureSessionOverlay
 
     [JsonPropertyName("adventureNotes")]
     public List<AdventureSessionNote> AdventureNotes { get; set; } = new();
+
+    [JsonPropertyName("questUpdates")]
+    public Dictionary<string, string> QuestUpdates { get; set; } = new();
+
+    [JsonPropertyName("combatState")]
+    public CombatState? CombatState { get; set; }
 }
 
 public class AdventureSessionItemAdjustment

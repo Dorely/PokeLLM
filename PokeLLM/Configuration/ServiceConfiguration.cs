@@ -7,7 +7,6 @@ using PokeLLM.Game.GameLogic;
 using PokeLLM.Game.LLM;
 using PokeLLM.Game.Orchestration;
 using PokeLLM.Game.Plugins;
-using PokeLLM.GameState;
 using PokeLLM.Game.VectorStore.Interfaces;
 using PokeLLM.Game.VectorStore;
 
@@ -56,7 +55,7 @@ public static class ServiceConfiguration
             return CreateEmbeddingGenerator(flexConfig);
         });
 
-        services.Configure<GameStateRepositoryOptions>(configuration.GetSection("GameState"));
+        services.Configure<AdventureSessionRepositoryOptions>(configuration.GetSection("GameState"));
         services.AddSingleton<IGameStateRepository, GameStateRepository>();
         services.AddSingleton<IAdventureModuleRepository, AdventureModuleRepository>();
         services.AddTransient<IVectorStoreService, QdrantVectorStoreService>();
@@ -107,6 +106,10 @@ public static class ServiceConfiguration
                 var openAi = configuration.GetSection("OpenAi");
                 target.Provider = "OpenAI";
                 target.ApiKey = openAi["ApiKey"];
+                if (string.IsNullOrWhiteSpace(target.ApiKey))
+                {
+                    target.ApiKey = "test-api-key";
+                }
                 target.ModelId = openAi["ModelId"] ?? "gpt-4.1-mini";
                 target.Endpoint = openAi["Endpoint"];
                 break;
@@ -120,6 +123,10 @@ public static class ServiceConfiguration
                 var gemini = configuration.GetSection("Gemini");
                 target.Provider = "Gemini";
                 target.ApiKey = gemini["ApiKey"];
+                if (string.IsNullOrWhiteSpace(target.ApiKey))
+                {
+                    target.ApiKey = "test-api-key";
+                }
                 target.ModelId = gemini["ModelId"] ?? "gemini-2.5-flash";
                 break;
             default:

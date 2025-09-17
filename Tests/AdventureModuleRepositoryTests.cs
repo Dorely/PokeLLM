@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Options;
+using System.Linq;
 using PokeLLM.GameState;
 using PokeLLM.GameState.Models;
+using PokeLLM.Game.Configuration;
 
 namespace PokeLLM.Tests;
 
@@ -16,7 +18,7 @@ public class AdventureModuleRepositoryTests : IDisposable
 
     private AdventureModuleRepository CreateRepository()
     {
-        var options = Options.Create(new GameStateRepositoryOptions
+        var options = Options.Create(new AdventureSessionRepositoryOptions
         {
             DataDirectory = _tempRoot
         });
@@ -142,6 +144,55 @@ public class AdventureModuleRepositoryTests : IDisposable
 
         var solarScout = module.CharacterClasses["class_solar_scout"];
         Assert.Contains("ability_signal_beacon", solarScout.StartingAbilities);
+    }
+
+    [Fact]
+    public async Task CreateBaselineSession_BuildsAdventureStateFromModule()
+    {
+        var repository = CreateRepository();
+        var samplePath = Path.Combine(AppContext.BaseDirectory, "TestData", "AdventureModules", "SampleAuroraAdventure.json");
+        var module = await repository.LoadAsync(samplePath);
+
+        var session = repository.CreateBaselineSession(module);
+
+        Assert.NotNull(session);
+        Assert.Equal(module.Metadata.ModuleId, session.Module.ModuleId);
+        Assert.Equal(module.Metadata.Title, session.Module.ModuleTitle);
+        Assert.Equal(module.Metadata.Version, session.Module.ModuleVersion);
+        Assert.Equal(module.Metadata.Summary, session.AdventureSummary);
+        Assert.Equal("Aurelia Archipelago", session.Region);
+
+        Assert.True(session.WorldLocations.ContainsKey("loc_sunspire_city"));
+        var sunspire = session.WorldLocations["loc_sunspire_city"];
+        Assert.Equal("Capital hub of the archipelago and site of the Radiant Gym.", sunspire.Summary);
+        Assert.Contains("npc_gym_leader_solaris", sunspire.PresentNpcIds);
+        Assert.Contains("inst_magmar_radiant_guard", sunspire.PresentPokemonIds);
+        Assert.NotEmpty(sunspire.Encounters);
+
+        var solaris = session.WorldNpcs["npc_gym_leader_solaris"];
+        Assert.Equal("Radiant Gym Leader", solaris.Role);
+        Assert.Contains("inst_magmar_radiant_guard", solaris.PokemonOwned);
+        Assert.Equal("GymLeader", solaris.CharacterDetails.Class);
+        Assert.Contains(solaris.CharacterDetails.Inventory, item => item.ItemId == "item_full_restore" && item.Quantity == 2);
+
+        var magmar = session.WorldPokemon["inst_magmar_radiant_guard"];
+        Assert.Equal("npc_gym_leader_solaris", magmar.OwnerNpcId);
+        Assert.Equal("creature_magmar", magmar.Species);
+        Assert.Contains(magmar.KnownMoves, move => move.Id == "move_flame_burst");
+        Assert.Contains("gym_guardian", magmar.Tags);
+
+        var badge = session.Items["item_sunflare_badge"];
+        Assert.Equal("Sunflare Badge", badge.Name);
+        Assert.NotEmpty(badge.Placement);
+        Assert.Contains(badge.Placement, placement => placement.NpcId == "npc_gym_leader_solaris");
+
+        Assert.True(session.ActiveQuestStates.TryGetValue("quest_pokemon_league", out var questState));
+        Assert.Equal("NotStarted", questState);
+
+        Assert.Contains("Signal Beacon", session.Player.Abilities);
+        Assert.True(module.CharacterClasses.ContainsKey(session.Player.TrainerClassData.Id));
+        Assert.Equal(1, session.Player.TrainerClassData.StatModifiers["Dexterity"]);
+        Assert.Empty(session.Player.CharacterDetails.Inventory);
     }
 
     public void Dispose()

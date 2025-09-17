@@ -101,7 +101,7 @@ public class PhaseService : IPhaseService
         }
     }
 
-    private async IAsyncEnumerable<string> StreamResponseAsync(GameStateModel gameState, string inputMessage, StringBuilder responseBuilder, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    private async IAsyncEnumerable<string> StreamResponseAsync(AdventureSessionState gameState, string inputMessage, StringBuilder responseBuilder, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Create fresh ChatHistory with updated system prompt
         var freshHistory = new ChatHistory();
