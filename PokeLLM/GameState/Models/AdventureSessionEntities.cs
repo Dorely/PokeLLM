@@ -20,8 +20,8 @@ public class PlayerState
     [JsonPropertyName("abilities")]
     public List<string> Abilities { get; set; } = new();
 
-    [JsonPropertyName("perks")]
-    public List<string> Perks { get; set; } = new();
+    [JsonPropertyName("passiveAbilities")]
+    public List<string> PassiveAbilities { get; set; } = new();
 
     [JsonPropertyName("characterDetails")]
     public CharacterDetails CharacterDetails { get; set; } = new();
@@ -371,8 +371,8 @@ public class TrainerClass
     [JsonPropertyName("startingAbilities")]
     public List<string> StartingAbilities { get; set; } = new();
 
-    [JsonPropertyName("startingPerks")]
-    public List<string> StartingPerks { get; set; } = new();
+    [JsonPropertyName("startingPassiveAbilities")]
+    public List<string> StartingPassiveAbilities { get; set; } = new();
 
     [JsonPropertyName("startingMoney")]
     public int StartingMoney { get; set; } = 1000;
@@ -383,11 +383,17 @@ public class TrainerClass
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = new();
 
-    [JsonPropertyName("levelUpTable")]
-    public Dictionary<int, string> LevelUpTable { get; set; } = new();
+    [JsonPropertyName("levelUpChoices")]
+    public Dictionary<int, TrainerClassLevelChoices> LevelUpChoices { get; set; } = new();
+}
 
-    [JsonPropertyName("levelUpPerks")]
-    public Dictionary<int, string> LevelUpPerks { get; set; } = new();
+public class TrainerClassLevelChoices
+{
+    [JsonPropertyName("abilities")]
+    public List<string> Abilities { get; set; } = new();
+
+    [JsonPropertyName("passiveAbilities")]
+    public List<string> PassiveAbilities { get; set; } = new();
 }
 
 public class CombatState

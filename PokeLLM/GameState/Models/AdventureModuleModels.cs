@@ -614,17 +614,23 @@ public class AdventureModuleCharacterClass
     [JsonPropertyName("startingAbilities")]
     public List<string> StartingAbilities { get; set; } = new();
 
-    [JsonPropertyName("levelUpAbilities")]
-    public Dictionary<int, List<string>> LevelUpAbilities { get; set; } = new();
+    [JsonPropertyName("startingPassiveAbilities")]
+    public List<string> StartingPassiveAbilities { get; set; } = new();
 
-    [JsonPropertyName("startingPerks")]
-    public List<string> StartingPerks { get; set; } = new();
-
-    [JsonPropertyName("levelUpPerks")]
-    public Dictionary<int, List<string>> LevelUpPerks { get; set; } = new();
+    [JsonPropertyName("levelUpChart")]
+    public Dictionary<int, AdventureModuleClassLevelProgression> LevelUpChart { get; set; } = new();
 
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = new();
+}
+
+public class AdventureModuleClassLevelProgression
+{
+    [JsonPropertyName("abilities")]
+    public List<string> Abilities { get; set; } = new();
+
+    [JsonPropertyName("passiveAbilities")]
+    public List<string> PassiveAbilities { get; set; } = new();
 }
 
 public class AdventureModuleMove

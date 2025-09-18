@@ -244,9 +244,169 @@ public class GameSetupPhasePlugin
 
     #region Character Classes
 
+    #region Module Abilities
+
+    [KernelFunction("list_module_abilities")]
+    [Description("List the abilities currently available in the module catalog.")]
+    public async Task<string> ListModuleAbilities()
+    {
+        const string operation = nameof(ListModuleAbilities);
+        LogOperationStart(operation, null);
+
+        try
+        {
+            var module = await LoadModuleAsync();
+            module.Abilities ??= new Dictionary<string, AdventureModuleAbility>(StringComparer.OrdinalIgnoreCase);
+
+            var abilities = module.Abilities.Select(pair => new
+            {
+                id = pair.Key,
+                pair.Value.Name,
+                pair.Value.Description,
+                pair.Value.Effects
+            }).ToList();
+
+            _logger.LogDebug("{Operation} returning {Count} abilities", operation, abilities.Count);
+            var response = JsonSerializer.Serialize(new { success = true, abilities }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Operation} failed", operation);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
+        }
+    }
+
+    [KernelFunction("upsert_module_ability")]
+    [Description("Create or update an ability definition in the module catalog.")]
+    public async Task<string> UpsertModuleAbility([Description("Ability definition to create or update")] AbilityDefinition definition)
+    {
+        const string operation = nameof(UpsertModuleAbility);
+        LogOperationStart(operation, definition);
+
+        try
+        {
+            if (definition is null || string.IsNullOrWhiteSpace(definition.Id))
+            {
+                _logger.LogWarning("{Operation} missing ability id", operation);
+                var missingResponse = JsonSerializer.Serialize(new { success = false, error = "Ability id is required" }, _jsonOptions);
+                LogOperationResult(operation, missingResponse);
+                return missingResponse;
+            }
+
+            var module = await LoadModuleAsync();
+            module.Abilities ??= new Dictionary<string, AdventureModuleAbility>(StringComparer.OrdinalIgnoreCase);
+
+            var abilityId = definition.Id.Trim();
+            var isNew = !module.Abilities.TryGetValue(abilityId, out var abilityData);
+            if (abilityData is null)
+            {
+                abilityData = new AdventureModuleAbility();
+                module.Abilities[abilityId] = abilityData;
+            }
+
+            if (definition.Name is not null)
+            {
+                abilityData.Name = definition.Name.Trim();
+            }
+
+            if (definition.Description is not null)
+            {
+                abilityData.Description = definition.Description.Trim();
+            }
+
+            if (definition.Effects is not null)
+            {
+                abilityData.Effects = definition.Effects.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(abilityData.Name))
+            {
+                abilityData.Name = abilityId;
+            }
+
+            abilityData.Description ??= string.Empty;
+            abilityData.Effects ??= string.Empty;
+
+            await SaveModuleAsync(module);
+
+            _logger.LogDebug("{Operation} {Result} ability {AbilityId}", operation, isNew ? "created" : "updated", abilityId);
+            var response = JsonSerializer.Serialize(new
+            {
+                success = true,
+                abilityId,
+                createdNew = isNew
+            }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Operation} failed", operation);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
+        }
+    }
+
+    [KernelFunction("remove_module_ability")]
+    [Description("Remove an ability from the module catalog.")]
+    public async Task<string> RemoveModuleAbility([Description("Ability id to remove")] string abilityId)
+    {
+        const string operation = nameof(RemoveModuleAbility);
+        LogOperationStart(operation, new { abilityId });
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(abilityId))
+            {
+                _logger.LogWarning("{Operation} missing ability id", operation);
+                var missingResponse = JsonSerializer.Serialize(new { success = false, error = "Ability id cannot be empty" }, _jsonOptions);
+                LogOperationResult(operation, missingResponse);
+                return missingResponse;
+            }
+
+            var module = await LoadModuleAsync();
+            module.Abilities ??= new Dictionary<string, AdventureModuleAbility>(StringComparer.OrdinalIgnoreCase);
+
+            var trimmedId = abilityId.Trim();
+            var removed = module.Abilities.Remove(trimmedId);
+            if (removed)
+            {
+                await SaveModuleAsync(module);
+                _logger.LogDebug("{Operation} removed ability {AbilityId}", operation, trimmedId);
+            }
+            else
+            {
+                _logger.LogDebug("{Operation} found no ability {AbilityId} to remove", operation, trimmedId);
+            }
+
+            var response = JsonSerializer.Serialize(new
+            {
+                success = removed,
+                abilityId = trimmedId,
+                catalogCount = module.Abilities.Count
+            }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Operation} failed", operation);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
+        }
+    }
+
+    #endregion
+
     [KernelFunction("upsert_character_class")]
-    [Description("Create or update a character class definition in the module.")]
-    public async Task<string> UpsertCharacterClass([Description("Full class definition")] CharacterClassDefinition definition)
+    [Description("Create or update a character class definition in the module. Only supplied fields are modified.")]
+    public async Task<string> UpsertCharacterClass([Description("Partial or complete class details")] CharacterClassDefinition definition)
     {
         const string operation = nameof(UpsertCharacterClass);
         LogOperationStart(operation, definition);
@@ -263,25 +423,71 @@ public class GameSetupPhasePlugin
 
             var module = await LoadModuleAsync();
             var classId = definition.Id.Trim();
-            var isNew = !module.CharacterClasses.ContainsKey(classId);
+            module.CharacterClasses ??= new Dictionary<string, AdventureModuleCharacterClass>(StringComparer.OrdinalIgnoreCase);
 
-            module.CharacterClasses[classId] = new AdventureModuleCharacterClass
+            var isNew = !module.CharacterClasses.TryGetValue(classId, out var classData);
+            if (classData is null)
             {
-                Name = string.IsNullOrWhiteSpace(definition.Name) ? classId : definition.Name!.Trim(),
-                Description = definition.Description?.Trim() ?? string.Empty,
-                StatModifiers = definition.StatModifiers?.ToDictionary(
-                    static pair => pair.Key,
-                    static pair => pair.Value,
-                    StringComparer.OrdinalIgnoreCase) ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase),
-                StartingAbilities = NormalizeStringList(definition.StartingAbilities),
-                LevelUpAbilities = NormalizeLevelTable(definition.LevelUpAbilities),
-                StartingPerks = NormalizeStringList(definition.StartingPerks),
-                LevelUpPerks = NormalizeLevelTable(definition.LevelUpPerks),
-                Tags = NormalizeStringList(definition.Tags)
-            };
+                classData = new AdventureModuleCharacterClass
+                {
+                    Name = classId,
+                    Description = string.Empty,
+                    StatModifiers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase),
+                    StartingAbilities = new List<string>(),
+                    StartingPassiveAbilities = new List<string>(),
+                    LevelUpChart = new Dictionary<int, AdventureModuleClassLevelProgression>(),
+                    Tags = new List<string>()
+                };
+                module.CharacterClasses[classId] = classData;
+            }
 
-            var persistedClass = module.CharacterClasses[classId];
-            var validationErrors = ValidateCharacterClassStructure(persistedClass);
+            if (definition.Name is not null)
+            {
+                classData.Name = string.IsNullOrWhiteSpace(definition.Name)
+                    ? classId
+                    : definition.Name.Trim();
+            }
+            else if (isNew && string.IsNullOrWhiteSpace(classData.Name))
+            {
+                classData.Name = classId;
+            }
+
+            if (definition.Description is not null)
+            {
+                classData.Description = definition.Description.Trim();
+            }
+
+            if (definition.StatModifiers is not null)
+            {
+                classData.StatModifiers = definition.StatModifiers
+                    .Where(static pair => !string.IsNullOrWhiteSpace(pair.Key))
+                    .ToDictionary(
+                        pair => pair.Key.Trim(),
+                        pair => pair.Value,
+                        StringComparer.OrdinalIgnoreCase);
+            }
+
+            if (definition.StartingAbilities is not null)
+            {
+                classData.StartingAbilities = NormalizeIdentifierList(definition.StartingAbilities);
+            }
+
+            if (definition.StartingPassiveAbilities is not null)
+            {
+                classData.StartingPassiveAbilities = NormalizeIdentifierList(definition.StartingPassiveAbilities);
+            }
+
+            if (definition.LevelUpChart is not null)
+            {
+                ApplyLevelUpChartUpdates(classData, definition.LevelUpChart);
+            }
+
+            if (definition.Tags is not null)
+            {
+                classData.Tags = NormalizeIdentifierList(definition.Tags);
+            }
+
+            var validationErrors = ValidateCharacterClassStructure(module, classId, classData);
 
             await SaveModuleAsync(module);
 
@@ -374,6 +580,8 @@ public class GameSetupPhasePlugin
         try
         {
             var module = await LoadModuleAsync();
+            module.CharacterClasses ??= new Dictionary<string, AdventureModuleCharacterClass>(StringComparer.OrdinalIgnoreCase);
+
             var classes = module.CharacterClasses.Select(pair => new
             {
                 id = pair.Key,
@@ -381,13 +589,13 @@ public class GameSetupPhasePlugin
                 pair.Value.Description,
                 statModifiers = pair.Value.StatModifiers,
                 startingAbilities = pair.Value.StartingAbilities,
-                startingPerks = pair.Value.StartingPerks,
-                levelUpAbilities = pair.Value.LevelUpAbilities,
-                levelUpPerks = pair.Value.LevelUpPerks,
-                tags = pair.Value.Tags
-            });
+                startingPassiveAbilities = pair.Value.StartingPassiveAbilities,
+                levelUpChart = pair.Value.LevelUpChart,
+                tags = pair.Value.Tags,
+                validationIssues = ValidateCharacterClassStructure(module, pair.Key, pair.Value)
+            }).ToList();
 
-            _logger.LogDebug("{Operation} returning {Count} classes", operation, module.CharacterClasses.Count);
+            _logger.LogDebug("{Operation} returning {Count} classes", operation, classes.Count);
             var response = JsonSerializer.Serialize(new { success = true, classes }, _jsonOptions);
             LogOperationResult(operation, response);
             return response;
@@ -419,6 +627,8 @@ public class GameSetupPhasePlugin
             }
 
             var module = await LoadModuleAsync();
+            module.CharacterClasses ??= new Dictionary<string, AdventureModuleCharacterClass>(StringComparer.OrdinalIgnoreCase);
+
             var trimmedId = classId.Trim();
             if (!module.CharacterClasses.TryGetValue(trimmedId, out var classData))
             {
@@ -432,7 +642,7 @@ public class GameSetupPhasePlugin
             session.Player.CharacterDetails.Class = trimmedId;
             session.Player.TrainerClassData = ConvertModuleClass(trimmedId, classData);
             session.Player.Abilities = classData.StartingAbilities?.ToList() ?? new List<string>();
-            session.Player.Perks = classData.StartingPerks?.ToList() ?? new List<string>();
+            session.Player.PassiveAbilities = classData.StartingPassiveAbilities?.ToList() ?? new List<string>();
 
             await _characterManagementService.SetPlayerClass(trimmedId);
             await SaveSessionAsync(session);
@@ -445,7 +655,7 @@ public class GameSetupPhasePlugin
                 classId = trimmedId,
                 className = classData.Name,
                 startingAbilities = session.Player.Abilities,
-                startingPerks = session.Player.Perks
+                startingPassiveAbilities = session.Player.PassiveAbilities
             }, _jsonOptions);
             LogOperationResult(operation, response);
             return response;
@@ -615,6 +825,8 @@ public class GameSetupPhasePlugin
             var session = await _gameStateRepo.LoadLatestStateAsync();
             var module = await LoadModuleAsync();
 
+            module.CharacterClasses ??= new Dictionary<string, AdventureModuleCharacterClass>(StringComparer.OrdinalIgnoreCase);
+
             var missing = new List<string>();
             if (string.IsNullOrWhiteSpace(session.Region)) missing.Add("region");
             if (string.IsNullOrWhiteSpace(session.Player.Name)) missing.Add("playerName");
@@ -635,7 +847,7 @@ public class GameSetupPhasePlugin
             }
 
             var invalidClasses = module.CharacterClasses
-                .Select(pair => new { pair.Key, Issues = ValidateCharacterClassStructure(pair.Value) })
+                .Select(pair => new { pair.Key, Issues = ValidateCharacterClassStructure(module, pair.Key, pair.Value) })
                 .Where(result => result.Issues.Count > 0)
                 .ToDictionary(result => result.Key, result => (IReadOnlyCollection<string>)result.Issues);
 
@@ -649,7 +861,7 @@ public class GameSetupPhasePlugin
                 var invalidResponse = JsonSerializer.Serialize(new
                 {
                     success = false,
-                    error = "Class definitions must include starting abilities/perks and level 1-20 rewards before completing setup.",
+                    error = "Class definitions must include complete starting abilities, passive abilities, and level 1-20 progression before completing setup.",
                     invalidClasses
                 }, _jsonOptions);
                 LogOperationResult(operation, invalidResponse);
@@ -777,93 +989,163 @@ public class GameSetupPhasePlugin
         _logger.LogDebug("Module {ModuleId} persisted", module.Metadata.ModuleId);
     }
 
-    private static List<string> NormalizeStringList(IEnumerable<string>? source)
+    private static List<string> NormalizeIdentifierList(IEnumerable<string>? source)
     {
         return source?
             .Where(static item => !string.IsNullOrWhiteSpace(item))
             .Select(static item => item.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList()
             ?? new List<string>();
     }
 
-    private static Dictionary<int, List<string>> NormalizeLevelTable(Dictionary<int, List<string>>? source)
+    private static void ApplyLevelUpChartUpdates(
+        AdventureModuleCharacterClass classData,
+        Dictionary<int, CharacterClassLevelEntry> updates)
     {
-        if (source is null || source.Count == 0)
+        if (updates is null || updates.Count == 0)
         {
-            return new Dictionary<int, List<string>>();
+            return;
         }
 
-        var result = new Dictionary<int, List<string>>();
-        foreach (var entry in source)
+        classData.LevelUpChart ??= new Dictionary<int, AdventureModuleClassLevelProgression>();
+        foreach (var (level, entry) in updates)
         {
-            result[entry.Key] = NormalizeStringList(entry.Value);
-        }
+            if (entry is null)
+            {
+                classData.LevelUpChart.Remove(level);
+                continue;
+            }
 
-        return result;
+            if (!classData.LevelUpChart.TryGetValue(level, out var progression) || progression is null)
+            {
+                progression = new AdventureModuleClassLevelProgression();
+                classData.LevelUpChart[level] = progression;
+            }
+
+            if (entry.Abilities is not null)
+            {
+                progression.Abilities = NormalizeIdentifierList(entry.Abilities);
+            }
+
+            if (entry.PassiveAbilities is not null)
+            {
+                progression.PassiveAbilities = NormalizeIdentifierList(entry.PassiveAbilities);
+            }
+        }
     }
 
-    private static List<string> ValidateCharacterClassStructure(AdventureModuleCharacterClass classData)
+    private static List<string> ValidateCharacterClassStructure(
+        AdventureModule module,
+        string classId,
+        AdventureModuleCharacterClass classData)
     {
         var issues = new List<string>();
 
+        if (string.IsNullOrWhiteSpace(classData.Name))
+        {
+            issues.Add($"Class '{classId}' requires a name.");
+        }
+
+        if (string.IsNullOrWhiteSpace(classData.Description))
+        {
+            issues.Add($"Class '{classId}' requires a description.");
+        }
+
         if (classData.StartingAbilities is null || classData.StartingAbilities.Count == 0)
         {
-            issues.Add("At least one starting ability is required.");
+            issues.Add($"Class '{classId}' must include at least one starting ability.");
         }
 
-        if (classData.StartingPerks is null || classData.StartingPerks.Count == 0)
+        if (classData.StartingPassiveAbilities is null || classData.StartingPassiveAbilities.Count == 0)
         {
-            issues.Add("At least one starting perk is required.");
+            issues.Add($"Class '{classId}' must include at least one starting passive ability.");
         }
 
-        var invalidLevels = GetInvalidClassLevels(classData);
+        var invalidLevels = classData.LevelUpChart?
+            .Where(entry => entry.Key < MinClassLevel || entry.Key > MaxClassLevel)
+            .Select(entry => entry.Key)
+            .OrderBy(level => level)
+            .ToList() ?? new List<int>();
+
         if (invalidLevels.Count > 0)
         {
-            issues.Add($"Level-up entries must fall between levels {MinClassLevel}-{MaxClassLevel}; invalid levels: {string.Join(", ", invalidLevels)}.");
+            issues.Add($"Class '{classId}' level-up entries must fall between levels {MinClassLevel}-{MaxClassLevel}; invalid levels: {string.Join(", ", invalidLevels)}.");
+        }
+
+        var missingLevels = Enumerable.Range(MinClassLevel, MaxClassLevel - MinClassLevel + 1)
+            .Where(level => !HasRewardAtLevel(classData, level))
+            .ToList();
+
+        if (missingLevels.Count > 0)
+        {
+            issues.Add($"Class '{classId}' must define at least one ability or passive ability choice for every level. Missing levels: {string.Join(", ", missingLevels)}.");
+        }
+
+        var knownAbilityIds = module.Abilities != null
+            ? new HashSet<string>(module.Abilities.Keys.Select(key => key.Trim()), StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var invalidAbilityRefs = new List<string>();
+
+        void ValidateAbilities(IEnumerable<string>? ids, string context)
+        {
+            if (ids is null)
+            {
+                return;
+            }
+
+            foreach (var raw in ids)
+            {
+                if (string.IsNullOrWhiteSpace(raw))
+                {
+                    continue;
+                }
+
+                var abilityId = raw.Trim();
+                if (!knownAbilityIds.Contains(abilityId))
+                {
+                    invalidAbilityRefs.Add($"{abilityId} ({context})");
+                }
+            }
+        }
+
+        ValidateAbilities(classData.StartingAbilities, "startingAbilities");
+        ValidateAbilities(classData.StartingPassiveAbilities, "startingPassiveAbilities");
+
+        if (classData.LevelUpChart is not null)
+        {
+            foreach (var (level, progression) in classData.LevelUpChart)
+            {
+                ValidateAbilities(progression?.Abilities, $"level {level} abilities");
+                ValidateAbilities(progression?.PassiveAbilities, $"level {level} passiveAbilities");
+            }
+        }
+
+        if (invalidAbilityRefs.Count > 0)
+        {
+            issues.Add($"Class '{classId}' references unknown ability ids: {string.Join(", ", invalidAbilityRefs)}.");
         }
 
         return issues;
     }
 
-    private static List<int> GetInvalidClassLevels(AdventureModuleCharacterClass classData)
-    {
-        var invalid = new HashSet<int>();
-
-        static void CaptureInvalid(Dictionary<int, List<string>>? table, HashSet<int> accumulator)
-        {
-            if (table is null)
-            {
-                return;
-            }
-
-            foreach (var level in table.Keys)
-            {
-                if (level < MinClassLevel || level > MaxClassLevel)
-                {
-                    accumulator.Add(level);
-                }
-            }
-        }
-
-        CaptureInvalid(classData.LevelUpAbilities, invalid);
-        CaptureInvalid(classData.LevelUpPerks, invalid);
-
-        return invalid.OrderBy(level => level).ToList();
-    }
-
     private static bool HasRewardAtLevel(AdventureModuleCharacterClass classData, int level)
     {
-        return TableHasEntries(classData.LevelUpAbilities, level) || TableHasEntries(classData.LevelUpPerks, level);
-    }
-
-    private static bool TableHasEntries(Dictionary<int, List<string>>? table, int level)
-    {
-        if (table is null)
+        if (classData.LevelUpChart is null)
         {
             return false;
         }
 
-        return table.TryGetValue(level, out var entries) && entries.Any();
+        if (!classData.LevelUpChart.TryGetValue(level, out var progression) || progression is null)
+        {
+            return false;
+        }
+
+        var hasAbilities = progression.Abilities is { Count: > 0 } && progression.Abilities.Any(id => !string.IsNullOrWhiteSpace(id));
+        var hasPassives = progression.PassiveAbilities is { Count: > 0 } && progression.PassiveAbilities.Any(id => !string.IsNullOrWhiteSpace(id));
+
+        return hasAbilities || hasPassives;
     }
 
     private static TrainerClass ConvertModuleClass(string classId, AdventureModuleCharacterClass classData)
@@ -877,29 +1159,39 @@ public class GameSetupPhasePlugin
                 ? new Dictionary<string, int>(classData.StatModifiers, StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase),
             StartingAbilities = classData.StartingAbilities?.ToList() ?? new List<string>(),
-            StartingPerks = classData.StartingPerks?.ToList() ?? new List<string>(),
+            StartingPassiveAbilities = classData.StartingPassiveAbilities?.ToList() ?? new List<string>(),
             StartingItems = new List<string>(),
             Tags = classData.Tags?.ToList() ?? new List<string>(),
-            LevelUpTable = ConvertLevelUpTable(classData.LevelUpAbilities),
-            LevelUpPerks = ConvertLevelUpTable(classData.LevelUpPerks)
+            LevelUpChoices = ConvertLevelUpChart(classData.LevelUpChart)
         };
     }
 
-    private static Dictionary<int, string> ConvertLevelUpTable(Dictionary<int, List<string>>? source)
+    private static Dictionary<int, TrainerClassLevelChoices> ConvertLevelUpChart(
+        Dictionary<int, AdventureModuleClassLevelProgression>? source)
     {
+        var result = new Dictionary<int, TrainerClassLevelChoices>();
         if (source is null)
         {
-            return new Dictionary<int, string>();
+            return result;
         }
 
-        var table = new Dictionary<int, string>();
-        foreach (var entry in source)
+        foreach (var (level, progression) in source)
         {
-            var value = entry.Value != null ? string.Join(", ", entry.Value) : string.Empty;
-            table[entry.Key] = value;
+            var abilities = progression?.Abilities?.Where(id => !string.IsNullOrWhiteSpace(id))
+                .Select(id => id.Trim())
+                .ToList() ?? new List<string>();
+            var passiveAbilities = progression?.PassiveAbilities?.Where(id => !string.IsNullOrWhiteSpace(id))
+                .Select(id => id.Trim())
+                .ToList() ?? new List<string>();
+
+            result[level] = new TrainerClassLevelChoices
+            {
+                Abilities = abilities,
+                PassiveAbilities = passiveAbilities
+            };
         }
 
-        return table;
+        return result;
     }
 
     #endregion
@@ -939,6 +1231,21 @@ public class GameSetupPhasePlugin
         public List<string>? SafetyConsiderations { get; set; }
     }
 
+    public class AbilityDefinition
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        [JsonPropertyName("effects")]
+        public string? Effects { get; set; }
+    }
+
     public class CharacterClassDefinition
     {
         [JsonPropertyName("id")]
@@ -956,18 +1263,23 @@ public class GameSetupPhasePlugin
         [JsonPropertyName("startingAbilities")]
         public List<string>? StartingAbilities { get; set; }
 
-        [JsonPropertyName("startingPerks")]
-        public List<string>? StartingPerks { get; set; }
+        [JsonPropertyName("startingPassiveAbilities")]
+        public List<string>? StartingPassiveAbilities { get; set; }
 
-        [JsonPropertyName("levelUpAbilities")]
-        public Dictionary<int, List<string>>? LevelUpAbilities { get; set; }
-
-        [JsonPropertyName("levelUpPerks")]
-        public Dictionary<int, List<string>>? LevelUpPerks { get; set; }
-
+        [JsonPropertyName("levelUpChart")]
+        public Dictionary<int, CharacterClassLevelEntry>? LevelUpChart { get; set; }
 
         [JsonPropertyName("tags")]
         public List<string>? Tags { get; set; }
+    }
+
+    public class CharacterClassLevelEntry
+    {
+        [JsonPropertyName("abilities")]
+        public List<string>? Abilities { get; set; }
+
+        [JsonPropertyName("passiveAbilities")]
+        public List<string>? PassiveAbilities { get; set; }
     }
 
     #endregion

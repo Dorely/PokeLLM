@@ -18,6 +18,9 @@ public sealed class AdventureModuleValidator
         "ally"
     };
 
+    private const int MinClassLevel = 1;
+    private const int MaxClassLevel = 20;
+
     public AdventureModuleValidationResult Validate(AdventureModule? module)
     {
         var result = new AdventureModuleValidationResult();
@@ -58,6 +61,7 @@ public sealed class AdventureModuleValidator
         var moveIds = CollectIds(module.Moves, errors, "moves");
         var abilityIds = CollectIds(module.Abilities, errors, "abilities");
         var classIds = CollectIds(module.CharacterClasses, errors, "characterClasses");
+        ValidateCharacterClasses(module, abilityIds, errors);
         var scenarioScriptIds = CollectIds(module.ScenarioScripts, errors, "scenarioScripts", s => s.ScriptId, "scriptId");
         var questStageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var travelRuleIds = CollectTravelRuleIds(module);
@@ -734,6 +738,112 @@ public sealed class AdventureModuleValidator
         }
 
         return set;
+    }
+
+    private static void ValidateCharacterClasses(
+        AdventureModule module,
+        HashSet<string> abilityIds,
+        List<string> errors)
+    {
+        if (module.CharacterClasses is null)
+        {
+            return;
+        }
+
+        foreach (var (classId, classData) in module.CharacterClasses)
+        {
+            if (classData is null)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(classData.Name))
+            {
+                errors.Add($"characterClasses.{classId} must define a name.");
+            }
+
+            if (string.IsNullOrWhiteSpace(classData.Description))
+            {
+                errors.Add($"characterClasses.{classId} must define a description.");
+            }
+
+            if (classData.StartingAbilities is null || classData.StartingAbilities.Count == 0)
+            {
+                errors.Add($"characterClasses.{classId} must include at least one starting ability.");
+            }
+
+            if (classData.StartingPassiveAbilities is null || classData.StartingPassiveAbilities.Count == 0)
+            {
+                errors.Add($"characterClasses.{classId} must include at least one starting passive ability.");
+            }
+
+            if (classData.LevelUpChart is null || classData.LevelUpChart.Count == 0)
+            {
+                errors.Add($"characterClasses.{classId}.levelUpChart must define entries for levels {MinClassLevel}-{MaxClassLevel}.");
+                continue;
+            }
+
+            var invalidLevels = classData.LevelUpChart.Keys
+                .Where(level => level < MinClassLevel || level > MaxClassLevel)
+                .OrderBy(level => level)
+                .ToList();
+            if (invalidLevels.Count > 0)
+            {
+                errors.Add($"characterClasses.{classId}.levelUpChart contains invalid levels: {string.Join(", ", invalidLevels)}.");
+            }
+
+            var missingLevels = Enumerable.Range(MinClassLevel, MaxClassLevel - MinClassLevel + 1)
+                .Where(level => !classData.LevelUpChart.TryGetValue(level, out var progression) || !HasClassRewards(progression))
+                .ToList();
+            if (missingLevels.Count > 0)
+            {
+                errors.Add($"characterClasses.{classId}.levelUpChart must include abilities or passive abilities for levels: {string.Join(", ", missingLevels)}.");
+            }
+
+            void ValidateAbilityRefs(IEnumerable<string>? ids, string path)
+            {
+                if (ids is null)
+                {
+                    return;
+                }
+
+                foreach (var raw in ids)
+                {
+                    if (string.IsNullOrWhiteSpace(raw))
+                    {
+                        continue;
+                    }
+
+                    var abilityId = raw.Trim();
+                    if (!abilityIds.Contains(abilityId))
+                    {
+                        errors.Add($"characterClasses.{classId}.{path} references unknown ability id '{abilityId}'.");
+                    }
+                }
+            }
+
+            ValidateAbilityRefs(classData.StartingAbilities, "startingAbilities");
+            ValidateAbilityRefs(classData.StartingPassiveAbilities, "startingPassiveAbilities");
+
+            foreach (var (level, progression) in classData.LevelUpChart)
+            {
+                ValidateAbilityRefs(progression?.Abilities, $"levelUpChart[{level}].abilities");
+                ValidateAbilityRefs(progression?.PassiveAbilities, $"levelUpChart[{level}].passiveAbilities");
+            }
+        }
+    }
+
+    private static bool HasClassRewards(AdventureModuleClassLevelProgression? progression)
+    {
+        if (progression is null)
+        {
+            return false;
+        }
+
+        var hasAbilities = progression.Abilities is { Count: > 0 } && progression.Abilities.Any(id => !string.IsNullOrWhiteSpace(id));
+        var hasPassive = progression.PassiveAbilities is { Count: > 0 } && progression.PassiveAbilities.Any(id => !string.IsNullOrWhiteSpace(id));
+
+        return hasAbilities || hasPassive;
     }
 
     private static void ValidateMechanicalReferences(

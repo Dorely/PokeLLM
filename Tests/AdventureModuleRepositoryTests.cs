@@ -189,7 +189,8 @@ public class AdventureModuleRepositoryTests : IDisposable
         Assert.True(session.ActiveQuestStates.TryGetValue("quest_pokemon_league", out var questState));
         Assert.Equal("NotStarted", questState);
 
-        Assert.Contains("Signal Beacon", session.Player.Abilities);
+        Assert.Contains("ability_signal_beacon", session.Player.Abilities);
+        Assert.Contains("perk_scout_lightstep", session.Player.PassiveAbilities);
         Assert.True(module.CharacterClasses.ContainsKey(session.Player.TrainerClassData.Id));
         Assert.Equal(1, session.Player.TrainerClassData.StatModifiers["Dexterity"]);
         Assert.Empty(session.Player.CharacterDetails.Inventory);

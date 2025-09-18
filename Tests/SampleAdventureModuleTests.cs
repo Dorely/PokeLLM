@@ -18,20 +18,16 @@ public class SampleAdventureModuleTests
             Assert.NotNull(classData.StartingAbilities);
             Assert.True(classData.StartingAbilities.Count > 0, $"Class {classId} is missing starting abilities.");
 
-            Assert.NotNull(classData.StartingPerks);
-            Assert.True(classData.StartingPerks.Count > 0, $"Class {classId} is missing starting perks.");
+            Assert.NotNull(classData.StartingPassiveAbilities);
+            Assert.True(classData.StartingPassiveAbilities.Count > 0, $"Class {classId} is missing starting passive abilities.");
 
-            AssertNoInvalidLevels(classId, classData.LevelUpAbilities);
-            AssertNoInvalidLevels(classId, classData.LevelUpPerks);
+            AssertNoInvalidLevels(classId, classData.LevelUpChart);
 
             foreach (var level in Enumerable.Range(1, 20))
             {
-                var hasAbility = HasEntriesAtLevel(classData.LevelUpAbilities, level);
-                var hasPerk = HasEntriesAtLevel(classData.LevelUpPerks, level);
-
                 Assert.True(
-                    hasAbility || hasPerk,
-                    $"Class {classId} must define either an ability or perk reward at level {level}.");
+                    HasEntriesAtLevel(classData.LevelUpChart, level),
+                    $"Class {classId} must define ability or passive ability rewards at level {level}.");
             }
         }
     }
@@ -56,29 +52,38 @@ public class SampleAdventureModuleTests
         }) ?? throw new InvalidOperationException("Failed to deserialize sample adventure module.");
     }
 
-    private static bool HasEntriesAtLevel(Dictionary<int, List<string>>? table, int level)
+    private static bool HasEntriesAtLevel(Dictionary<int, AdventureModuleClassLevelProgression>? chart, int level)
     {
-        if (table is null)
+        if (chart is null)
         {
             return false;
         }
 
-        return table.TryGetValue(level, out var entries) && entries.Any(e => !string.IsNullOrWhiteSpace(e));
+        return chart.TryGetValue(level, out var progression) && HasRewards(progression);
     }
 
-    private static void AssertNoInvalidLevels(string classId, Dictionary<int, List<string>>? table)
+    private static void AssertNoInvalidLevels(string classId, Dictionary<int, AdventureModuleClassLevelProgression>? chart)
     {
-        if (table is null)
-        {
-            return;
-        }
+        Assert.NotNull(chart);
 
-        foreach (var key in table.Keys)
+        foreach (var (level, progression) in chart!)
         {
-            Assert.InRange(key, 1, 20);
-            var entries = table[key];
-            Assert.True(entries is { Count: > 0 } && entries.All(e => !string.IsNullOrWhiteSpace(e)),
-                $"Class {classId} has an empty reward list at level {key}.");
+            Assert.InRange(level, 1, 20);
+            Assert.True(HasRewards(progression), $"Class {classId} has an empty reward list at level {level}.");
         }
     }
+
+    private static bool HasRewards(AdventureModuleClassLevelProgression? progression)
+    {
+        if (progression is null)
+        {
+            return false;
+        }
+
+        var hasAbilities = progression.Abilities is { Count: > 0 } && progression.Abilities.Any(e => !string.IsNullOrWhiteSpace(e));
+        var hasPassiveAbilities = progression.PassiveAbilities is { Count: > 0 } && progression.PassiveAbilities.Any(e => !string.IsNullOrWhiteSpace(e));
+
+        return hasAbilities || hasPassiveAbilities;
+    }
+
 }

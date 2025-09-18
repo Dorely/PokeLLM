@@ -195,11 +195,6 @@ public class AdventureModuleRepository : IAdventureModuleRepository
         var moduleItems = module.Items != null
             ? new Dictionary<string, AdventureModuleItem>(module.Items, StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, AdventureModuleItem>(StringComparer.OrdinalIgnoreCase);
-
-        var moduleAbilities = module.Abilities != null
-            ? new Dictionary<string, AdventureModuleAbility>(module.Abilities, StringComparer.OrdinalIgnoreCase)
-            : new Dictionary<string, AdventureModuleAbility>(StringComparer.OrdinalIgnoreCase);
-
         var characterClasses = module.CharacterClasses != null
             ? new Dictionary<string, AdventureModuleCharacterClass>(module.CharacterClasses, StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, AdventureModuleCharacterClass>(StringComparer.OrdinalIgnoreCase);
@@ -219,7 +214,7 @@ public class AdventureModuleRepository : IAdventureModuleRepository
         baseline.Region = DetermineRegion(module);
         baseline.AdventureSummary = module.Metadata?.Summary ?? string.Empty;
         baseline.CurrentLocationId = DetermineStartingLocationId(module);
-        baseline.Player = CreateBaselinePlayer(module, moduleAbilities, characterClasses);
+        baseline.Player = CreateBaselinePlayer(module, characterClasses);
 
         var pokemonByLocation = creatureInstances
             .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.LocationId))
@@ -301,7 +296,6 @@ public class AdventureModuleRepository : IAdventureModuleRepository
 
     private static PlayerState CreateBaselinePlayer(
         AdventureModule module,
-        IReadOnlyDictionary<string, AdventureModuleAbility> moduleAbilities,
         IReadOnlyDictionary<string, AdventureModuleCharacterClass> characterClasses)
     {
         var player = new PlayerState
@@ -331,42 +325,47 @@ public class AdventureModuleRepository : IAdventureModuleRepository
                 ? new Dictionary<string, int>(classData.StatModifiers, StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase),
             StartingAbilities = classData.StartingAbilities?.ToList() ?? new List<string>(),
-            StartingPerks = classData.StartingPerks?.ToList() ?? new List<string>(),
+            StartingPassiveAbilities = classData.StartingPassiveAbilities?.ToList() ?? new List<string>(),
             StartingItems = new List<string>(),
             Tags = classData.Tags?.ToList() ?? new List<string>(),
-            LevelUpTable = ConvertLevelUpTable(classData.LevelUpAbilities),
-            LevelUpPerks = ConvertLevelUpTable(classData.LevelUpPerks)
+            LevelUpChoices = ConvertLevelUpChart(classData.LevelUpChart)
         };
 
-
-        var abilityNames = classData.StartingAbilities?
-            .Select(id => moduleAbilities.TryGetValue(id, out var ability) ? ability.Name : id)
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .ToList() ?? new List<string>();
-
-        player.Abilities = abilityNames;
-        player.Perks = classData.StartingPerks?.ToList() ?? new List<string>();
+        player.Abilities = classData.StartingAbilities?.ToList() ?? new List<string>();
+        player.PassiveAbilities = classData.StartingPassiveAbilities?.ToList() ?? new List<string>();
         player.CharacterDetails.Class = classId;
         player.CharacterDetails.Inventory = new List<ItemInstance>();
 
         return player;
     }
 
-    private static Dictionary<int, string> ConvertLevelUpTable(Dictionary<int, List<string>>? source)
+    private static Dictionary<int, TrainerClassLevelChoices> ConvertLevelUpChart(
+        Dictionary<int, AdventureModuleClassLevelProgression>? source)
     {
+        var result = new Dictionary<int, TrainerClassLevelChoices>();
         if (source is null)
         {
-            return new Dictionary<int, string>();
+            return result;
         }
 
-        var table = new Dictionary<int, string>();
-        foreach (var entry in source)
+        foreach (var (level, progression) in source)
         {
-            var value = entry.Value != null ? string.Join(", ", entry.Value) : string.Empty;
-            table[entry.Key] = value;
+            var normalizedLevel = level;
+            var abilities = progression?.Abilities?.Where(a => !string.IsNullOrWhiteSpace(a))
+                .Select(a => a.Trim())
+                .ToList() ?? new List<string>();
+            var passiveAbilities = progression?.PassiveAbilities?.Where(a => !string.IsNullOrWhiteSpace(a))
+                .Select(a => a.Trim())
+                .ToList() ?? new List<string>();
+
+            result[normalizedLevel] = new TrainerClassLevelChoices
+            {
+                Abilities = abilities,
+                PassiveAbilities = passiveAbilities
+            };
         }
 
-        return table;
+        return result;
     }
 
     private static List<ItemInstance> CreateInventoryFromItemInstances(IEnumerable<ItemInstance>? items, IReadOnlyDictionary<string, AdventureModuleItem> moduleItems)

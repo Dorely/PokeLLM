@@ -59,8 +59,8 @@ public class OpenAiLLMProvider : ILLMProvider
     {
         return new OpenAIPromptExecutionSettings
         {
-            MaxTokens = maxTokens,
-            Temperature = temperature,
+            //MaxTokens = maxTokens,
+            //Temperature = temperature,
             ToolCallBehavior = enableFunctionCalling ? ToolCallBehavior.AutoInvokeKernelFunctions : ToolCallBehavior.EnableKernelFunctions
         };
     }

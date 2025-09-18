@@ -1,4 +1,5 @@
 using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,11 @@ public class GameSetupPhasePluginTests : IDisposable
     private readonly IAdventureModuleRepository _moduleRepository;
     private readonly IGameStateRepository _gameStateRepository;
     private readonly CharacterManagementService _characterService;
+
+    private const string StartingAbilityId = "ability_starting";
+    private const string StartingPassiveAbilityId = "ability_passive_starting";
+    private const string LevelAbilityId = "ability_level_reward";
+    private const string LevelPassiveAbilityId = "ability_passive_level_reward";
 
     public GameSetupPhasePluginTests()
     {
@@ -50,16 +56,51 @@ public class GameSetupPhasePluginTests : IDisposable
         var reloadedModule = await _moduleRepository.LoadByFileNameAsync(session.Module.ModuleFileName);
         Assert.True(reloadedModule.CharacterClasses.TryGetValue("class_bug_catcher", out var storedClass));
         Assert.Equal("Bug Catcher", storedClass!.Name);
-        Assert.Collection(storedClass.StartingAbilities, ability => Assert.Equal("Starting Ability", ability));
-        Assert.Collection(storedClass.StartingPerks, perk => Assert.Equal("Starting Perk", perk));
-        Assert.Equal(20, storedClass.LevelUpAbilities.Count);
-        Assert.Equal(20, storedClass.LevelUpPerks.Count);
+        Assert.Collection(storedClass.StartingAbilities, ability => Assert.Equal(StartingAbilityId, ability));
+        Assert.Collection(storedClass.StartingPassiveAbilities, ability => Assert.Equal(StartingPassiveAbilityId, ability));
+        Assert.NotNull(storedClass.LevelUpChart);
+        Assert.Equal(20, storedClass.LevelUpChart.Count);
         Assert.All(Enumerable.Range(1, 20), level =>
         {
-            Assert.True(storedClass.LevelUpAbilities.ContainsKey(level));
-            Assert.True(storedClass.LevelUpPerks.ContainsKey(level));
+            Assert.True(storedClass.LevelUpChart.TryGetValue(level, out var progression));
+            Assert.NotNull(progression);
+            var levelProgression = progression!;
+            Assert.Contains(LevelAbilityId, levelProgression.Abilities);
+            Assert.Contains(LevelPassiveAbilityId, levelProgression.PassiveAbilities);
         });
     }
+
+    [Fact]
+    public async Task UpsertModuleAbility_CreatesOrUpdatesAbility()
+    {
+        var (plugin, session) = await CreatePluginAsync();
+
+        var abilityDefinition = new GameSetupPhasePlugin.AbilityDefinition
+        {
+            Id = "ability_bug_net",
+            Name = "Bug Net Expertise",
+            Description = "Improves catching Bug-type Pokémon.",
+            Effects = "+2 to capture checks for Bug-type Pokémon."
+        };
+
+        var result = JsonSerializer.Deserialize<JsonElement>(await plugin.UpsertModuleAbility(abilityDefinition));
+        Assert.True(result.GetProperty("success").GetBoolean());
+        Assert.True(result.GetProperty("createdNew").GetBoolean());
+
+        var reloadedModule = await _moduleRepository.LoadByFileNameAsync(session.Module.ModuleFileName);
+        Assert.True(reloadedModule.Abilities.TryGetValue("ability_bug_net", out var storedAbility));
+        Assert.Equal("Bug Net Expertise", storedAbility!.Name);
+
+        abilityDefinition.Name = "Bug Net Mastery";
+        var updateResult = JsonSerializer.Deserialize<JsonElement>(await plugin.UpsertModuleAbility(abilityDefinition));
+        Assert.True(updateResult.GetProperty("success").GetBoolean());
+        Assert.False(updateResult.GetProperty("createdNew").GetBoolean());
+
+        reloadedModule = await _moduleRepository.LoadByFileNameAsync(session.Module.ModuleFileName);
+        Assert.True(reloadedModule.Abilities.TryGetValue("ability_bug_net", out storedAbility));
+        Assert.Equal("Bug Net Mastery", storedAbility!.Name);
+    }
+
 
     [Fact]
     public async Task UpsertCharacterClass_WithMissingRequirements_ReturnsErrorsButPersists()
@@ -71,22 +112,21 @@ public class GameSetupPhasePluginTests : IDisposable
             Id = "class_incomplete",
             Name = "Incomplete",
             Description = "Lacks required structure.",
-            StartingAbilities = new List<string> { "Quick Strike" },
-            StartingPerks = new List<string> { "Field Guide" },
-            LevelUpAbilities = new Dictionary<int, List<string>>
+            StartingAbilities = new List<string> { StartingAbilityId },
+            LevelUpChart = new Dictionary<int, GameSetupPhasePlugin.CharacterClassLevelEntry>
             {
-                [5] = new() { "Swarm Tactics" }
-            },
-            LevelUpPerks = new Dictionary<int, List<string>>
-            {
-                [10] = new() { "Sharpened Reflexes" }
+                [5] = new()
+                {
+                    Abilities = new List<string> { LevelAbilityId }
+                }
             }
         };
 
         var result = JsonSerializer.Deserialize<JsonElement>(await plugin.UpsertCharacterClass(incompleteDefinition));
 
-        Assert.True(result.GetProperty("success").GetBoolean());
-        Assert.False(result.TryGetProperty("validationErrors", out _));
+        Assert.False(result.GetProperty("success").GetBoolean());
+        Assert.True(result.TryGetProperty("validationErrors", out var validationErrors));
+        Assert.True(validationErrors.GetArrayLength() > 0);
 
         var reloadedModule = await _moduleRepository.LoadByFileNameAsync(session.Module.ModuleFileName);
         Assert.True(reloadedModule.CharacterClasses.ContainsKey("class_incomplete"));
@@ -102,16 +142,17 @@ public class GameSetupPhasePluginTests : IDisposable
             Id = "class_bard",
             Name = "Bard",
             Description = "Performer with limited prep.",
-            StartingAbilities = new List<string>(),
-            StartingPerks = new List<string> { "Stage Presence" },
-            LevelUpAbilities = new Dictionary<int, List<string>>
+            StartingPassiveAbilities = new List<string> { StartingPassiveAbilityId },
+            LevelUpChart = new Dictionary<int, GameSetupPhasePlugin.CharacterClassLevelEntry>
             {
-                [1] = new() { "Verse of Vigor" },
-                [5] = new() { "Ballad of Courage" }
-            },
-            LevelUpPerks = new Dictionary<int, List<string>>
-            {
-                [10] = new() { "Encore" }
+                [1] = new()
+                {
+                    Abilities = new List<string> { LevelAbilityId }
+                },
+                [5] = new()
+                {
+                    PassiveAbilities = new List<string> { LevelPassiveAbilityId }
+                }
             }
         };
 
@@ -160,6 +201,7 @@ public class GameSetupPhasePluginTests : IDisposable
     private async Task<(GameSetupPhasePlugin plugin, AdventureSessionState session)> CreatePluginAsync()
     {
         var module = _moduleRepository.CreateNewModule();
+        SeedModuleAbilities(module);
         await _moduleRepository.SaveAsync(module);
         var modulePath = _moduleRepository.GetModuleFilePath(module.Metadata.ModuleId);
 
@@ -196,12 +238,37 @@ public class GameSetupPhasePluginTests : IDisposable
             Id = id,
             Name = name,
             Description = $"Complete class definition for {name}.",
-            StartingAbilities = new List<string> { "Starting Ability" },
-            StartingPerks = new List<string> { "Starting Perk" },
-            LevelUpAbilities = Enumerable.Range(1, 20)
-                .ToDictionary(level => level, level => new List<string> { $"Ability_{level:00}" }),
-            LevelUpPerks = Enumerable.Range(1, 20)
-                .ToDictionary(level => level, level => new List<string> { $"Perk_{level:00}" })
+            StartingAbilities = new List<string> { StartingAbilityId },
+            StartingPassiveAbilities = new List<string> { StartingPassiveAbilityId },
+            LevelUpChart = Enumerable.Range(1, 20)
+                .ToDictionary(
+                    level => level,
+                    level => new GameSetupPhasePlugin.CharacterClassLevelEntry
+                    {
+                        Abilities = new List<string> { LevelAbilityId },
+                        PassiveAbilities = new List<string> { LevelPassiveAbilityId }
+                    })
         };
     }
+
+    private static void SeedModuleAbilities(AdventureModule module)
+    {
+        module.Abilities ??= new Dictionary<string, AdventureModuleAbility>(StringComparer.OrdinalIgnoreCase);
+        module.Abilities[StartingAbilityId] = CreateAbility("Starting Ability");
+        module.Abilities[StartingPassiveAbilityId] = CreateAbility("Starting Passive Ability");
+        module.Abilities[LevelAbilityId] = CreateAbility("Level Ability");
+        module.Abilities[LevelPassiveAbilityId] = CreateAbility("Level Passive Ability");
+    }
+
+    private static AdventureModuleAbility CreateAbility(string name)
+    {
+        return new AdventureModuleAbility
+        {
+            Name = name,
+            Description = $"{name} description.",
+            Effects = $"{name} effects."
+        };
+    }
+
 }
+

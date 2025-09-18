@@ -3906,106 +3906,656 @@
   },
   "abilities": {
     "ability_flame_body": {
-      "name": "Flame Body",
-      "description": "The Pok\u00e9mon radiates intense heat; contact attackers risk burning while nearby forgework stays ignited.",
-      "effects": ""
+        "name": "Flame Body",
+        "description": "The Pok\u00e9mon radiates intense heat; contact attackers risk burning while nearby forgework stays ignited.",
+        "effects": ""
     },
     "ability_marvel_scale": {
-      "name": "Marvel Scale",
-      "description": "Defensive scales shimmer under pressure, raising resilience whenever the Pok\u00e9mon is impaired.",
-      "effects": ""
+        "name": "Marvel Scale",
+        "description": "Defensive scales shimmer under pressure, raising resilience whenever the Pok\u00e9mon is impaired.",
+        "effects": ""
     },
     "ability_harvest": {
-      "name": "Harvest",
-      "description": "Reclaims restorative resources during calm weather, allowing repeated use of nourishment items.",
-      "effects": ""
+        "name": "Harvest",
+        "description": "Reclaims restorative resources during calm weather, allowing repeated use of nourishment items.",
+        "effects": ""
     },
     "ability_sturdy": {
-      "name": "Sturdy",
-      "description": "Immovable plating lets the Pok\u00e9mon withstand otherwise overwhelming blows from full health.",
-      "effects": ""
+        "name": "Sturdy",
+        "description": "Immovable plating lets the Pok\u00e9mon withstand otherwise overwhelming blows from full health.",
+        "effects": ""
     },
     "ability_gale_wings": {
-      "name": "Gale Wings",
-      "description": "Harnesses tailwinds to act first whenever launching Flying-type tactics.",
-      "effects": ""
+        "name": "Gale Wings",
+        "description": "Harnesses tailwinds to act first whenever launching Flying-type tactics.",
+        "effects": ""
     },
     "ability_trace": {
-      "name": "Trace",
-      "description": "Copies an opponent\u2019s battlefield ability for a short duration when entering the fray.",
-      "effects": ""
+        "name": "Trace",
+        "description": "Copies an opponent\u2019s battlefield ability for a short duration when entering the fray.",
+        "effects": ""
     },
     "ability_sand_veil": {
-      "name": "Sand Veil",
-      "description": "Shrouds the Pok\u00e9mon in sandstorms, heightening evasiveness amid harsh grit.",
-      "effects": ""
+        "name": "Sand Veil",
+        "description": "Shrouds the Pok\u00e9mon in sandstorms, heightening evasiveness amid harsh grit.",
+        "effects": ""
     },
     "ability_magnet_pull": {
-      "name": "Magnet Pull",
-      "description": "Generates electromagnetic locks that prevent Steel-type foes from retreating.",
-      "effects": ""
+        "name": "Magnet Pull",
+        "description": "Generates electromagnetic locks that prevent Steel-type foes from retreating.",
+        "effects": ""
     },
     "ability_prism_cloak": {
-      "name": "Prism Cloak",
-      "description": "Diffuses light through stolen prism tech, intermittently rendering the user translucent.",
-      "effects": ""
+        "name": "Prism Cloak",
+        "description": "Diffuses light through stolen prism tech, intermittently rendering the user translucent.",
+        "effects": ""
     },
     "ability_resonance_pulse": {
-      "name": "Resonance Pulse",
-      "description": "Vibrates with Solaryn\u2019s hymn, projecting harmonic shields when allies coordinate.",
-      "effects": ""
+        "name": "Resonance Pulse",
+        "description": "Vibrates with Solaryn\u2019s hymn, projecting harmonic shields when allies coordinate.",
+        "effects": ""
     },
     "ability_radiant_harmony": {
-      "name": "Radiant Harmony",
-      "description": "Balances sunlight and tides, amplifying allies when battle conditions are stabilized.",
-      "effects": ""
+        "name": "Radiant Harmony",
+        "description": "Balances sunlight and tides, amplifying allies when battle conditions are stabilized.",
+        "effects": ""
     },
     "ability_signal_beacon": {
-      "name": "Signal Beacon",
-      "description": "Project a flare of coherent light that boosts allies\u2019 perception in exploration scenes.",
-      "effects": "Allies gain advantage on navigation and awareness checks for the next scene."
+        "name": "Signal Beacon",
+        "description": "Project a flare of coherent light that boosts allies\u2019 perception in exploration scenes.",
+        "effects": "Allies gain advantage on navigation and awareness checks for the next scene."
     },
     "ability_rescue_coordination": {
-      "name": "Rescue Coordination",
-      "description": "Directs allied actions with pinpoint timing during evacuations or rapid response.",
-      "effects": "When orchestrating rescues, allies may reroll a failed skill check once per scene."
+        "name": "Rescue Coordination",
+        "description": "Directs allied actions with pinpoint timing during evacuations or rapid response.",
+        "effects": "When orchestrating rescues, allies may reroll a failed skill check once per scene."
     },
     "ability_solar_insight": {
-      "name": "Solar Insight",
-      "description": "Reads subtle shifts in solar arrays to anticipate environmental hazards.",
-      "effects": "Gain early warning of ambient threats; party may reposition before hazards trigger."
+        "name": "Solar Insight",
+        "description": "Reads subtle shifts in solar arrays to anticipate environmental hazards.",
+        "effects": "Gain early warning of ambient threats; party may reposition before hazards trigger."
     },
     "ability_tidal_guardian": {
-      "name": "Tidal Guardian",
-      "description": "Summons gentle currents that steady allies against oncoming force.",
-      "effects": "Allies gain temporary vigor equal to the channeler\u2019s Wisdom modifier."
+        "name": "Tidal Guardian",
+        "description": "Summons gentle currents that steady allies against oncoming force.",
+        "effects": "Allies gain temporary vigor equal to the channeler\u2019s Wisdom modifier."
     },
     "ability_currents_embrace": {
-      "name": "Current's Embrace",
-      "description": "Wraps the party in restorative tides that purge minor afflictions.",
-      "effects": "Once per rest, remove a status effect from each ally in range."
+        "name": "Current's Embrace",
+        "description": "Wraps the party in restorative tides that purge minor afflictions.",
+        "effects": "Once per rest, remove a status effect from each ally in range."
     },
     "ability_oceanic_resolve": {
-      "name": "Oceanic Resolve",
-      "description": "Draws strength from deep ocean pressure to resist overwhelming odds.",
-      "effects": "Allies within 30 feet gain resistance to damage from large foes for one round."
+        "name": "Oceanic Resolve",
+        "description": "Draws strength from deep ocean pressure to resist overwhelming odds.",
+        "effects": "Allies within 30 feet gain resistance to damage from large foes for one round."
     },
     "ability_wind_reader": {
-      "name": "Wind Reader",
-      "description": "Senses microcurrents to predict enemy movement and optimize positioning.",
-      "effects": "Gain a bonus to initiative checks and ignore difficult aerial terrain."
+        "name": "Wind Reader",
+        "description": "Senses microcurrents to predict enemy movement and optimize positioning.",
+        "effects": "Gain a bonus to initiative checks and ignore difficult aerial terrain."
     },
     "ability_tempest_drive": {
-      "name": "Tempest Drive",
-      "description": "Harnesses storm force to propel sudden strikes without losing balance.",
-      "effects": "Once per encounter, make an additional movement and attack after using a Flying-type move."
+        "name": "Tempest Drive",
+        "description": "Harnesses storm force to propel sudden strikes without losing balance.",
+        "effects": "Once per encounter, make an additional movement and attack after using a Flying-type move."
     },
     "ability_eye_of_the_storm": {
-      "name": "Eye of the Storm",
-      "description": "Establishes a calm center that shields allies amidst chaotic weather.",
-      "effects": "Allies within the eye gain advantage on saving throws against environmental hazards."
+        "name": "Eye of the Storm",
+        "description": "Establishes a calm center that shields allies amidst chaotic weather.",
+        "effects": "Allies within the eye gain advantage on saving throws against environmental hazards."
+    },
+    "perk_channeler_ebbshield": {
+        "name": "Perk Channeler Ebbshield",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_channeler_tidal_focus": {
+        "name": "Perk Channeler Tidal Focus",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_01": {
+        "name": "Perk Class Ember Guardian Rank 01",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_02": {
+        "name": "Perk Class Ember Guardian Rank 02",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_03": {
+        "name": "Perk Class Ember Guardian Rank 03",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_04": {
+        "name": "Perk Class Ember Guardian Rank 04",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_05": {
+        "name": "Perk Class Ember Guardian Rank 05",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_06": {
+        "name": "Perk Class Ember Guardian Rank 06",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_07": {
+        "name": "Perk Class Ember Guardian Rank 07",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_08": {
+        "name": "Perk Class Ember Guardian Rank 08",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_09": {
+        "name": "Perk Class Ember Guardian Rank 09",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_10": {
+        "name": "Perk Class Ember Guardian Rank 10",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_11": {
+        "name": "Perk Class Ember Guardian Rank 11",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_12": {
+        "name": "Perk Class Ember Guardian Rank 12",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_13": {
+        "name": "Perk Class Ember Guardian Rank 13",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_14": {
+        "name": "Perk Class Ember Guardian Rank 14",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_15": {
+        "name": "Perk Class Ember Guardian Rank 15",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_16": {
+        "name": "Perk Class Ember Guardian Rank 16",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_17": {
+        "name": "Perk Class Ember Guardian Rank 17",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_18": {
+        "name": "Perk Class Ember Guardian Rank 18",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_19": {
+        "name": "Perk Class Ember Guardian Rank 19",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_ember_guardian_rank_20": {
+        "name": "Perk Class Ember Guardian Rank 20",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_01": {
+        "name": "Perk Class Horizon Vanguard Rank 01",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_02": {
+        "name": "Perk Class Horizon Vanguard Rank 02",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_03": {
+        "name": "Perk Class Horizon Vanguard Rank 03",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_04": {
+        "name": "Perk Class Horizon Vanguard Rank 04",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_05": {
+        "name": "Perk Class Horizon Vanguard Rank 05",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_06": {
+        "name": "Perk Class Horizon Vanguard Rank 06",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_07": {
+        "name": "Perk Class Horizon Vanguard Rank 07",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_08": {
+        "name": "Perk Class Horizon Vanguard Rank 08",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_09": {
+        "name": "Perk Class Horizon Vanguard Rank 09",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_10": {
+        "name": "Perk Class Horizon Vanguard Rank 10",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_11": {
+        "name": "Perk Class Horizon Vanguard Rank 11",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_12": {
+        "name": "Perk Class Horizon Vanguard Rank 12",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_13": {
+        "name": "Perk Class Horizon Vanguard Rank 13",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_14": {
+        "name": "Perk Class Horizon Vanguard Rank 14",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_15": {
+        "name": "Perk Class Horizon Vanguard Rank 15",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_16": {
+        "name": "Perk Class Horizon Vanguard Rank 16",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_17": {
+        "name": "Perk Class Horizon Vanguard Rank 17",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_18": {
+        "name": "Perk Class Horizon Vanguard Rank 18",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_19": {
+        "name": "Perk Class Horizon Vanguard Rank 19",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_horizon_vanguard_rank_20": {
+        "name": "Perk Class Horizon Vanguard Rank 20",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_01": {
+        "name": "Perk Class Solar Scout Rank 01",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_02": {
+        "name": "Perk Class Solar Scout Rank 02",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_03": {
+        "name": "Perk Class Solar Scout Rank 03",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_04": {
+        "name": "Perk Class Solar Scout Rank 04",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_05": {
+        "name": "Perk Class Solar Scout Rank 05",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_06": {
+        "name": "Perk Class Solar Scout Rank 06",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_07": {
+        "name": "Perk Class Solar Scout Rank 07",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_08": {
+        "name": "Perk Class Solar Scout Rank 08",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_09": {
+        "name": "Perk Class Solar Scout Rank 09",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_10": {
+        "name": "Perk Class Solar Scout Rank 10",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_11": {
+        "name": "Perk Class Solar Scout Rank 11",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_12": {
+        "name": "Perk Class Solar Scout Rank 12",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_13": {
+        "name": "Perk Class Solar Scout Rank 13",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_14": {
+        "name": "Perk Class Solar Scout Rank 14",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_15": {
+        "name": "Perk Class Solar Scout Rank 15",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_16": {
+        "name": "Perk Class Solar Scout Rank 16",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_17": {
+        "name": "Perk Class Solar Scout Rank 17",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_18": {
+        "name": "Perk Class Solar Scout Rank 18",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_19": {
+        "name": "Perk Class Solar Scout Rank 19",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_solar_scout_rank_20": {
+        "name": "Perk Class Solar Scout Rank 20",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_01": {
+        "name": "Perk Class Storm Rider Rank 01",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_02": {
+        "name": "Perk Class Storm Rider Rank 02",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_03": {
+        "name": "Perk Class Storm Rider Rank 03",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_04": {
+        "name": "Perk Class Storm Rider Rank 04",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_05": {
+        "name": "Perk Class Storm Rider Rank 05",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_06": {
+        "name": "Perk Class Storm Rider Rank 06",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_07": {
+        "name": "Perk Class Storm Rider Rank 07",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_08": {
+        "name": "Perk Class Storm Rider Rank 08",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_09": {
+        "name": "Perk Class Storm Rider Rank 09",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_10": {
+        "name": "Perk Class Storm Rider Rank 10",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_11": {
+        "name": "Perk Class Storm Rider Rank 11",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_12": {
+        "name": "Perk Class Storm Rider Rank 12",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_13": {
+        "name": "Perk Class Storm Rider Rank 13",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_14": {
+        "name": "Perk Class Storm Rider Rank 14",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_15": {
+        "name": "Perk Class Storm Rider Rank 15",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_16": {
+        "name": "Perk Class Storm Rider Rank 16",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_17": {
+        "name": "Perk Class Storm Rider Rank 17",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_18": {
+        "name": "Perk Class Storm Rider Rank 18",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_19": {
+        "name": "Perk Class Storm Rider Rank 19",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_storm_rider_rank_20": {
+        "name": "Perk Class Storm Rider Rank 20",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_01": {
+        "name": "Perk Class Tide Channeler Rank 01",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_02": {
+        "name": "Perk Class Tide Channeler Rank 02",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_03": {
+        "name": "Perk Class Tide Channeler Rank 03",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_04": {
+        "name": "Perk Class Tide Channeler Rank 04",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_05": {
+        "name": "Perk Class Tide Channeler Rank 05",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_06": {
+        "name": "Perk Class Tide Channeler Rank 06",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_07": {
+        "name": "Perk Class Tide Channeler Rank 07",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_08": {
+        "name": "Perk Class Tide Channeler Rank 08",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_09": {
+        "name": "Perk Class Tide Channeler Rank 09",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_10": {
+        "name": "Perk Class Tide Channeler Rank 10",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_11": {
+        "name": "Perk Class Tide Channeler Rank 11",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_12": {
+        "name": "Perk Class Tide Channeler Rank 12",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_13": {
+        "name": "Perk Class Tide Channeler Rank 13",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_14": {
+        "name": "Perk Class Tide Channeler Rank 14",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_15": {
+        "name": "Perk Class Tide Channeler Rank 15",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_16": {
+        "name": "Perk Class Tide Channeler Rank 16",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_17": {
+        "name": "Perk Class Tide Channeler Rank 17",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_18": {
+        "name": "Perk Class Tide Channeler Rank 18",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_19": {
+        "name": "Perk Class Tide Channeler Rank 19",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_class_tide_channeler_rank_20": {
+        "name": "Perk Class Tide Channeler Rank 20",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_guardian_forgeplate": {
+        "name": "Perk Guardian Forgeplate",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_guardian_heat_reserve": {
+        "name": "Perk Guardian Heat Reserve",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_rider_gale_dancer": {
+        "name": "Perk Rider Gale Dancer",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_rider_sky_anchor": {
+        "name": "Perk Rider Sky Anchor",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_scout_command_channel": {
+        "name": "Perk Scout Command Channel",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_scout_lightstep": {
+        "name": "Perk Scout Lightstep",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_vanguard_compass_of_light": {
+        "name": "Perk Vanguard Compass Of Light",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
+    },
+    "perk_vanguard_solar_aegis": {
+        "name": "Perk Vanguard Solar Aegis",
+        "description": "Sample passive ability placeholder.",
+        "effects": ""
     }
-  },
+},
   "moves": {
     "move_acrobatics": {
       "name": "Acrobatics",
@@ -4482,2025 +5032,2557 @@
   },
   "characterClasses": {
       "class_solar_scout": {
-          "name": "Solar Scout",
-          "description": "Light-guiding navigators who chart safe routes and rally evac teams across the archipelago.",
-          "statModifiers": {
-              "Dexterity": 1,
-              "Wisdom": 1,
-              "Charisma": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Solar Scout",
+            "description": "Light-guiding navigators who chart safe routes and rally evac teams across the archipelago.",
+            "statModifiers": {
+                  "Dexterity": 1,
+                  "Wisdom": 1,
+                  "Charisma": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "support",
-              "exploration"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "support",
+                  "exploration"
+            ]
       },
       "class_tide_channeler": {
-          "name": "Tide Channeler",
-          "description": "Mystics who weave restorative tides and shield crews from the Shadow Cartel's sabotage.",
-          "statModifiers": {
-              "Constitution": 1,
-              "Wisdom": 2
-          },
-          "startingAbilities": [
-              "ability_tidal_guardian",
-              "ability_currents_embrace"
-          ],
-          "startingPerks": [
-              "perk_channeler_tidal_focus",
-              "perk_channeler_ebbshield"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
-                  "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
+            "name": "Tide Channeler",
+            "description": "Mystics who weave restorative tides and shield crews from the Shadow Cartel's sabotage.",
+            "statModifiers": {
+                  "Constitution": 1,
+                  "Wisdom": 2
+            },
+            "startingAbilities": [
+                  "ability_tidal_guardian",
                   "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_tide_channeler_rank_01"
-              ],
-              "2": [
-                  "perk_class_tide_channeler_rank_02"
-              ],
-              "3": [
-                  "perk_class_tide_channeler_rank_03"
-              ],
-              "4": [
-                  "perk_class_tide_channeler_rank_04"
-              ],
-              "5": [
-                  "perk_class_tide_channeler_rank_05"
-              ],
-              "6": [
-                  "perk_class_tide_channeler_rank_06"
-              ],
-              "7": [
-                  "perk_class_tide_channeler_rank_07"
-              ],
-              "8": [
-                  "perk_class_tide_channeler_rank_08"
-              ],
-              "9": [
-                  "perk_class_tide_channeler_rank_09"
-              ],
-              "10": [
-                  "perk_class_tide_channeler_rank_10"
-              ],
-              "11": [
-                  "perk_class_tide_channeler_rank_11"
-              ],
-              "12": [
-                  "perk_class_tide_channeler_rank_12"
-              ],
-              "13": [
-                  "perk_class_tide_channeler_rank_13"
-              ],
-              "14": [
-                  "perk_class_tide_channeler_rank_14"
-              ],
-              "15": [
-                  "perk_class_tide_channeler_rank_15"
-              ],
-              "16": [
-                  "perk_class_tide_channeler_rank_16"
-              ],
-              "17": [
-                  "perk_class_tide_channeler_rank_17"
-              ],
-              "18": [
-                  "perk_class_tide_channeler_rank_18"
-              ],
-              "19": [
-                  "perk_class_tide_channeler_rank_19"
-              ],
-              "20": [
-                  "perk_class_tide_channeler_rank_20"
-              ]
-          },
-          "tags": [
-              "support",
-              "defender"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_channeler_tidal_focus",
+                  "perk_channeler_ebbshield"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_tide_channeler_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "support",
+                  "defender"
+            ]
       },
       "class_storm_rider": {
-          "name": "Storm Rider",
-          "description": "Aerial tacticians who master wind lanes and strike with precision during volatile weather.",
-          "statModifiers": {
-              "Dexterity": 2,
-              "Strength": 1
-          },
-          "startingAbilities": [
-              "ability_wind_reader",
-              "ability_tempest_drive"
-          ],
-          "startingPerks": [
-              "perk_rider_gale_dancer",
-              "perk_rider_sky_anchor"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
-                  "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
+            "name": "Storm Rider",
+            "description": "Aerial tacticians who master wind lanes and strike with precision during volatile weather.",
+            "statModifiers": {
+                  "Dexterity": 2,
+                  "Strength": 1
+            },
+            "startingAbilities": [
+                  "ability_wind_reader",
                   "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_storm_rider_rank_01"
-              ],
-              "2": [
-                  "perk_class_storm_rider_rank_02"
-              ],
-              "3": [
-                  "perk_class_storm_rider_rank_03"
-              ],
-              "4": [
-                  "perk_class_storm_rider_rank_04"
-              ],
-              "5": [
-                  "perk_class_storm_rider_rank_05"
-              ],
-              "6": [
-                  "perk_class_storm_rider_rank_06"
-              ],
-              "7": [
-                  "perk_class_storm_rider_rank_07"
-              ],
-              "8": [
-                  "perk_class_storm_rider_rank_08"
-              ],
-              "9": [
-                  "perk_class_storm_rider_rank_09"
-              ],
-              "10": [
-                  "perk_class_storm_rider_rank_10"
-              ],
-              "11": [
-                  "perk_class_storm_rider_rank_11"
-              ],
-              "12": [
-                  "perk_class_storm_rider_rank_12"
-              ],
-              "13": [
-                  "perk_class_storm_rider_rank_13"
-              ],
-              "14": [
-                  "perk_class_storm_rider_rank_14"
-              ],
-              "15": [
-                  "perk_class_storm_rider_rank_15"
-              ],
-              "16": [
-                  "perk_class_storm_rider_rank_16"
-              ],
-              "17": [
-                  "perk_class_storm_rider_rank_17"
-              ],
-              "18": [
-                  "perk_class_storm_rider_rank_18"
-              ],
-              "19": [
-                  "perk_class_storm_rider_rank_19"
-              ],
-              "20": [
-                  "perk_class_storm_rider_rank_20"
-              ]
-          },
-          "tags": [
-              "offense",
-              "mobility"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_rider_gale_dancer",
+                  "perk_rider_sky_anchor"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_storm_rider_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "offense",
+                  "mobility"
+            ]
       },
       "class_ember_guardian": {
-          "name": "Ember Guardian",
-          "description": "Shield-bearing frontliners who stabilize geothermal forges and hold the line against cartel incursions.",
-          "statModifiers": {
-              "Strength": 2,
-              "Constitution": 1
-          },
-          "startingAbilities": [
-              "ability_flame_body",
-              "ability_sturdy"
-          ],
-          "startingPerks": [
-              "perk_guardian_forgeplate",
-              "perk_guardian_heat_reserve"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
-                  "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
+            "name": "Ember Guardian",
+            "description": "Shield-bearing frontliners who stabilize geothermal forges and hold the line against cartel incursions.",
+            "statModifiers": {
+                  "Strength": 2,
+                  "Constitution": 1
+            },
+            "startingAbilities": [
+                  "ability_flame_body",
                   "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_ember_guardian_rank_01"
-              ],
-              "2": [
-                  "perk_class_ember_guardian_rank_02"
-              ],
-              "3": [
-                  "perk_class_ember_guardian_rank_03"
-              ],
-              "4": [
-                  "perk_class_ember_guardian_rank_04"
-              ],
-              "5": [
-                  "perk_class_ember_guardian_rank_05"
-              ],
-              "6": [
-                  "perk_class_ember_guardian_rank_06"
-              ],
-              "7": [
-                  "perk_class_ember_guardian_rank_07"
-              ],
-              "8": [
-                  "perk_class_ember_guardian_rank_08"
-              ],
-              "9": [
-                  "perk_class_ember_guardian_rank_09"
-              ],
-              "10": [
-                  "perk_class_ember_guardian_rank_10"
-              ],
-              "11": [
-                  "perk_class_ember_guardian_rank_11"
-              ],
-              "12": [
-                  "perk_class_ember_guardian_rank_12"
-              ],
-              "13": [
-                  "perk_class_ember_guardian_rank_13"
-              ],
-              "14": [
-                  "perk_class_ember_guardian_rank_14"
-              ],
-              "15": [
-                  "perk_class_ember_guardian_rank_15"
-              ],
-              "16": [
-                  "perk_class_ember_guardian_rank_16"
-              ],
-              "17": [
-                  "perk_class_ember_guardian_rank_17"
-              ],
-              "18": [
-                  "perk_class_ember_guardian_rank_18"
-              ],
-              "19": [
-                  "perk_class_ember_guardian_rank_19"
-              ],
-              "20": [
-                  "perk_class_ember_guardian_rank_20"
-              ]
-          },
-          "tags": [
-              "defender",
-              "industrial"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_guardian_forgeplate",
+                  "perk_guardian_heat_reserve"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_ember_guardian_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "defender",
+                  "industrial"
+            ]
       },
       "class_horizon_vanguard": {
-          "name": "Horizon Vanguard",
-          "description": "Radiant trailblazers who balance solar arrays and inspire allies with luminous tactics.",
-          "statModifiers": {
-              "Charisma": 2,
-              "Wisdom": 1
-          },
-          "startingAbilities": [
-              "ability_radiant_harmony",
-              "ability_resonance_pulse"
-          ],
-          "startingPerks": [
-              "perk_vanguard_solar_aegis",
-              "perk_vanguard_compass_of_light"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
-                  "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
+            "name": "Horizon Vanguard",
+            "description": "Radiant trailblazers who balance solar arrays and inspire allies with luminous tactics.",
+            "statModifiers": {
+                  "Charisma": 2,
+                  "Wisdom": 1
+            },
+            "startingAbilities": [
+                  "ability_radiant_harmony",
                   "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_horizon_vanguard_rank_01"
-              ],
-              "2": [
-                  "perk_class_horizon_vanguard_rank_02"
-              ],
-              "3": [
-                  "perk_class_horizon_vanguard_rank_03"
-              ],
-              "4": [
-                  "perk_class_horizon_vanguard_rank_04"
-              ],
-              "5": [
-                  "perk_class_horizon_vanguard_rank_05"
-              ],
-              "6": [
-                  "perk_class_horizon_vanguard_rank_06"
-              ],
-              "7": [
-                  "perk_class_horizon_vanguard_rank_07"
-              ],
-              "8": [
-                  "perk_class_horizon_vanguard_rank_08"
-              ],
-              "9": [
-                  "perk_class_horizon_vanguard_rank_09"
-              ],
-              "10": [
-                  "perk_class_horizon_vanguard_rank_10"
-              ],
-              "11": [
-                  "perk_class_horizon_vanguard_rank_11"
-              ],
-              "12": [
-                  "perk_class_horizon_vanguard_rank_12"
-              ],
-              "13": [
-                  "perk_class_horizon_vanguard_rank_13"
-              ],
-              "14": [
-                  "perk_class_horizon_vanguard_rank_14"
-              ],
-              "15": [
-                  "perk_class_horizon_vanguard_rank_15"
-              ],
-              "16": [
-                  "perk_class_horizon_vanguard_rank_16"
-              ],
-              "17": [
-                  "perk_class_horizon_vanguard_rank_17"
-              ],
-              "18": [
-                  "perk_class_horizon_vanguard_rank_18"
-              ],
-              "19": [
-                  "perk_class_horizon_vanguard_rank_19"
-              ],
-              "20": [
-                  "perk_class_horizon_vanguard_rank_20"
-              ]
-          },
-          "tags": [
-              "support",
-              "leadership"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_vanguard_solar_aegis",
+                  "perk_vanguard_compass_of_light"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_horizon_vanguard_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "support",
+                  "leadership"
+            ]
       },
       "GymLeader": {
-          "name": "Gym Leader",
-          "description": "Battle-tested leaders who channel regional themes into signature encounters.",
-          "statModifiers": {
-              "Strength": 1,
-              "Charisma": 1,
-              "Wisdom": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Gym Leader",
+            "description": "Battle-tested leaders who channel regional themes into signature encounters.",
+            "statModifiers": {
+                  "Strength": 1,
+                  "Charisma": 1,
+                  "Wisdom": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "leader",
-              "battle"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "leader",
+                  "battle"
+            ]
       },
       "Innovator": {
-          "name": "Innovator",
-          "description": "Inventive tacticians who prototype battlefield technology on the fly.",
-          "statModifiers": {
-              "Intelligence": 2,
-              "Dexterity": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Innovator",
+            "description": "Inventive tacticians who prototype battlefield technology on the fly.",
+            "statModifiers": {
+                  "Intelligence": 2,
+                  "Dexterity": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "tech",
-              "strategy"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "tech",
+                  "strategy"
+            ]
       },
       "CrimeLord": {
-          "name": "Crime Lord",
-          "description": "Cartel masterminds who leverage intimidation and illicit tech.",
-          "statModifiers": {
-              "Charisma": 2,
-              "Intelligence": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Crime Lord",
+            "description": "Cartel masterminds who leverage intimidation and illicit tech.",
+            "statModifiers": {
+                  "Charisma": 2,
+                  "Intelligence": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "villain",
-              "cartel"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "villain",
+                  "cartel"
+            ]
       },
       "Saboteur": {
-          "name": "Saboteur",
-          "description": "Stealth agents adept at disabling infrastructure and retreating unseen.",
-          "statModifiers": {
-              "Dexterity": 2,
-              "Intelligence": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Saboteur",
+            "description": "Stealth agents adept at disabling infrastructure and retreating unseen.",
+            "statModifiers": {
+                  "Dexterity": 2,
+                  "Intelligence": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "cartel",
-              "infiltration"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "cartel",
+                  "infiltration"
+            ]
       },
       "Commander": {
-          "name": "Cartel Commander",
-          "description": "Field leaders who direct mercenary squads during assaults.",
-          "statModifiers": {
-              "Strength": 1,
-              "Constitution": 1,
-              "Charisma": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Cartel Commander",
+            "description": "Field leaders who direct mercenary squads during assaults.",
+            "statModifiers": {
+                  "Strength": 1,
+                  "Constitution": 1,
+                  "Charisma": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "cartel",
-              "command"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "cartel",
+                  "command"
+            ]
       },
       "Scout": {
-          "name": "Cartel Scout",
-          "description": "Recon specialists who map routes and relay intel for cartel operations.",
-          "statModifiers": {
-              "Dexterity": 1,
-              "Wisdom": 1,
-              "Intelligence": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Cartel Scout",
+            "description": "Recon specialists who map routes and relay intel for cartel operations.",
+            "statModifiers": {
+                  "Dexterity": 1,
+                  "Wisdom": 1,
+                  "Intelligence": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "cartel",
-              "recon"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "cartel",
+                  "recon"
+            ]
       },
       "Researcher": {
-          "name": "Researcher",
-          "description": "Scholars who document Solaryn phenomena and coordinate field studies.",
-          "statModifiers": {
-              "Intelligence": 2,
-              "Wisdom": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Researcher",
+            "description": "Scholars who document Solaryn phenomena and coordinate field studies.",
+            "statModifiers": {
+                  "Intelligence": 2,
+                  "Wisdom": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "support",
-              "research"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "support",
+                  "research"
+            ]
       },
       "Bard": {
-          "name": "Festival Bard",
-          "description": "Performers who inspire allies and spread encoded messages through song.",
-          "statModifiers": {
-              "Charisma": 2,
-              "Wisdom": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Festival Bard",
+            "description": "Performers who inspire allies and spread encoded messages through song.",
+            "statModifiers": {
+                  "Charisma": 2,
+                  "Wisdom": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "support",
-              "performance"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "support",
+                  "performance"
+            ]
       },
       "Technician": {
-          "name": "Technician",
-          "description": "Engineers who tune gear mid-battle and stabilize experimental devices.",
-          "statModifiers": {
-              "Intelligence": 1,
-              "Dexterity": 1,
-              "Wisdom": 1
-          },
-          "startingAbilities": [
-              "ability_signal_beacon",
-              "ability_rescue_coordination"
-          ],
-          "startingPerks": [
-              "perk_scout_lightstep",
-              "perk_scout_command_channel"
-          ],
-          "levelUpAbilities": {
-              "1": [
-                  "ability_signal_beacon"
-              ],
-              "2": [
+            "name": "Technician",
+            "description": "Engineers who tune gear mid-battle and stabilize experimental devices.",
+            "statModifiers": {
+                  "Intelligence": 1,
+                  "Dexterity": 1,
+                  "Wisdom": 1
+            },
+            "startingAbilities": [
+                  "ability_signal_beacon",
                   "ability_rescue_coordination"
-              ],
-              "3": [
-                  "ability_solar_insight"
-              ],
-              "4": [
-                  "ability_currents_embrace"
-              ],
-              "5": [
-                  "ability_oceanic_resolve"
-              ],
-              "6": [
-                  "ability_wind_reader"
-              ],
-              "7": [
-                  "ability_tempest_drive"
-              ],
-              "8": [
-                  "ability_eye_of_the_storm"
-              ],
-              "9": [
-                  "ability_flame_body"
-              ],
-              "10": [
-                  "ability_marvel_scale"
-              ],
-              "11": [
-                  "ability_harvest"
-              ],
-              "12": [
-                  "ability_sturdy"
-              ],
-              "13": [
-                  "ability_gale_wings"
-              ],
-              "14": [
-                  "ability_trace"
-              ],
-              "15": [
-                  "ability_sand_veil"
-              ],
-              "16": [
-                  "ability_magnet_pull"
-              ],
-              "17": [
-                  "ability_prism_cloak"
-              ],
-              "18": [
-                  "ability_resonance_pulse"
-              ],
-              "19": [
-                  "ability_radiant_harmony"
-              ],
-              "20": [
-                  "ability_tidal_guardian"
-              ]
-          },
-          "levelUpPerks": {
-              "1": [
-                  "perk_class_solar_scout_rank_01"
-              ],
-              "2": [
-                  "perk_class_solar_scout_rank_02"
-              ],
-              "3": [
-                  "perk_class_solar_scout_rank_03"
-              ],
-              "4": [
-                  "perk_class_solar_scout_rank_04"
-              ],
-              "5": [
-                  "perk_class_solar_scout_rank_05"
-              ],
-              "6": [
-                  "perk_class_solar_scout_rank_06"
-              ],
-              "7": [
-                  "perk_class_solar_scout_rank_07"
-              ],
-              "8": [
-                  "perk_class_solar_scout_rank_08"
-              ],
-              "9": [
-                  "perk_class_solar_scout_rank_09"
-              ],
-              "10": [
-                  "perk_class_solar_scout_rank_10"
-              ],
-              "11": [
-                  "perk_class_solar_scout_rank_11"
-              ],
-              "12": [
-                  "perk_class_solar_scout_rank_12"
-              ],
-              "13": [
-                  "perk_class_solar_scout_rank_13"
-              ],
-              "14": [
-                  "perk_class_solar_scout_rank_14"
-              ],
-              "15": [
-                  "perk_class_solar_scout_rank_15"
-              ],
-              "16": [
-                  "perk_class_solar_scout_rank_16"
-              ],
-              "17": [
-                  "perk_class_solar_scout_rank_17"
-              ],
-              "18": [
-                  "perk_class_solar_scout_rank_18"
-              ],
-              "19": [
-                  "perk_class_solar_scout_rank_19"
-              ],
-              "20": [
-                  "perk_class_solar_scout_rank_20"
-              ]
-          },
-          "tags": [
-              "tech",
-              "support"
-          ]
+            ],
+            "startingPassiveAbilities": [
+                  "perk_scout_lightstep",
+                  "perk_scout_command_channel"
+            ],
+            "levelUpChart": {
+                  "1": {
+                        "abilities": [
+                              "ability_signal_beacon"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_01"
+                        ]
+                  },
+                  "2": {
+                        "abilities": [
+                              "ability_rescue_coordination"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_02"
+                        ]
+                  },
+                  "3": {
+                        "abilities": [
+                              "ability_solar_insight"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_03"
+                        ]
+                  },
+                  "4": {
+                        "abilities": [
+                              "ability_currents_embrace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_04"
+                        ]
+                  },
+                  "5": {
+                        "abilities": [
+                              "ability_oceanic_resolve"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_05"
+                        ]
+                  },
+                  "6": {
+                        "abilities": [
+                              "ability_wind_reader"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_06"
+                        ]
+                  },
+                  "7": {
+                        "abilities": [
+                              "ability_tempest_drive"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_07"
+                        ]
+                  },
+                  "8": {
+                        "abilities": [
+                              "ability_eye_of_the_storm"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_08"
+                        ]
+                  },
+                  "9": {
+                        "abilities": [
+                              "ability_flame_body"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_09"
+                        ]
+                  },
+                  "10": {
+                        "abilities": [
+                              "ability_marvel_scale"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_10"
+                        ]
+                  },
+                  "11": {
+                        "abilities": [
+                              "ability_harvest"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_11"
+                        ]
+                  },
+                  "12": {
+                        "abilities": [
+                              "ability_sturdy"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_12"
+                        ]
+                  },
+                  "13": {
+                        "abilities": [
+                              "ability_gale_wings"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_13"
+                        ]
+                  },
+                  "14": {
+                        "abilities": [
+                              "ability_trace"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_14"
+                        ]
+                  },
+                  "15": {
+                        "abilities": [
+                              "ability_sand_veil"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_15"
+                        ]
+                  },
+                  "16": {
+                        "abilities": [
+                              "ability_magnet_pull"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_16"
+                        ]
+                  },
+                  "17": {
+                        "abilities": [
+                              "ability_prism_cloak"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_17"
+                        ]
+                  },
+                  "18": {
+                        "abilities": [
+                              "ability_resonance_pulse"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_18"
+                        ]
+                  },
+                  "19": {
+                        "abilities": [
+                              "ability_radiant_harmony"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_19"
+                        ]
+                  },
+                  "20": {
+                        "abilities": [
+                              "ability_tidal_guardian"
+                        ],
+                        "passiveAbilities": [
+                              "perk_class_solar_scout_rank_20"
+                        ]
+                  }
+            },
+            "tags": [
+                  "tech",
+                  "support"
+            ]
       }
-  }
+}
 }

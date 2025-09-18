@@ -21,24 +21,25 @@ When calling `apply_world_generation_updates`:
 - Include all interconnected entities that depend on one another in the same batch so validation can succeed (e.g. add a location and the NPCs/quests it references together).
 - Use removal lists (e.g. `removeNpcIds`) if you need to delete earlier drafts.
 - Set `reapplyBaseline` to `true` unless you have a specific reason to defer session syncing.
-- For trainer classes, `levelUpAbilities` and `levelUpPerks` **must** be dictionaries keyed by level numbers (e.g. `"1": ["ability_first"]`). Every level from 1–20 needs either an ability list or a perk list populated. Example:
+- For trainer classes, `levelUpChart` must be a dictionary keyed by level numbers (e.g. `"1": { "abilities": ["ability_first"], "passiveAbilities": ["passive_first"] }`). Every level from 1–20 needs at least one entry in either `abilities` or `passiveAbilities`, and all ids must already exist in `module.abilities`. Example:
   ```json
   "characterClasses": {
     "class_example": {
       "name": "Example Class",
       "startingAbilities": ["ability_alpha"],
-      "startingPerks": ["perk_alpha"],
-      "levelUpAbilities": {
-        "1": ["ability_alpha"],
-        "2": ["ability_beta"]
-      },
-      "levelUpPerks": {
-        "3": ["perk_gamma"]
+      "startingPassiveAbilities": ["passive_alpha"],
+      "levelUpChart": {
+        "1": {
+          "abilities": ["ability_alpha"],
+          "passiveAbilities": ["passive_alpha"]
+        },
+        "2": {
+          "abilities": ["ability_beta"],
+          "passiveAbilities": []
+        }
       }
     }
   }
-  ```
-  If a level grants perks instead of abilities, leave the counterpart empty but present an entry for that level.
 
 ## Recommended Workflow
 1. **Review Seeds**
