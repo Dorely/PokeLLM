@@ -2,6 +2,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.Json;
 using System.IO;
 using System.Linq;
@@ -52,7 +53,7 @@ public class GameSetupPhasePlugin
     public async Task<string> GetSetupState()
     {
         const string operation = nameof(GetSetupState);
-        _logger.LogDebug("{Operation} invoked", operation);
+        LogOperationStart(operation, null);
         try
         {
             var session = await _gameStateRepo.LoadLatestStateAsync();
@@ -103,12 +104,16 @@ public class GameSetupPhasePlugin
             };
 
             _logger.LogDebug("{Operation} succeeded", operation);
-            return JsonSerializer.Serialize(new { success = true, data = result }, _jsonOptions);
+            var response = JsonSerializer.Serialize(new { success = true, data = result }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var response = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
     }
 
@@ -121,14 +126,16 @@ public class GameSetupPhasePlugin
     public async Task<string> UpdateModuleOverview([Description("Overview fields to upsert")] ModuleOverviewUpdate update)
     {
         const string operation = nameof(UpdateModuleOverview);
-        _logger.LogDebug("{Operation} invoked", operation);
+        LogOperationStart(operation, update);
 
         try
         {
             if (update is null)
             {
                 _logger.LogWarning("{Operation} received null update payload", operation);
-                return JsonSerializer.Serialize(new { success = false, error = "Update payload cannot be null" }, _jsonOptions);
+                var nullResponse = JsonSerializer.Serialize(new { success = false, error = "Update payload cannot be null" }, _jsonOptions);
+                LogOperationResult(operation, nullResponse);
+                return nullResponse;
             }
 
             var session = await _gameStateRepo.LoadLatestStateAsync();
@@ -214,18 +221,22 @@ public class GameSetupPhasePlugin
 
             _logger.LogDebug("{Operation} updated module {ModuleId}", operation, module.Metadata.ModuleId);
 
-            return JsonSerializer.Serialize(new
+            var successResponse = JsonSerializer.Serialize(new
             {
                 success = true,
                 moduleTitle = module.Metadata.Title,
                 region = session.Region,
                 summary = module.Metadata.Summary
             }, _jsonOptions);
+            LogOperationResult(operation, successResponse);
+            return successResponse;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -238,14 +249,16 @@ public class GameSetupPhasePlugin
     public async Task<string> UpsertCharacterClass([Description("Full class definition")] CharacterClassDefinition definition)
     {
         const string operation = nameof(UpsertCharacterClass);
-        _logger.LogDebug("{Operation} invoked for class {ClassId}", operation, definition?.Id);
+        LogOperationStart(operation, definition);
 
         try
         {
             if (definition is null || string.IsNullOrWhiteSpace(definition.Id))
             {
                 _logger.LogWarning("{Operation} missing class id", operation);
-                return JsonSerializer.Serialize(new { success = false, error = "Class id is required" }, _jsonOptions);
+                var missingResponse = JsonSerializer.Serialize(new { success = false, error = "Class id is required" }, _jsonOptions);
+                LogOperationResult(operation, missingResponse);
+                return missingResponse;
             }
 
             var module = await LoadModuleAsync();
@@ -282,7 +295,7 @@ public class GameSetupPhasePlugin
                     string.Join("; ", validationErrors));
             }
 
-            return JsonSerializer.Serialize(new
+            var response = JsonSerializer.Serialize(new
             {
                 success = validationErrors.Count == 0,
                 classId,
@@ -290,11 +303,15 @@ public class GameSetupPhasePlugin
                 createdNew = isNew,
                 validationErrors = validationErrors.Count > 0 ? validationErrors : null
             }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -303,14 +320,16 @@ public class GameSetupPhasePlugin
     public async Task<string> RemoveCharacterClass([Description("Class id to remove")] string classId)
     {
         const string operation = nameof(RemoveCharacterClass);
-        _logger.LogDebug("{Operation} invoked for class {ClassId}", operation, classId);
+        LogOperationStart(operation, new { classId });
 
         try
         {
             if (string.IsNullOrWhiteSpace(classId))
             {
                 _logger.LogWarning("{Operation} missing class id", operation);
-                return JsonSerializer.Serialize(new { success = false, error = "Class id cannot be empty" }, _jsonOptions);
+                var missingResponse = JsonSerializer.Serialize(new { success = false, error = "Class id cannot be empty" }, _jsonOptions);
+                LogOperationResult(operation, missingResponse);
+                return missingResponse;
             }
 
             var module = await LoadModuleAsync();
@@ -327,17 +346,21 @@ public class GameSetupPhasePlugin
                 _logger.LogDebug("{Operation} found no class {ClassId} to remove", operation, trimmedId);
             }
 
-            return JsonSerializer.Serialize(new
+            var response = JsonSerializer.Serialize(new
             {
                 success = removed,
                 classId = trimmedId,
                 moduleClassCount = module.CharacterClasses.Count
             }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -346,7 +369,7 @@ public class GameSetupPhasePlugin
     public async Task<string> ListCharacterClasses()
     {
         const string operation = nameof(ListCharacterClasses);
-        _logger.LogDebug("{Operation} invoked", operation);
+        LogOperationStart(operation, null);
 
         try
         {
@@ -365,12 +388,16 @@ public class GameSetupPhasePlugin
             });
 
             _logger.LogDebug("{Operation} returning {Count} classes", operation, module.CharacterClasses.Count);
-            return JsonSerializer.Serialize(new { success = true, classes }, _jsonOptions);
+            var response = JsonSerializer.Serialize(new { success = true, classes }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -379,14 +406,16 @@ public class GameSetupPhasePlugin
     public async Task<string> SetPlayerClassChoice([Description("Class id to assign")] string classId)
     {
         const string operation = nameof(SetPlayerClassChoice);
-        _logger.LogDebug("{Operation} invoked for class {ClassId}", operation, classId);
+        LogOperationStart(operation, new { classId });
 
         try
         {
             if (string.IsNullOrWhiteSpace(classId))
             {
                 _logger.LogWarning("{Operation} missing class id", operation);
-                return JsonSerializer.Serialize(new { success = false, error = "Class id cannot be empty" }, _jsonOptions);
+                var missingResponse = JsonSerializer.Serialize(new { success = false, error = "Class id cannot be empty" }, _jsonOptions);
+                LogOperationResult(operation, missingResponse);
+                return missingResponse;
             }
 
             var module = await LoadModuleAsync();
@@ -394,7 +423,9 @@ public class GameSetupPhasePlugin
             if (!module.CharacterClasses.TryGetValue(trimmedId, out var classData))
             {
                 _logger.LogWarning("{Operation} could not find class {ClassId}", operation, trimmedId);
-                return JsonSerializer.Serialize(new { success = false, error = $"Class '{classId}' not found in module." }, _jsonOptions);
+                var notFoundResponse = JsonSerializer.Serialize(new { success = false, error = $"Class '{classId}' not found in module." }, _jsonOptions);
+                LogOperationResult(operation, notFoundResponse);
+                return notFoundResponse;
             }
 
             var session = await _gameStateRepo.LoadLatestStateAsync();
@@ -408,7 +439,7 @@ public class GameSetupPhasePlugin
 
             _logger.LogDebug("{Operation} assigned class {ClassId} to player", operation, trimmedId);
 
-            return JsonSerializer.Serialize(new
+            var response = JsonSerializer.Serialize(new
             {
                 success = true,
                 classId = trimmedId,
@@ -416,11 +447,15 @@ public class GameSetupPhasePlugin
                 startingAbilities = session.Player.Abilities,
                 startingPerks = session.Player.Perks
             }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -434,7 +469,7 @@ public class GameSetupPhasePlugin
     public async Task<string> SetPlayerName([Description("Trainer name")] string name)
     {
         const string operation = nameof(SetPlayerName);
-        _logger.LogDebug("{Operation} invoked with name '{Name}'", operation, name);
+        LogOperationStart(operation, new { name });
 
         try
         {
@@ -442,12 +477,16 @@ public class GameSetupPhasePlugin
             var session = await _gameStateRepo.LoadLatestStateAsync();
             await SaveSessionAsync(session);
             _logger.LogDebug("{Operation} succeeded", operation);
-            return JsonSerializer.Serialize(new { success = true, playerName = session.Player.Name }, _jsonOptions);
+            var response = JsonSerializer.Serialize(new { success = true, playerName = session.Player.Name }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = $"Error setting player name: {ex.Message}" }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = $"Error setting player name: {ex.Message}" }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -456,14 +495,16 @@ public class GameSetupPhasePlugin
     public async Task<string> SetPlayerStats([Description("Array of 6 ability scores")] int[] stats)
     {
         const string operation = nameof(SetPlayerStats);
-        _logger.LogDebug("{Operation} invoked", operation);
+        LogOperationStart(operation, stats);
 
         try
         {
             if (stats is null || stats.Length != 6)
             {
                 _logger.LogWarning("{Operation} received invalid stat array length", operation);
-                return JsonSerializer.Serialize(new { success = false, error = "Must provide exactly 6 ability scores" }, _jsonOptions);
+                var lengthResponse = JsonSerializer.Serialize(new { success = false, error = "Must provide exactly 6 ability scores" }, _jsonOptions);
+                LogOperationResult(operation, lengthResponse);
+                return lengthResponse;
             }
 
             foreach (var stat in stats)
@@ -471,7 +512,9 @@ public class GameSetupPhasePlugin
                 if (stat < 3 || stat > 20)
                 {
                     _logger.LogWarning("{Operation} received out of range stat value {Stat}", operation, stat);
-                    return JsonSerializer.Serialize(new { success = false, error = $"Ability scores must be between 3 and 20. Invalid value: {stat}" }, _jsonOptions);
+                    var rangeResponse = JsonSerializer.Serialize(new { success = false, error = $"Ability scores must be between 3 and 20. Invalid value: {stat}" }, _jsonOptions);
+                    LogOperationResult(operation, rangeResponse);
+                    return rangeResponse;
                 }
             }
 
@@ -481,12 +524,16 @@ public class GameSetupPhasePlugin
             var statDict = statNames.Zip(stats, (name, value) => new { name, value }).ToDictionary(x => x.name, x => x.value);
 
             _logger.LogDebug("{Operation} succeeded", operation);
-            return JsonSerializer.Serialize(new { success = true, stats = statDict }, _jsonOptions);
+            var response = JsonSerializer.Serialize(new { success = true, stats = statDict }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = $"Error setting player stats: {ex.Message}" }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = $"Error setting player stats: {ex.Message}" }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -495,7 +542,7 @@ public class GameSetupPhasePlugin
     public async Task<string> GenerateRandomStats()
     {
         const string operation = nameof(GenerateRandomStats);
-        _logger.LogDebug("{Operation} invoked", operation);
+        LogOperationStart(operation, null);
 
         try
         {
@@ -511,12 +558,16 @@ public class GameSetupPhasePlugin
             };
 
             _logger.LogDebug("{Operation} succeeded", operation);
-            return JsonSerializer.Serialize(result, _jsonOptions);
+            var response = JsonSerializer.Serialize(result, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -525,7 +576,7 @@ public class GameSetupPhasePlugin
     public async Task<string> GenerateStandardStats()
     {
         const string operation = nameof(GenerateStandardStats);
-        _logger.LogDebug("{Operation} invoked", operation);
+        LogOperationStart(operation, null);
 
         try
         {
@@ -539,12 +590,16 @@ public class GameSetupPhasePlugin
             };
 
             _logger.LogDebug("{Operation} succeeded", operation);
-            return JsonSerializer.Serialize(result, _jsonOptions);
+            var response = JsonSerializer.Serialize(result, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
@@ -553,7 +608,7 @@ public class GameSetupPhasePlugin
     public async Task<string> MarkSetupComplete([Description("Summary of setup choices")] string setupSummary)
     {
         const string operation = nameof(MarkSetupComplete);
-        _logger.LogDebug("{Operation} invoked", operation);
+        LogOperationStart(operation, new { setupSummary });
 
         try
         {
@@ -574,7 +629,9 @@ public class GameSetupPhasePlugin
             if (missing.Count > 0)
             {
                 _logger.LogWarning("{Operation} cannot complete setup; missing {Missing}", operation, string.Join(", ", missing));
-                return JsonSerializer.Serialize(new { success = false, error = "Setup incomplete", missing }, _jsonOptions);
+                var missingResponse = JsonSerializer.Serialize(new { success = false, error = "Setup incomplete", missing }, _jsonOptions);
+                LogOperationResult(operation, missingResponse);
+                return missingResponse;
             }
 
             var invalidClasses = module.CharacterClasses
@@ -589,12 +646,14 @@ public class GameSetupPhasePlugin
                     operation,
                     invalidClasses.Count);
 
-                return JsonSerializer.Serialize(new
+                var invalidResponse = JsonSerializer.Serialize(new
                 {
                     success = false,
                     error = "Class definitions must include starting abilities/perks and level 1-20 rewards before completing setup.",
                     invalidClasses
                 }, _jsonOptions);
+                LogOperationResult(operation, invalidResponse);
+                return invalidResponse;
             }
 
             await SaveModuleAsync(module, session);
@@ -617,24 +676,58 @@ public class GameSetupPhasePlugin
 
             _logger.LogDebug("{Operation} succeeded", operation);
 
-            return JsonSerializer.Serialize(new
+            var successResponse = JsonSerializer.Serialize(new
             {
                 success = true,
                 message = "Setup complete. Transitioning to WorldGeneration phase.",
                 session.SessionName,
                 session.CurrentPhase
             }, _jsonOptions);
+            LogOperationResult(operation, successResponse);
+            return successResponse;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{Operation} failed", operation);
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
     #endregion
 
     #region Internal Helpers
+
+    private void LogOperationStart(string operation, object? payload)
+    {
+        var serialized = SerializeForLog(payload);
+        Debug.WriteLine($"[GameSetupPhasePlugin] {operation} input: {serialized}");
+        _logger.LogDebug("{Operation} input: {Payload}", operation, serialized);
+    }
+
+    private void LogOperationResult(string operation, string response)
+    {
+        Debug.WriteLine($"[GameSetupPhasePlugin] {operation} output: {response}");
+        _logger.LogDebug("{Operation} output: {Payload}", operation, response);
+    }
+
+    private string SerializeForLog(object? payload)
+    {
+        if (payload is null)
+        {
+            return "null";
+        }
+
+        try
+        {
+            return JsonSerializer.Serialize(payload, _jsonOptions);
+        }
+        catch
+        {
+            return payload.ToString() ?? "<unserializable>";
+        }
+    }
 
     private void ApplySessionDisplayName(AdventureSessionState session)
     {
@@ -727,15 +820,6 @@ public class GameSetupPhasePlugin
         if (invalidLevels.Count > 0)
         {
             issues.Add($"Level-up entries must fall between levels {MinClassLevel}-{MaxClassLevel}; invalid levels: {string.Join(", ", invalidLevels)}.");
-        }
-
-        var missingLevels = Enumerable.Range(MinClassLevel, MaxClassLevel - MinClassLevel + 1)
-            .Where(level => !HasRewardAtLevel(classData, level))
-            .ToList();
-
-        if (missingLevels.Count > 0)
-        {
-            issues.Add($"Level-up table must define abilities or perks for levels {MinClassLevel}-{MaxClassLevel}; missing levels: {string.Join(", ", missingLevels)}.");
         }
 
         return issues;

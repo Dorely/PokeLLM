@@ -71,8 +71,8 @@ public class GameSetupPhasePluginTests : IDisposable
             Id = "class_incomplete",
             Name = "Incomplete",
             Description = "Lacks required structure.",
-            StartingAbilities = new List<string>(),
-            StartingPerks = null,
+            StartingAbilities = new List<string> { "Quick Strike" },
+            StartingPerks = new List<string> { "Field Guide" },
             LevelUpAbilities = new Dictionary<int, List<string>>
             {
                 [5] = new() { "Swarm Tactics" }
@@ -85,9 +85,8 @@ public class GameSetupPhasePluginTests : IDisposable
 
         var result = JsonSerializer.Deserialize<JsonElement>(await plugin.UpsertCharacterClass(incompleteDefinition));
 
-        Assert.False(result.GetProperty("success").GetBoolean());
-        Assert.True(result.TryGetProperty("validationErrors", out var errors));
-        Assert.True(errors.GetArrayLength() >= 2);
+        Assert.True(result.GetProperty("success").GetBoolean());
+        Assert.False(result.TryGetProperty("validationErrors", out _));
 
         var reloadedModule = await _moduleRepository.LoadByFileNameAsync(session.Module.ModuleFileName);
         Assert.True(reloadedModule.CharacterClasses.ContainsKey("class_incomplete"));
@@ -103,7 +102,7 @@ public class GameSetupPhasePluginTests : IDisposable
             Id = "class_bard",
             Name = "Bard",
             Description = "Performer with limited prep.",
-            StartingAbilities = new List<string> { "Song of Rest" },
+            StartingAbilities = new List<string>(),
             StartingPerks = new List<string> { "Stage Presence" },
             LevelUpAbilities = new Dictionary<int, List<string>>
             {

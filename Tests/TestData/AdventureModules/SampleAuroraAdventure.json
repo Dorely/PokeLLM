@@ -1300,9 +1300,9 @@
         "strength": 8,
         "dexterity": 10,
         "constitution": 12,
-        "intelligence": 18,
-        "wisdom": 16,
-        "charisma": 14
+      "intelligence": 18,
+      "wisdom": 16,
+      "charisma": 14
       },
       "characterDetails": {
         "class": "Researcher",
@@ -1347,12 +1347,12 @@
           "context": "QuestBriefing",
           "lines": [
             {
-              "speaker": "Professor Marina",
+              "speaker": "npc_professor_marina",
               "content": "Solaryn's pulse is uneven tonight. I need your help to restore the harmony before the Shadow Cartel exploits it.",
               "notes": "Sets up Solaryn mystery quest."
             },
             {
-              "speaker": "Professor Marina",
+              "speaker": "npc_professor_marina",
               "content": "Trust Lyra's instincts. Her data leads us to the cartel's next move.",
               "notes": "Links to companion quest."
             }
@@ -1418,12 +1418,12 @@
           "context": "GymBattle",
           "lines": [
             {
-              "speaker": "Leader Solaris",
+              "speaker": "npc_gym_leader_solaris",
               "content": "We bend sunlight into a battlefield here. Show me how brightly you can adapt.",
               "notes": ""
             },
             {
-              "speaker": "Leader Solaris",
+              "speaker": "npc_gym_leader_solaris",
               "content": "Victory means guiding others out of the dark\u2014not just basking in your own glow.",
               "notes": ""
             }
@@ -1490,7 +1490,7 @@
           "context": "GymBattle",
           "lines": [
             {
-              "speaker": "Leader Cascade",
+              "speaker": "npc_gym_leader_cascade",
               "content": "Every tide tells a story. Ride the rhythm with me or be swept away.",
               "notes": ""
             }
@@ -1551,7 +1551,7 @@
           "context": "GymBattle",
           "lines": [
             {
-              "speaker": "Leader Thorn",
+              "speaker": "npc_gym_leader_thorn",
               "content": "Nurture every move. If your heart strays, the labyrinth will close around you.",
               "notes": ""
             }
@@ -1612,7 +1612,7 @@
           "context": "GymBattle",
           "lines": [
             {
-              "speaker": "Leader Onyx",
+              "speaker": "npc_gym_leader_onyx",
               "content": "Steel yourself. The Bastion only yields to trainers who stand firm when the ground splits.",
               "notes": ""
             }
@@ -1674,7 +1674,7 @@
           "context": "GymBattle",
           "lines": [
             {
-              "speaker": "Leader Aeris",
+              "speaker": "npc_gym_leader_aeris",
               "content": "Keep your balance. Every gust can lift you higher or hurl you below.",
               "notes": ""
             }
@@ -1735,7 +1735,7 @@
           "context": "GymBattle",
           "lines": [
             {
-              "speaker": "Leader Mirage",
+              "speaker": "npc_gym_leader_mirage",
               "content": "What you fear will appear before you. Accept it, and the path clarifies.",
               "notes": ""
             }
@@ -1796,7 +1796,7 @@
           "context": "GymBattle",
           "lines": [
             {
-              "speaker": "Leader Quake",
+              "speaker": "npc_gym_leader_quake",
               "content": "Feel the tremor, predict the break, and stand unshaken.",
               "notes": ""
             }
@@ -1858,7 +1858,7 @@
           "context": "GymBattle",
           "lines": [
             {
-              "speaker": "Leader Nova",
+              "speaker": "npc_gym_leader_nova",
               "content": "Tune into the cosmic beat. Let your Pok\u00e9mon resonate with the stars.",
               "notes": ""
             }
@@ -1924,7 +1924,7 @@
           "context": "RivalBattle",
           "lines": [
             {
-              "speaker": "Set",
+              "speaker": "npc_rival_set",
               "content": "I'm not here to slow you down\u2014I'm here to make sure you're strong enough to protect this place.",
               "notes": ""
             }
@@ -1990,7 +1990,7 @@
           "context": "BossBattle",
           "lines": [
             {
-              "speaker": "Noctis",
+              "speaker": "npc_shadow_cartel_boss",
               "content": "Light or shadow\u2014it all bends to whoever holds the conduit. Surrender the keystone.",
               "notes": ""
             }
@@ -2042,7 +2042,7 @@
           "context": "Encounter",
           "lines": [
             {
-              "speaker": "Saboteur Lure",
+              "speaker": "npc_shadow_cartel_saboteur",
               "content": "Floodgates fail, profits surge. That's how business works in Noctis's world.",
               "notes": ""
             }
@@ -2099,7 +2099,7 @@
           "context": "Encounter",
           "lines": [
             {
-              "speaker": "Commander Rasp",
+              "speaker": "npc_shadow_cartel_commander",
               "content": "The cartel doesn't negotiate. We take what the league hoards.",
               "notes": ""
             }
@@ -2151,7 +2151,7 @@
           "context": "Encounter",
           "lines": [
             {
-              "speaker": "Scout Nyra",
+              "speaker": "npc_shadow_cartel_scout",
               "content": "The festival lights make perfect cover\u2014unless a nosy reporter gets in the way.",
               "notes": ""
             }
@@ -2176,7 +2176,7 @@
         "charisma": 19
       },
       "characterDetails": {
-        "class": "Bard",
+        "class": "GymLeader",
         "inventory": [
           {
             "itemId": "item_luminous_pass",
@@ -2213,7 +2213,7 @@
           "context": "Companion",
           "lines": [
             {
-              "speaker": "Lyra",
+              "speaker": "npc_companion_lyra",
               "content": "I'll sing the truth so everyone hears it\u2014and you make sure we have a story worth telling.",
               "notes": ""
             }
@@ -2274,7 +2274,7 @@
           "context": "Companion",
           "lines": [
             {
-              "speaker": "Dex",
+              "speaker": "npc_companion_dex",
               "content": "The faster we map the danger, the faster we can get everyone out.",
               "notes": ""
             }
@@ -2463,6 +2463,60 @@
           "notes": "Given after helping Lyra broadcast cartel findings."
         }
       ]
+    },
+    "item_ultra_ball": {
+      "itemId": "item_ultra_ball",
+      "name": "Ultra Ball",
+      "rarity": "Rare",
+      "fullDescription": "Advanced capture device engineered for resilient Pok\u00e9mon encounters.",
+      "effects": "Grants advantage on capture checks against Pok\u00e9mon of level 30 or higher.",
+      "defaultQuantity": 4,
+      "placement": []
+    },
+    "item_full_restore": {
+      "itemId": "item_full_restore",
+      "name": "Full Restore",
+      "rarity": "Rare",
+      "fullDescription": "Top-tier restorative spray carried by league officials and veteran trainers.",
+      "effects": "Completely restores HP and clears all status conditions for one Pok\u00e9mon.",
+      "defaultQuantity": 3,
+      "placement": []
+    },
+    "item_max_potion": {
+      "itemId": "item_max_potion",
+      "name": "Max Potion",
+      "rarity": "Rare",
+      "fullDescription": "First-response medicine issued to Archipelago Guard squads during crises.",
+      "effects": "Fully restores HP but does not remove status effects.",
+      "defaultQuantity": 3,
+      "placement": []
+    },
+    "item_hyper_potion": {
+      "itemId": "item_hyper_potion",
+      "name": "Hyper Potion",
+      "rarity": "Uncommon",
+      "fullDescription": "Concentrated healing brew stocked aboard traveling aid barges.",
+      "effects": "Restores a large amount of HP to a single Pok\u00e9mon.",
+      "defaultQuantity": 5,
+      "placement": []
+    },
+    "item_poke_ball": {
+      "itemId": "item_poke_ball",
+      "name": "Pok\u00e9 Ball",
+      "rarity": "Common",
+      "fullDescription": "Standard capture capsule distributed freely during the festival opening.",
+      "effects": "Provides baseline capture odds against low-level Pok\u00e9mon.",
+      "defaultQuantity": 10,
+      "placement": []
+    },
+    "item_potion": {
+      "itemId": "item_potion",
+      "name": "Potion",
+      "rarity": "Common",
+      "fullDescription": "Basic restorative spray supplied by community clinics across the archipelago.",
+      "effects": "Restores a modest amount of HP to a single Pok\u00e9mon.",
+      "defaultQuantity": 8,
+      "placement": []
     }
   },
   "factions": {
@@ -2650,12 +2704,12 @@
               "context": "OpeningScenario",
               "lines": [
                 {
-                  "speaker": "Lyra",
+                  "speaker": "npc_companion_lyra",
                   "content": "Those aren't festival charges\u2014get people clear while I jam their signal!",
                   "notes": "Encourages immediate action."
                 },
                 {
-                  "speaker": "Scout Nyra",
+                  "speaker": "npc_shadow_cartel_scout",
                   "content": "Too late. The keystone batteries belong to the cartel now!",
                   "notes": "Introduces cartel threat."
                 }
@@ -2701,7 +2755,7 @@
               "context": "RivalBattle",
               "lines": [
                 {
-                  "speaker": "Set",
+                  "speaker": "npc_rival_set",
                   "content": "He promised me funding to power every island. I almost believed him\u2014until I saw the cost.",
                   "notes": "Player decides how to respond."
                 }
@@ -2741,7 +2795,7 @@
               "context": "LegendaryEncounter",
               "lines": [
                 {
-                  "speaker": "Professor Marina",
+                  "speaker": "npc_professor_marina",
                   "content": "Let the archipelago sing as one. Solaryn, hear us and choose partnership over fear.",
                   "notes": "Sets tone for final encounter."
                 }
@@ -5146,6 +5200,1306 @@
           "tags": [
               "support",
               "leadership"
+          ]
+      },
+      "GymLeader": {
+          "name": "Gym Leader",
+          "description": "Battle-tested leaders who channel regional themes into signature encounters.",
+          "statModifiers": {
+              "Strength": 1,
+              "Charisma": 1,
+              "Wisdom": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "leader",
+              "battle"
+          ]
+      },
+      "Innovator": {
+          "name": "Innovator",
+          "description": "Inventive tacticians who prototype battlefield technology on the fly.",
+          "statModifiers": {
+              "Intelligence": 2,
+              "Dexterity": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "tech",
+              "strategy"
+          ]
+      },
+      "CrimeLord": {
+          "name": "Crime Lord",
+          "description": "Cartel masterminds who leverage intimidation and illicit tech.",
+          "statModifiers": {
+              "Charisma": 2,
+              "Intelligence": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "villain",
+              "cartel"
+          ]
+      },
+      "Saboteur": {
+          "name": "Saboteur",
+          "description": "Stealth agents adept at disabling infrastructure and retreating unseen.",
+          "statModifiers": {
+              "Dexterity": 2,
+              "Intelligence": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "cartel",
+              "infiltration"
+          ]
+      },
+      "Commander": {
+          "name": "Cartel Commander",
+          "description": "Field leaders who direct mercenary squads during assaults.",
+          "statModifiers": {
+              "Strength": 1,
+              "Constitution": 1,
+              "Charisma": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "cartel",
+              "command"
+          ]
+      },
+      "Scout": {
+          "name": "Cartel Scout",
+          "description": "Recon specialists who map routes and relay intel for cartel operations.",
+          "statModifiers": {
+              "Dexterity": 1,
+              "Wisdom": 1,
+              "Intelligence": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "cartel",
+              "recon"
+          ]
+      },
+      "Researcher": {
+          "name": "Researcher",
+          "description": "Scholars who document Solaryn phenomena and coordinate field studies.",
+          "statModifiers": {
+              "Intelligence": 2,
+              "Wisdom": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "support",
+              "research"
+          ]
+      },
+      "Bard": {
+          "name": "Festival Bard",
+          "description": "Performers who inspire allies and spread encoded messages through song.",
+          "statModifiers": {
+              "Charisma": 2,
+              "Wisdom": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "support",
+              "performance"
+          ]
+      },
+      "Technician": {
+          "name": "Technician",
+          "description": "Engineers who tune gear mid-battle and stabilize experimental devices.",
+          "statModifiers": {
+              "Intelligence": 1,
+              "Dexterity": 1,
+              "Wisdom": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "tech",
+              "support"
           ]
       }
   }

@@ -3,9 +3,11 @@ using Moq;
 using PokeLLM.Game.GameLogic;
 using Microsoft.Extensions.Logging.Abstractions;
 using PokeLLM.Game.Plugins;
+using PokeLLM.Game.Plugins.Models;
 using PokeLLM.GameState;
 using PokeLLM.GameState.Models;
 using System.Text.Json;
+using System.Linq;
 using Xunit;
 
 namespace PokeLLM.Tests;
@@ -41,6 +43,13 @@ public class PluginExceptionHandlingTests
         _mockModuleRepository
             .Setup(x => x.ApplyModuleBaseline(It.IsAny<AdventureModule>(), It.IsAny<AdventureSessionState>(), It.IsAny<bool>()))
             .Returns((AdventureModule module, AdventureSessionState session, bool _) => session);
+        _mockModuleRepository
+            .Setup(x => x.ApplyChanges(It.IsAny<AdventureModule>(), It.IsAny<Action<AdventureModule>>()))
+            .Returns((AdventureModule module, Action<AdventureModule> update) =>
+            {
+                update(module);
+                return module;
+            });
 
         _mockNpcService = new Mock<INpcManagementService>();
         _mockPokemonService = new Mock<IPokemonManagementService>();
@@ -297,53 +306,93 @@ public class PluginExceptionHandlingTests
     #region WorldGenerationPhasePlugin Tests
 
     [Fact]
-    public async Task WorldGenerationPhasePlugin_SearchExistingContent_HandlesExceptions()
+    public async Task WorldGenerationPhasePlugin_ApplyUpdates_ReturnsValidationErrors_ForBrokenReferences()
     {
         // Arrange
-        _mockInfoService.Setup(x => x.SearchEntitiesAsync(It.IsAny<List<string>>(), It.IsAny<string>()))
-            .ThrowsAsync(new NotSupportedException("Search not supported"));
+        var session = CreateBaselineSession();
+        var module = CreateBaselineModule();
+
+        _mockGameStateRepo.Setup(x => x.LoadLatestStateAsync())
+            .ReturnsAsync(session);
+        _mockModuleRepository.Setup(x => x.LoadByFileNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(module);
+        _mockModuleRepository.Setup(x => x.GetModuleFilePath(It.IsAny<string>()))
+            .Returns<string>(file => Path.Combine(Path.GetTempPath(), file));
 
         var plugin = new WorldGenerationPhasePlugin(
             _mockGameStateRepo.Object,
-            _mockWorldService.Object,
-            _mockNpcService.Object,
-            _mockPokemonService.Object,
-            _mockInfoService.Object,
-            _mockGameLogicService.Object);
+            _mockModuleRepository.Object,
+            NullLogger<WorldGenerationPhasePlugin>.Instance);
 
-        var queries = new PokeLLM.Game.Plugins.Models.SearchQueriesDto { Queries = new List<string> { "test" } };
+        var updates = new WorldGenerationUpdateBatch
+        {
+            Locations = new Dictionary<string, AdventureModuleLocation>
+            {
+                ["loc_new"] = new AdventureModuleLocation
+                {
+                    LocationId = "loc_new",
+                    Name = "New Location",
+                    Summary = "Summary",
+                    FullDescription = "Description",
+                    Region = "Test Region",
+                    PointsOfInterest = new List<AdventureModulePointOfInterest>
+                    {
+                        new AdventureModulePointOfInterest
+                        {
+                            Id = "poi_missing",
+                            Name = "Missing NPC Hook",
+                            Description = "References an undefined NPC",
+                            RelatedNpcIds = new List<string> { "npc_missing" }
+                        }
+                    }
+                }
+            }
+        };
 
         // Act
-        var result = await plugin.SearchExistingContent(queries, "entities");
+        var result = await plugin.ApplyWorldGenerationUpdates(updates);
 
         // Assert
-        var jsonResult = JsonSerializer.Deserialize<JsonElement>(result);
-        Assert.False(jsonResult.GetProperty("success").GetBoolean());
-        Assert.Contains("Search not supported", jsonResult.GetProperty("error").GetString());
+        var json = JsonSerializer.Deserialize<JsonElement>(result);
+        Assert.False(json.GetProperty("success").GetBoolean());
+        Assert.Contains("Module updates failed validation", json.GetProperty("error").GetString());
+        var errors = json.GetProperty("validation").GetProperty("errors").EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.Contains(errors, e => e != null && e.Contains("npc_missing", StringComparison.OrdinalIgnoreCase));
+        _mockModuleRepository.Verify(x => x.SaveAsync(It.IsAny<AdventureModule>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task WorldGenerationPhasePlugin_GenerateProceduralContent_HandlesExceptions()
+    public async Task WorldGenerationPhasePlugin_FinalizeWorldGeneration_RequiresValidModule()
     {
         // Arrange
-        _mockGameLogicService.Setup(x => x.RollDiceAsync(It.IsAny<int>(), It.IsAny<int>()))
-            .ThrowsAsync(new ArgumentOutOfRangeException("Invalid dice parameters"));
+        var session = CreateBaselineSession();
+        var module = new AdventureModule
+        {
+            Metadata = new AdventureModuleMetadata
+            {
+                ModuleId = "module_test",
+                Title = string.Empty // force validation failure
+            },
+            World = new AdventureModuleWorldOverview()
+        };
+
+        _mockGameStateRepo.Setup(x => x.LoadLatestStateAsync())
+            .ReturnsAsync(session);
+        _mockModuleRepository.Setup(x => x.LoadByFileNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(module);
 
         var plugin = new WorldGenerationPhasePlugin(
             _mockGameStateRepo.Object,
-            _mockWorldService.Object,
-            _mockNpcService.Object,
-            _mockPokemonService.Object,
-            _mockInfoService.Object,
-            _mockGameLogicService.Object);
+            _mockModuleRepository.Object,
+            NullLogger<WorldGenerationPhasePlugin>.Instance);
 
         // Act
-        var result = await plugin.GenerateProceduralContent("dice_roll", 20, 1);
+        var result = await plugin.FinalizeWorldGeneration("Opening scene text");
 
         // Assert
-        var jsonResult = JsonSerializer.Deserialize<JsonElement>(result);
-        Assert.False(jsonResult.GetProperty("success").GetBoolean());
-        Assert.Contains("Invalid dice parameters", jsonResult.GetProperty("error").GetString());
+        var json = JsonSerializer.Deserialize<JsonElement>(result);
+        Assert.False(json.GetProperty("success").GetBoolean());
+        Assert.Contains("Module failed validation", json.GetProperty("error").GetString());
     }
 
     #endregion
@@ -453,4 +502,40 @@ public class PluginExceptionHandlingTests
     }
 
     #endregion
+
+    private static AdventureSessionState CreateBaselineSession()
+    {
+        var session = new AdventureSessionState
+        {
+            Metadata =
+            {
+                CurrentPhase = GamePhase.WorldGeneration
+            }
+        };
+
+        session.Module.ModuleId = "module_test";
+        session.Module.ModuleTitle = "Test Module";
+        session.Module.ModuleFileName = "module_test.json";
+        session.Region = "Test Region";
+        return session;
+    }
+
+    private static AdventureModule CreateBaselineModule()
+    {
+        return new AdventureModule
+        {
+            Metadata = new AdventureModuleMetadata
+            {
+                ModuleId = "module_test",
+                Title = "Test Module",
+                Summary = "Baseline module for tests",
+                RecommendedLevelRange = "1-5"
+            },
+            World = new AdventureModuleWorldOverview
+            {
+                Setting = "Test Region",
+                StartingContext = "Players gather in the test region."
+            }
+        };
+    }
 }

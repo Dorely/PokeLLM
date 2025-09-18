@@ -1,4 +1,5 @@
 using System.Text.Json;
+using PokeLLM.GameState;
 using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Tests;
@@ -33,6 +34,16 @@ public class SampleAdventureModuleTests
                     $"Class {classId} must define either an ability or perk reward at level {level}.");
             }
         }
+    }
+
+    [Fact]
+    public void SampleAdventureModule_PassesStructuralValidation()
+    {
+        var module = LoadSampleModule();
+        var validator = new AdventureModuleValidator();
+
+        var result = validator.Validate(module);
+        Assert.True(result.IsValid, string.Join(Environment.NewLine, result.Errors));
     }
 
     private static AdventureModule LoadSampleModule()

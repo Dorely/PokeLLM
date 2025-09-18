@@ -1,42 +1,36 @@
-using Microsoft.SemanticKernel;
-using PokeLLM.Game.GameLogic;
-using PokeLLM.Game.Plugins.Models;
-using PokeLLM.Game.VectorStore.Models;
-using PokeLLM.GameState.Models;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
+using PokeLLM.Game.Plugins.Models;
+using PokeLLM.GameState;
+using PokeLLM.GameState.Models;
 
 namespace PokeLLM.Game.Plugins;
 
 /// <summary>
-/// Plugin for procedural world generation and content creation
+/// Plugin that manages adventure module population during the world generation phase.
+/// Focuses on manipulating the module/session data directly and enforcing structural integrity.
 /// </summary>
 public class WorldGenerationPhasePlugin
 {
     private readonly IGameStateRepository _gameStateRepo;
-    private readonly IWorldManagementService _worldManagementService;
-    private readonly INpcManagementService _npcManagementService;
-    private readonly IPokemonManagementService _pokemonManagementService;
-    private readonly IInformationManagementService _informationManagementService;
-    private readonly IGameLogicService _gameLogicService;
+    private readonly IAdventureModuleRepository _moduleRepository;
+    private readonly ILogger<WorldGenerationPhasePlugin> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly AdventureModuleValidator _validator;
 
     public WorldGenerationPhasePlugin(
         IGameStateRepository gameStateRepo,
-        IWorldManagementService worldManagementService,
-        INpcManagementService npcManagementService,
-        IPokemonManagementService pokemonManagementService,
-        IInformationManagementService informationManagementService,
-        IGameLogicService gameLogicService)
+        IAdventureModuleRepository moduleRepository,
+        ILogger<WorldGenerationPhasePlugin> logger)
     {
         _gameStateRepo = gameStateRepo;
-        _worldManagementService = worldManagementService;
-        _npcManagementService = npcManagementService;
-        _pokemonManagementService = pokemonManagementService;
-        _informationManagementService = informationManagementService;
-        _gameLogicService = gameLogicService;
+        _moduleRepository = moduleRepository;
+        _logger = logger;
         _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -44,881 +38,974 @@ public class WorldGenerationPhasePlugin
             Converters = { new JsonStringEnumConverter() },
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
+        _validator = new AdventureModuleValidator();
     }
 
-    #region Vector Lookup Functions
+    #region Context Functions
 
-    [KernelFunction("search_existing_content")]
-    [Description("Search vector store for existing world content before generation")]
-    public async Task<string> SearchExistingContent(
-        [Description("Search queries to find existing content")] SearchQueriesDto queries,
-        [Description("Content type: 'entities', 'locations', 'lore', 'rules', 'narrative'")] string contentType = "all")
+    [KernelFunction("get_world_generation_context")]
+    [Description("Fetch the current world-generation context including session state, module metadata, content counts, and outstanding validation issues.")]
+    public async Task<string> GetWorldGenerationContext()
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] SearchExistingContent called: {string.Join(", ", queries.Queries)}");
-        
+        const string operation = nameof(GetWorldGenerationContext);
+        LogOperationStart(operation, null);
+
         try
         {
-            // Validate required parameters
-            if (queries == null || queries.Queries == null || queries.Queries.Count == 0 || queries.Queries.All(string.IsNullOrWhiteSpace))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "At least one non-empty search query is required" 
-                }, _jsonOptions);
-            }
+            var (session, module) = await LoadSessionAndModuleAsync();
+            var validation = _validator.Validate(module);
 
-            if (string.IsNullOrWhiteSpace(contentType))
+            var summary = new
             {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Content type cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            var validContentTypes = new[] { "entities", "locations", "lore", "rules", "narrative", "all" };
-            if (!validContentTypes.Contains(contentType.ToLower()))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = $"Invalid content type '{contentType}'. Valid types are: {string.Join(", ", validContentTypes)}" 
-                }, _jsonOptions);
-            }
-
-            var results = new List<object>();
-            
-            foreach (var query in queries.Queries.Where(q => !string.IsNullOrWhiteSpace(q)))
-            {
-                switch (contentType.ToLower())
+                session = new
                 {
-                    case "entities":
-                        var entities = await _informationManagementService.SearchEntitiesAsync(new List<string> { query });
-                        results.AddRange(entities.Select(e => new { type = "entity", data = e }));
-                        break;
-                        
-                    case "locations":
-                        var location = await _informationManagementService.GetLocationAsync(query);
-                        if (location != null)
-                            results.Add(new { type = "location", data = location });
-                        break;
-                        
-                    case "lore":
-                        var loreResults = await _informationManagementService.SearchLoreAsync(new List<string> { query });
-                        results.AddRange(loreResults.Select(l => new { type = "lore", data = l }));
-                        break;
-                        
-                    case "rules":
-                        var ruleResults = await _informationManagementService.SearchGameRulesAsync(new List<string> { query });
-                        results.AddRange(ruleResults.Select(r => new { type = "rule", data = r }));
-                        break;
-                        
-                    case "all":
-                    default:
-                        // Search all types
-                        var allEntities = await _informationManagementService.SearchEntitiesAsync(new List<string> { query });
-                        results.AddRange(allEntities.Select(e => new { type = "entity", data = e }));
-                        
-                        var allLore = await _informationManagementService.SearchLoreAsync(new List<string> { query });
-                        results.AddRange(allLore.Select(l => new { type = "lore", data = l }));
-                        
-                        var allRules = await _informationManagementService.SearchGameRulesAsync(new List<string> { query });
-                        results.AddRange(allRules.Select(r => new { type = "rule", data = r }));
-                        break;
+                    session.SessionId,
+                    session.SessionName,
+                    session.CurrentPhase,
+                    session.Region,
+                    session.CurrentContext,
+                    session.Metadata.LastUpdatedTime,
+                    session.Metadata.GameTurnNumber
+                },
+                module = new
+                {
+                    module.Metadata.ModuleId,
+                    module.Metadata.Title,
+                    module.Metadata.Summary,
+                    module.Metadata.RecommendedLevelRange,
+                    module.Metadata.Tags,
+                    world = module.World,
+                    counts = new
+                    {
+                        locations = module.Locations.Count,
+                        npcs = module.Npcs.Count,
+                        species = module.Bestiary.Count,
+                        creatures = module.CreatureInstances.Count,
+                        items = module.Items.Count,
+                        factions = module.Factions.Count,
+                        loreEntries = module.LoreEntries.Count,
+                        quests = module.QuestLines.Count,
+                        scriptedEvents = module.ScriptedEvents.Count,
+                        scenarioScripts = module.ScenarioScripts.Count
+                    }
+                },
+                validation = new
+                {
+                    validation.IsValid,
+                    validation.Errors
+                }
+            };
+
+            var response = JsonSerializer.Serialize(new { success = true, data = summary }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            LogError(ex, "GetWorldGenerationContext failed");
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
+        }
+    }
+
+    #endregion
+
+    #region Module Mutation
+
+    [KernelFunction("apply_world_generation_updates")]
+    [Description("Apply a batch of world-building updates to the active adventure module. All referenced IDs must exist or be provided in the same batch.")]
+    public async Task<string> ApplyWorldGenerationUpdates([Description("The batch of updates to merge into the module")] WorldGenerationUpdateBatch updates)
+    {
+        const string operation = nameof(ApplyWorldGenerationUpdates);
+        LogOperationStart(operation, updates);
+
+        try
+        {
+            if (updates is null)
+            {
+                var nullResponse = JsonSerializer.Serialize(new { success = false, error = "Update payload cannot be null." }, _jsonOptions);
+                LogOperationResult(operation, nullResponse);
+                return nullResponse;
+            }
+
+            if (!updates.HasContent())
+            {
+                var emptyResponse = JsonSerializer.Serialize(new { success = false, error = "At least one update or removal must be specified." }, _jsonOptions);
+                LogOperationResult(operation, emptyResponse);
+                return emptyResponse;
+            }
+
+            var (session, module) = await LoadSessionAndModuleAsync();
+            var originalModuleJson = JsonSerializer.Serialize(module, _jsonOptions);
+
+            _moduleRepository.ApplyChanges(module, m => ApplyModuleUpdates(m, updates));
+
+            var validation = _validator.Validate(module);
+            if (!validation.IsValid)
+            {
+                // Reload module from original snapshot to discard invalid mutations
+                module = JsonSerializer.Deserialize<AdventureModule>(originalModuleJson, _jsonOptions)
+                          ?? throw new InvalidOperationException("Failed to revert module after validation failure.");
+
+                var invalidResponse = JsonSerializer.Serialize(new
+                {
+                    success = false,
+                    error = "Module updates failed validation.",
+                    validation = new
+                    {
+                        validation.IsValid,
+                        validation.Errors
+                    }
+                }, _jsonOptions);
+                LogOperationResult(operation, invalidResponse);
+                return invalidResponse;
+            }
+
+            await SaveModuleAsync(module, session);
+
+            if (updates.ReapplyBaseline)
+            {
+                _moduleRepository.ApplyModuleBaseline(module, session, preservePlayer: true);
+                session.Region = string.IsNullOrWhiteSpace(module.World.Setting) ? session.Region : module.World.Setting;
+                await SaveSessionAsync(session);
+            }
+
+            var response = JsonSerializer.Serialize(new
+            {
+                success = true,
+                moduleId = module.Metadata.ModuleId,
+                counts = new
+                {
+                    locations = module.Locations.Count,
+                    npcs = module.Npcs.Count,
+                    species = module.Bestiary.Count,
+                    creatures = module.CreatureInstances.Count,
+                    items = module.Items.Count,
+                    factions = module.Factions.Count,
+                    loreEntries = module.LoreEntries.Count,
+                    quests = module.QuestLines.Count,
+                    scriptedEvents = module.ScriptedEvents.Count,
+                    scenarioScripts = module.ScenarioScripts.Count
+                }
+            }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            LogError(ex, "ApplyWorldGenerationUpdates failed");
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
+        }
+    }
+
+    private void ApplyModuleUpdates(AdventureModule module, WorldGenerationUpdateBatch updates)
+    {
+        NormalizeModule(module);
+
+        if (updates.Metadata is not null)
+        {
+            ApplyMetadataUpdates(module.Metadata, updates.Metadata);
+        }
+
+        if (updates.World is not null)
+        {
+            ApplyWorldOverviewUpdates(module.World, updates.World);
+        }
+
+        ApplyDictionaryUpdates(module.Locations, updates.Locations, NormalizeLocation);
+        ApplyDictionaryUpdates(module.Npcs, updates.Npcs, NormalizeNpc);
+        ApplyDictionaryUpdates(module.Bestiary, updates.CreatureSpecies, NormalizeSpecies);
+        ApplyDictionaryUpdates(module.CreatureInstances, updates.CreatureInstances, NormalizeCreatureInstance);
+        ApplyDictionaryUpdates(module.Items, updates.Items, NormalizeItem);
+        ApplyDictionaryUpdates(module.Factions, updates.Factions, NormalizeFaction);
+        ApplyDictionaryUpdates(module.LoreEntries, updates.LoreEntries, NormalizeLoreEntry);
+        ApplyDictionaryUpdates(module.ScriptedEvents, updates.ScriptedEvents, NormalizeScriptedEvent);
+        ApplyDictionaryUpdates(module.QuestLines, updates.QuestLines, NormalizeQuestLine);
+        ApplyDictionaryUpdates(module.Moves, updates.Moves, NormalizeMove);
+        ApplyDictionaryUpdates(module.Abilities, updates.Abilities, NormalizeAbility);
+
+        if (updates.ScenarioScripts is not null)
+        {
+            module.ScenarioScripts ??= new List<AdventureModuleScenarioScript>();
+            foreach (var script in updates.ScenarioScripts)
+            {
+                if (string.IsNullOrWhiteSpace(script.ScriptId))
+                {
+                    continue;
+                }
+
+                var existingIndex = module.ScenarioScripts.FindIndex(s => string.Equals(s.ScriptId, script.ScriptId, StringComparison.OrdinalIgnoreCase));
+                var normalized = NormalizeScenarioScript(script);
+                if (existingIndex >= 0)
+                {
+                    module.ScenarioScripts[existingIndex] = normalized;
+                }
+                else
+                {
+                    module.ScenarioScripts.Add(normalized);
                 }
             }
-            
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Found {results.Count} total results");
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                queries = queries.Queries,
-                contentType = contentType,
-                resultsCount = results.Count,
-                results = results
+        }
+
+        RemoveDictionaryEntries(module.Locations, updates.RemoveLocationIds);
+        RemoveDictionaryEntries(module.Npcs, updates.RemoveNpcIds);
+        RemoveDictionaryEntries(module.Bestiary, updates.RemoveSpeciesIds);
+        RemoveDictionaryEntries(module.CreatureInstances, updates.RemoveCreatureInstanceIds);
+        RemoveDictionaryEntries(module.Items, updates.RemoveItemIds);
+        RemoveDictionaryEntries(module.Factions, updates.RemoveFactionIds);
+        RemoveDictionaryEntries(module.LoreEntries, updates.RemoveLoreEntryIds);
+        RemoveDictionaryEntries(module.ScriptedEvents, updates.RemoveScriptedEventIds);
+        RemoveDictionaryEntries(module.QuestLines, updates.RemoveQuestIds);
+        RemoveDictionaryEntries(module.Moves, updates.RemoveMoveIds);
+        RemoveDictionaryEntries(module.Abilities, updates.RemoveAbilityIds);
+
+        if (updates.RemoveScenarioScriptIds is not null && updates.RemoveScenarioScriptIds.Count > 0 && module.ScenarioScripts is not null)
+        {
+            var removals = updates.RemoveScenarioScriptIds
+                .Select(id => id.Trim())
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            module.ScenarioScripts.RemoveAll(script => removals.Contains(script.ScriptId));
+        }
+
+        if (updates.MechanicalReferences is not null)
+        {
+            module.MechanicalReferences ??= new AdventureModuleMechanicalReferences();
+            ApplyMechanicalReferenceUpdates(module.MechanicalReferences, updates.MechanicalReferences);
+        }
+
+        NormalizeModule(module);
+    }
+
+    #endregion
+
+    #region Validation Helpers
+
+    [KernelFunction("validate_module_integrity")]
+    [Description("Run structural validation over the active adventure module. Returns all detected issues.")]
+    public async Task<string> ValidateModuleIntegrity()
+    {
+        const string operation = nameof(ValidateModuleIntegrity);
+        LogOperationStart(operation, null);
+
+        try
+        {
+            var module = await LoadModuleAsync();
+            var validation = _validator.Validate(module);
+
+            var response = JsonSerializer.Serialize(new
+            {
+                success = validation.IsValid,
+                validation = new
+                {
+                    validation.IsValid,
+                    validation.Errors
+                }
             }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in SearchExistingContent: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
+            LogError(ex, "ValidateModuleIntegrity failed");
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
     #endregion
 
-    #region Vector Upsert Functions
-
-    [KernelFunction("upsert_entity")]
-    [Description("Store entity data (NPCs, Pokemon species, items) in the vector database")]
-    public async Task<string> UpsertEntity(
-        [Description("Complete entity record to store")] EntityVectorRecordDto entityDataDto)
-    {
-        var entityData = entityDataDto.ToVectorRecord();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertEntity called: {entityData?.EntityId}");
-        
-        try
-        {
-            // Validate required parameters
-            if (entityData == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entity data is required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(entityData.EntityId))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entity ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(entityData.EntityType))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entity type is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(entityData.Name))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entity name is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(entityData.Description))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entity description is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            var result = await _informationManagementService.UpsertEntityAsync(
-                entityData.EntityId,
-                entityData.EntityType,
-                entityData.Name,
-                entityData.Description,
-                entityData.PropertiesJson,
-                entityData.Id == Guid.Empty ? null : entityData.Id
-            );
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                entityId = entityData.EntityId,
-                entityType = entityData.EntityType,
-                result = result
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in UpsertEntity: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("upsert_location")]
-    [Description("Store location data in the vector database")]
-    public async Task<string> UpsertLocation(
-        [Description("Complete location record to store. Id is required for inserting or updating. Example IDs: loc_mt_ember, loc_route_1")] LocationVectorRecordDto locationDataDto)
-    {
-        var locationData = locationDataDto.ToVectorRecord();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLocation called: {locationData?.LocationId}");
-        
-        try
-        {
-            // Validate required parameters
-            if (locationData == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Location data is required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(locationData.LocationId))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Location ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(locationData.Name))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Location name is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(locationData.Description))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Location description is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            var result = await _informationManagementService.UpsertLocationAsync(
-                locationData.LocationId,
-                locationData.Name,
-                locationData.Description,
-                locationData.Region,
-                locationData.Tags?.ToList(),
-                locationData.Id == Guid.Empty ? null : locationData.Id
-            );
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                locationId = locationData.LocationId,
-                name = locationData.Name,
-                result = result
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in UpsertLocation: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("upsert_lore")]
-    [Description("Store lore, quest, and story data in the vector database")]
-    public async Task<string> UpsertLore(
-        [Description("Complete lore record to store")] LoreVectorRecordDto loreDataDto)
-    {
-        var loreData = loreDataDto.ToVectorRecord();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertLore called: {loreData?.EntryId}");
-        
-        try
-        {
-            // Validate required parameters
-            if (loreData == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Lore data is required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(loreData.EntryId))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entry ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(loreData.EntryType))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entry type is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(loreData.Title))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Lore title is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(loreData.Content))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Lore content is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            var result = await _informationManagementService.UpsertLoreAsync(
-                loreData.EntryId,
-                loreData.EntryType,
-                loreData.Title,
-                loreData.Content,
-                loreData.Tags?.ToList(),
-                loreData.Id == Guid.Empty ? null : loreData.Id
-            );
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                entryId = loreData.EntryId,
-                entryType = loreData.EntryType,
-                title = loreData.Title,
-                result = result
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in UpsertLore: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("upsert_game_rule")]
-    [Description("Store game rules, mechanics, and class data in the vector database")]
-    public async Task<string> UpsertGameRule(
-        [Description("Complete game rule record to store")] GameRuleVectorRecordDto ruleDataDto)
-    {
-        var ruleData = ruleDataDto.ToVectorRecord();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] UpsertGameRule called: {ruleData?.EntryId}");
-        
-        try
-        {
-            // Validate required parameters
-            if (ruleData == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Game rule data is required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(ruleData.EntryId))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entry ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(ruleData.EntryType))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Entry type is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(ruleData.Title))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Rule title is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(ruleData.Content))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Rule content is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            var result = await _informationManagementService.UpsertGameRuleAsync(
-                ruleData.EntryId,
-                ruleData.EntryType,
-                ruleData.Title,
-                ruleData.Content,
-                ruleData.Tags?.ToList(),
-                ruleData.Id == Guid.Empty ? null : ruleData.Id
-            );
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                entryId = ruleData.EntryId,
-                entryType = ruleData.EntryType,
-                title = ruleData.Title,
-                result = result
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in UpsertGameRule: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    #endregion
-
-    #region Game State Management Functions
-
-    [KernelFunction("create_npc")]
-    [Description("Create an NPC in the game state with complete NPC data")]
-    public async Task<string> CreateNpc(
-        [Description("Complete NPC object to create")] NpcDto npcDataDto,
-        [Description("Optional location ID to place the NPC")] string locationId = "")
-    {
-        var npcData = npcDataDto.ToAdventureNpc();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateNpc called: {npcData?.Id}");
-        
-        try
-        {
-            // Validate required parameters
-            if (npcData == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "NPC data is required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(npcData.Id))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "NPC ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(npcData.Name))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "NPC name is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (npcData.Stats == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "NPC stats are required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (npcData.CharacterDetails == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "NPC character details are required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            var result = await _npcManagementService.CreateNpcAsync(npcData, locationId);
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                npcId = npcData.Id,
-                npcName = npcData.Name,
-                locationId = locationId,
-                result = result
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in CreateNpc: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("create_pokemon")]
-    [Description("Create a Pokemon instance in the game state")]
-    public async Task<string> CreatePokemon(
-        [Description("Pokemon data to create")] PokemonDto pokemonDataDto,
-        [Description("Optional location ID to place the Pokemon")] string locationId = "")
-    {
-        var pokemonData = pokemonDataDto.ToAdventurePokemon();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreatePokemon called: {pokemonData?.Id}");
-        
-        try
-        {
-            // Validate required parameters
-            if (pokemonData == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Pokemon data is required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(pokemonData.Id))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Pokemon ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(pokemonData.Species))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Pokemon species is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (pokemonData.Level <= 0)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Pokemon level must be greater than 0" 
-                }, _jsonOptions);
-            }
-
-            if (pokemonData.Stats == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Pokemon stats are required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            var result = await _pokemonManagementService.CreatePokemonAsync(pokemonData, locationId);
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                pokemonId = pokemonData.Id,
-                species = pokemonData.Species,
-                locationId = locationId,
-                result = result
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in CreatePokemon: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("create_location")]
-    [Description("Create a location in the game state")]
-    public async Task<string> CreateLocation(
-        [Description("Location data to create")] LocationDto locationDataDto)
-    {
-        var locationData = locationDataDto.ToAdventureLocation();
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] CreateLocation called: {locationData?.Id}");
-        
-        try
-        {
-            // Validate required parameters
-            if (locationData == null)
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Location data is required and cannot be null" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(locationData.Id))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Location ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(locationData.Name))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Location name is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            var result = await _worldManagementService.CreateLocationAsync(locationData);
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                locationId = locationData.Id,
-                name = locationData.Name,
-                result = result
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in CreateLocation: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    [KernelFunction("assign_npc_pokemon")]
-    [Description("Assign Pokemon to an NPC's team")]
-    public async Task<string> AssignNpcPokemon(
-        [Description("NPC ID to assign Pokemon to")] string npcId,
-        [Description("Pokemon instance ID to assign")] string pokemonId)
-    {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] AssignNpcPokemon called: {npcId} <- {pokemonId}");
-        
-        try
-        {
-            // Validate required parameters
-            if (string.IsNullOrWhiteSpace(npcId))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "NPC ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            if (string.IsNullOrWhiteSpace(pokemonId))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Pokemon ID is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            var result = await _npcManagementService.AssignPokemonToNpcAsync(npcId, pokemonId);
-            
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true,
-                npcId = npcId,
-                pokemonId = pokemonId,
-                result = result
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in AssignNpcPokemon: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    #endregion
-
-    #region Procedural Generation Functions
-
-    [KernelFunction("generate_procedural_content")]
-    [Description("Use dice rolls and random generation for procedural world building")]
-    public async Task<string> GenerateProceduralContent(
-        [Description("Generation type: 'random_number', 'random_choice', 'dice_roll', 'random_stats'")] string generationType,
-        [Description("Number of sides for dice (if applicable)")] int sides = 20,
-        [Description("Number of dice to roll")] int count = 1,
-        [Description("List of choices for random selection")] ChoicesDto choices = null,
-        [Description("Minimum value (for ranges)")] int minValue = 1,
-        [Description("Maximum value (for ranges)")] int maxValue = 100)
-    {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] GenerateProceduralContent called: {generationType}");
-        
-        try
-        {
-            // Validate required parameters
-            if (string.IsNullOrWhiteSpace(generationType))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Generation type is required and cannot be null or empty" 
-                }, _jsonOptions);
-            }
-
-            var validTypes = new[] { "random_number", "random_choice", "dice_roll", "random_stats" };
-            if (!validTypes.Contains(generationType.ToLower()))
-            {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = $"Invalid generation type '{generationType}'. Valid types are: {string.Join(", ", validTypes)}" 
-                }, _jsonOptions);
-            }
-
-            switch (generationType.ToLower())
-            {
-                case "dice_roll":
-                    if (sides <= 0)
-                    {
-                        return JsonSerializer.Serialize(new { 
-                            success = false,
-                            error = "Number of sides must be greater than 0" 
-                        }, _jsonOptions);
-                    }
-
-                    if (count <= 0)
-                    {
-                        return JsonSerializer.Serialize(new { 
-                            success = false,
-                            error = "Number of dice to roll must be greater than 0" 
-                        }, _jsonOptions);
-                    }
-
-                    var diceResult = await _gameLogicService.RollDiceAsync(sides, count);
-                    return JsonSerializer.Serialize(diceResult, _jsonOptions);
-                    
-                case "random_choice":
-                    if (choices == null || choices.Choices == null || choices.Choices.Count == 0 || choices.Choices.All(string.IsNullOrWhiteSpace))
-                    {
-                        return JsonSerializer.Serialize(new { 
-                            success = false,
-                            error = "Choices list is required for random selection and must contain at least one non-empty choice" 
-                        }, _jsonOptions);
-                    }
-                    
-                    var validChoices = choices.Choices.Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
-                    var choiceResult = await _gameLogicService.MakeRandomDecisionFromOptionsAsync(validChoices);
-                    return JsonSerializer.Serialize(choiceResult, _jsonOptions);
-                    
-                case "random_number":
-                    if (minValue >= maxValue)
-                    {
-                        return JsonSerializer.Serialize(new { 
-                            success = false,
-                            error = "Maximum value must be greater than minimum value" 
-                        }, _jsonOptions);
-                    }
-
-                    var randomRoll = await _gameLogicService.RollDiceAsync(maxValue - minValue + 1, 1);
-                    var randomValue = randomRoll.Total + minValue - 1;
-                    
-                    return JsonSerializer.Serialize(new 
-                    { 
-                        success = true,
-                        value = randomValue,
-                        min = minValue,
-                        max = maxValue,
-                        generationType = generationType
-                    }, _jsonOptions);
-                    
-                case "random_stats":
-                    // Generate random D&D stats (3d6 for each)
-                    var stats = new Dictionary<string, int>();
-                    var statNames = new[] { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
-                    
-                    foreach (var statName in statNames)
-                    {
-                        var statRoll = await _gameLogicService.RollDiceAsync(6, 3);
-                        stats[statName] = statRoll.Total;
-                    }
-                    
-                    return JsonSerializer.Serialize(new 
-                    { 
-                        success = true,
-                        stats = stats,
-                        generationType = generationType
-                    }, _jsonOptions);
-                    
-                default:
-                    return JsonSerializer.Serialize(new { 
-                        success = false,
-                        error = $"Unknown generation type: {generationType}" 
-                    }, _jsonOptions);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in GenerateProceduralContent: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
-        }
-    }
-
-    #endregion
-
-    #region Phase Management
+    #region Finalization
 
     [KernelFunction("finalize_world_generation")]
-    [Description("Complete world generation")]
+    [Description("Finalize world generation after the module is fully populated and validated.")]
     public async Task<string> FinalizeWorldGeneration(
-        [Description("Opening scenario context that will start the adventure")] string openingScenario)
+        [Description("Opening scenario narrative that should greet the player when exploration begins")] string openingScenario)
     {
-        Debug.WriteLine($"[WorldGenerationPhasePlugin] FinalizeWorldGeneration called");
-        
+        const string operation = nameof(FinalizeWorldGeneration);
+        LogOperationStart(operation, new { openingScenario });
+
         try
         {
-            // Validate required parameters
             if (string.IsNullOrWhiteSpace(openingScenario))
             {
-                return JsonSerializer.Serialize(new { 
-                    success = false,
-                    error = "Opening scenario is required and cannot be null or empty" 
-                }, _jsonOptions);
+                var nullResponse = JsonSerializer.Serialize(new { success = false, error = "Opening scenario is required." }, _jsonOptions);
+                LogOperationResult(operation, nullResponse);
+                return nullResponse;
             }
 
-
-            var gameState = await _gameStateRepo.LoadLatestStateAsync();
-            
-            // Verify we have a region selected
-            if (string.IsNullOrEmpty(gameState.Region))
+            var (session, module) = await LoadSessionAndModuleAsync();
+            var validation = _validator.Validate(module);
+            if (!validation.IsValid)
             {
-                return JsonSerializer.Serialize(new 
-                { 
+                var invalidResponse = JsonSerializer.Serialize(new
+                {
                     success = false,
-                    error = "Cannot finalize world generation - no region has been set",
-                    requiresRegionSelection = true
+                    error = "Module failed validation. Resolve all issues before finalizing.",
+                    validation = new
+                    {
+                        validation.IsValid,
+                        validation.Errors
+                    }
                 }, _jsonOptions);
+                LogOperationResult(operation, invalidResponse);
+                return invalidResponse;
             }
-            
-            // Transition to exploration phase
-            gameState.CurrentPhase = GamePhase.Exploration;
-            gameState.PhaseChangeSummary = $"World generation completed successfully. {openingScenario}";
-            
-            // Add to recent events
-            gameState.RecentEvents.Add(new EventLog 
-            { 
-                TurnNumber = gameState.GameTurnNumber, 
-                EventDescription = $"World Generation Completed: {openingScenario}" 
+
+            module.Metadata.IsSetupComplete = true;
+            module.Metadata.Generator ??= new AdventureModuleGeneratorMetadata();
+            module.Metadata.Generator.SeedPrompt = "WorldGenerationPhase";
+            module.Metadata.Generator.Notes = "World generation finalized via autonomous phase.";
+
+            _moduleRepository.ApplyModuleBaseline(module, session, preservePlayer: true);
+            session.Region = string.IsNullOrWhiteSpace(module.World.Setting) ? session.Region : module.World.Setting;
+            session.Metadata.CurrentPhase = GamePhase.Exploration;
+            session.Metadata.PhaseChangeSummary = "World generation completed successfully.";
+            session.Metadata.CurrentContext = openingScenario.Trim();
+            session.AdventureSummary = string.IsNullOrWhiteSpace(module.Metadata.Summary) ? session.AdventureSummary : module.Metadata.Summary;
+            session.RecentEvents.Add(new EventLog
+            {
+                TurnNumber = session.GameTurnNumber,
+                EventDescription = $"World Generation Completed: {openingScenario.Trim()}"
             });
-            
-            // Update save time
-            gameState.LastSaveTime = DateTime.UtcNow;
-            
-            // Save the state
-            await _gameStateRepo.SaveStateAsync(gameState);
-            
-            
-            // Store the opening scenario for immediate use
-            await _informationManagementService.UpsertLoreAsync(
-                $"opening_scenario_{gameState.SessionId}",
-                "opening_scenario",
-                $"Opening Scenario for {gameState.Region}",
-                openingScenario,
-                new List<string> { "opening_scenario", "character_creation", gameState.Region.ToLower() }
-            );
-            
-            return JsonSerializer.Serialize(new 
-            { 
+            session.LastSaveTime = DateTime.UtcNow;
+
+            await SaveModuleAsync(module, session);
+            await SaveSessionAsync(session);
+
+            var response = JsonSerializer.Serialize(new
+            {
                 success = true,
-                message = "World generation completed successfully",
-                region = gameState.Region,
-                nextPhase = "Exploration",
-                openingScenario = openingScenario,
-                sessionId = gameState.SessionId,
-                phaseTransitionCompleted = true
+                message = "World generation finalized. Exploration phase unlocked.",
+                nextPhase = session.CurrentPhase.ToString(),
+                sessionId = session.SessionId,
+                region = session.Region
             }, _jsonOptions);
+            LogOperationResult(operation, response);
+            return response;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[WorldGenerationPhasePlugin] Error in FinalizeWorldGeneration: {ex.Message}");
-            return JsonSerializer.Serialize(new { 
-                success = false,
-                error = ex.Message 
-            }, _jsonOptions);
+            LogError(ex, "FinalizeWorldGeneration failed");
+            var errorResponse = JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            LogOperationResult(operation, errorResponse);
+            return errorResponse;
         }
     }
 
     #endregion
+
+    #region Persistence Helpers
+
+    private async Task<(AdventureSessionState session, AdventureModule module)> LoadSessionAndModuleAsync()
+    {
+        var session = await _gameStateRepo.LoadLatestStateAsync();
+        var module = await LoadModuleAsync(session);
+        return (session, module);
+    }
+
+    private Task<AdventureModule> LoadModuleAsync()
+        => LoadModuleAsync(null);
+
+    private async Task<AdventureModule> LoadModuleAsync(AdventureSessionState? sessionOverride)
+    {
+        var session = sessionOverride ?? await _gameStateRepo.LoadLatestStateAsync();
+        var moduleFileName = !string.IsNullOrWhiteSpace(session.Module.ModuleFileName)
+            ? session.Module.ModuleFileName
+            : session.Module.ModuleId;
+
+        LogDebug($"Loading module from {moduleFileName}");
+        var module = await _moduleRepository.LoadByFileNameAsync(moduleFileName);
+        NormalizeModule(module);
+        return module;
+    }
+
+    private async Task SaveModuleAsync(AdventureModule module, AdventureSessionState session)
+    {
+        var moduleFileName = !string.IsNullOrWhiteSpace(session.Module.ModuleFileName)
+            ? session.Module.ModuleFileName
+            : module.Metadata.ModuleId;
+        var modulePath = _moduleRepository.GetModuleFilePath(moduleFileName);
+
+        LogDebug($"Persisting module {module.Metadata.ModuleId} to {modulePath}");
+        await _moduleRepository.SaveAsync(module, modulePath);
+
+        var resolvedFileName = Path.GetFileName(modulePath);
+        if (!string.Equals(session.Module.ModuleFileName, resolvedFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            session.Module.ModuleFileName = resolvedFileName;
+            await SaveSessionAsync(session);
+        }
+    }
+
+    private async Task SaveSessionAsync(AdventureSessionState session)
+    {
+        session.SessionName = _gameStateRepo.GenerateSessionDisplayName(session);
+        session.Metadata.LastUpdatedTime = DateTime.UtcNow;
+        await _gameStateRepo.SaveStateAsync(session);
+    }
+
+    #endregion
+
+    #region Normalization Helpers
+
+    private static void NormalizeModule(AdventureModule module)
+    {
+        module.Locations ??= new Dictionary<string, AdventureModuleLocation>(StringComparer.OrdinalIgnoreCase);
+        module.Npcs ??= new Dictionary<string, AdventureModuleNpc>(StringComparer.OrdinalIgnoreCase);
+        module.Bestiary ??= new Dictionary<string, AdventureModuleCreatureSpecies>(StringComparer.OrdinalIgnoreCase);
+        module.CreatureInstances ??= new Dictionary<string, AdventureModuleCreatureInstance>(StringComparer.OrdinalIgnoreCase);
+        module.Items ??= new Dictionary<string, AdventureModuleItem>(StringComparer.OrdinalIgnoreCase);
+        module.Factions ??= new Dictionary<string, AdventureModuleFaction>(StringComparer.OrdinalIgnoreCase);
+        module.LoreEntries ??= new Dictionary<string, AdventureModuleLoreEntry>(StringComparer.OrdinalIgnoreCase);
+        module.ScriptedEvents ??= new Dictionary<string, AdventureModuleScriptedEvent>(StringComparer.OrdinalIgnoreCase);
+        module.QuestLines ??= new Dictionary<string, AdventureModuleQuestLine>(StringComparer.OrdinalIgnoreCase);
+        module.Moves ??= new Dictionary<string, AdventureModuleMove>(StringComparer.OrdinalIgnoreCase);
+        module.Abilities ??= new Dictionary<string, AdventureModuleAbility>(StringComparer.OrdinalIgnoreCase);
+        module.ScenarioScripts ??= new List<AdventureModuleScenarioScript>();
+        module.Metadata ??= new AdventureModuleMetadata();
+        module.World ??= new AdventureModuleWorldOverview();
+        module.MechanicalReferences ??= module.MechanicalReferences ?? new AdventureModuleMechanicalReferences();
+    }
+
+    private void ApplyMetadataUpdates(AdventureModuleMetadata target, ModuleMetadataUpdateDto source)
+    {
+        if (!string.IsNullOrWhiteSpace(source.Title))
+        {
+            target.Title = source.Title.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(source.Summary))
+        {
+            target.Summary = source.Summary.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(source.Version))
+        {
+            target.Version = source.Version.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(source.RecommendedLevelRange))
+        {
+            target.RecommendedLevelRange = source.RecommendedLevelRange.Trim();
+        }
+
+        if (source.Tags is not null)
+        {
+            target.Tags = source.Tags
+                .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                .Select(tag => tag.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+    }
+
+    private void ApplyWorldOverviewUpdates(AdventureModuleWorldOverview target, WorldOverviewUpdateDto source)
+    {
+        if (!string.IsNullOrWhiteSpace(source.Setting))
+        {
+            target.Setting = source.Setting.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(source.Tone))
+        {
+            target.Tone = source.Tone.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(source.StartingContext))
+        {
+            target.StartingContext = source.StartingContext.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(source.TimePeriod))
+        {
+            target.TimePeriod = source.TimePeriod.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(source.MaturityRating))
+        {
+            target.MaturityRating = source.MaturityRating.Trim();
+        }
+
+        if (source.Themes is not null)
+        {
+            target.Themes = source.Themes
+                .Where(theme => !string.IsNullOrWhiteSpace(theme))
+                .Select(theme => theme.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        if (source.Hooks is not null)
+        {
+            target.AdventureHooks = source.Hooks
+                .Where(hook => !string.IsNullOrWhiteSpace(hook))
+                .Select(hook => hook.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        if (source.SafetyConsiderations is not null)
+        {
+            target.SafetyConsiderations = source.SafetyConsiderations
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+    }
+
+    private void ApplyMechanicalReferenceUpdates(AdventureModuleMechanicalReferences target, MechanicalReferencesUpdateDto source)
+    {
+        if (source.EncounterTables is not null)
+        {
+            target.EncounterTables ??= new List<AdventureModuleEncounterTable>();
+            foreach (var table in source.EncounterTables)
+            {
+                if (string.IsNullOrWhiteSpace(table.TableId))
+                {
+                    continue;
+                }
+
+                var normalized = NormalizeEncounterTable(table);
+                var index = target.EncounterTables.FindIndex(t => string.Equals(t.TableId, normalized.TableId, StringComparison.OrdinalIgnoreCase));
+                if (index >= 0)
+                {
+                    target.EncounterTables[index] = normalized;
+                }
+                else
+                {
+                    target.EncounterTables.Add(normalized);
+                }
+            }
+        }
+
+        if (source.WeatherProfiles is not null)
+        {
+            target.WeatherProfiles ??= new List<AdventureModuleWeatherProfile>();
+            foreach (var profile in source.WeatherProfiles)
+            {
+                if (string.IsNullOrWhiteSpace(profile.ProfileId))
+                {
+                    continue;
+                }
+
+                var normalized = NormalizeWeatherProfile(profile);
+                var index = target.WeatherProfiles.FindIndex(p => string.Equals(p.ProfileId, normalized.ProfileId, StringComparison.OrdinalIgnoreCase));
+                if (index >= 0)
+                {
+                    target.WeatherProfiles[index] = normalized;
+                }
+                else
+                {
+                    target.WeatherProfiles.Add(normalized);
+                }
+            }
+        }
+
+        if (source.TravelRules is not null)
+        {
+            target.TravelRules ??= new List<AdventureModuleTravelRule>();
+            foreach (var rule in source.TravelRules)
+            {
+                if (string.IsNullOrWhiteSpace(rule.RuleId))
+                {
+                    continue;
+                }
+
+                var normalized = NormalizeTravelRule(rule);
+                var index = target.TravelRules.FindIndex(r => string.Equals(r.RuleId, normalized.RuleId, StringComparison.OrdinalIgnoreCase));
+                if (index >= 0)
+                {
+                    target.TravelRules[index] = normalized;
+                }
+                else
+                {
+                    target.TravelRules.Add(normalized);
+                }
+            }
+        }
+    }
+
+    private static void ApplyDictionaryUpdates<T>(Dictionary<string, T> target, Dictionary<string, T>? updates, Func<T, T> normalizer)
+    {
+        if (updates is null || updates.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var (key, value) in updates)
+        {
+            var normalizedKey = key?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedKey))
+            {
+                continue;
+            }
+
+            if (value is null)
+            {
+                continue;
+            }
+
+            var normalizedValue = normalizer(value);
+            target[normalizedKey] = normalizedValue;
+        }
+    }
+
+    private static void RemoveDictionaryEntries<T>(Dictionary<string, T> target, IReadOnlyCollection<string>? ids)
+    {
+        if (ids is null || ids.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var id in ids)
+        {
+            var normalizedId = id?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedId))
+            {
+                continue;
+            }
+
+            target.Remove(normalizedId);
+        }
+    }
+
+    private static AdventureModuleLocation NormalizeLocation(AdventureModuleLocation source)
+    {
+        source.LocationId = source.LocationId?.Trim() ?? string.Empty;
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.Summary ??= string.Empty;
+        source.FullDescription ??= string.Empty;
+        source.Region ??= string.Empty;
+        source.Tags ??= new List<string>();
+        source.FactionsPresent ??= new List<string>();
+        source.PointsOfInterest ??= new List<AdventureModulePointOfInterest>();
+        foreach (var poi in source.PointsOfInterest)
+        {
+            poi.Id = poi.Id?.Trim() ?? string.Empty;
+            poi.Name = poi.Name?.Trim() ?? string.Empty;
+            poi.Description ??= string.Empty;
+            poi.RelatedNpcIds ??= new List<string>();
+            poi.RelatedItemIds ??= new List<string>();
+        }
+
+        source.Encounters ??= new List<AdventureModuleEncounter>();
+        foreach (var encounter in source.Encounters)
+        {
+            encounter.EncounterId = encounter.EncounterId?.Trim() ?? string.Empty;
+            encounter.Type = encounter.Type?.Trim() ?? string.Empty;
+            encounter.Trigger = encounter.Trigger?.Trim() ?? string.Empty;
+            encounter.Difficulty = encounter.Difficulty?.Trim() ?? string.Empty;
+            encounter.Narrative ??= string.Empty;
+            encounter.Participants ??= new List<string>();
+            encounter.Outcomes ??= new List<AdventureModuleOutcome>();
+            foreach (var outcome in encounter.Outcomes)
+            {
+                outcome.Description ??= string.Empty;
+                outcome.ResultingChanges ??= new List<AdventureModuleStateChange>();
+                foreach (var change in outcome.ResultingChanges)
+                {
+                    change.ChangeType = change.ChangeType?.Trim() ?? string.Empty;
+                    change.TargetType = change.TargetType?.Trim() ?? string.Empty;
+                    change.TargetId = change.TargetId?.Trim() ?? string.Empty;
+                    change.Payload ??= string.Empty;
+                }
+            }
+        }
+
+        source.ConnectedLocations ??= new List<AdventureModuleLocationConnection>();
+        foreach (var connection in source.ConnectedLocations)
+        {
+            connection.Direction = connection.Direction?.Trim() ?? string.Empty;
+            connection.TargetLocationId = connection.TargetLocationId?.Trim() ?? string.Empty;
+            connection.Notes ??= string.Empty;
+        }
+
+        return source;
+    }
+
+    private static AdventureModuleNpc NormalizeNpc(AdventureModuleNpc source)
+    {
+        source.NpcId = source.NpcId?.Trim() ?? string.Empty;
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.Role ??= string.Empty;
+        source.Motivation ??= string.Empty;
+        source.FullDescription ??= string.Empty;
+        source.Factions ??= new List<string>();
+        source.Relationships ??= new List<AdventureModuleRelationship>();
+        foreach (var relationship in source.Relationships)
+        {
+            relationship.TargetId = relationship.TargetId?.Trim() ?? string.Empty;
+            relationship.Type = relationship.Type?.Trim() ?? string.Empty;
+            relationship.Summary ??= string.Empty;
+        }
+
+        source.DialogueScripts ??= new List<AdventureModuleDialogueScript>();
+        foreach (var script in source.DialogueScripts)
+        {
+            script.ScriptId = script.ScriptId?.Trim() ?? string.Empty;
+            script.Context ??= string.Empty;
+            script.Lines ??= new List<AdventureModuleDialogueLine>();
+            foreach (var line in script.Lines)
+            {
+                line.Speaker = line.Speaker?.Trim() ?? string.Empty;
+                line.Content ??= string.Empty;
+                line.Notes ??= string.Empty;
+            }
+        }
+
+        source.Stats ??= source.Stats ?? new Stats();
+        source.CharacterDetails ??= source.CharacterDetails ?? new CharacterDetails();
+        return source;
+    }
+
+    private static AdventureModuleCreatureSpecies NormalizeSpecies(AdventureModuleCreatureSpecies source)
+    {
+        source.Description ??= string.Empty;
+        source.Habitats ??= new List<string>();
+        source.DefaultMoves ??= new List<string>();
+        source.BaseStats ??= source.BaseStats ?? new Stats();
+        source.LevelUpMoves ??= new Dictionary<int, List<string>>();
+        foreach (var level in source.LevelUpMoves.Keys.ToList())
+        {
+            source.LevelUpMoves[level] ??= new List<string>();
+        }
+
+        source.EvolutionConditions ??= new List<string>();
+        source.BehaviorNotes ??= string.Empty;
+        source.AbilityIds ??= new List<string>();
+        return source;
+    }
+
+    private static AdventureModuleCreatureInstance NormalizeCreatureInstance(AdventureModuleCreatureInstance source)
+    {
+        source.SpeciesId = source.SpeciesId?.Trim() ?? string.Empty;
+        source.Nickname = source.Nickname?.Trim() ?? string.Empty;
+        source.HeldItem = source.HeldItem?.Trim() ?? string.Empty;
+        source.Moves ??= new List<string>();
+        source.LocationId = source.LocationId?.Trim() ?? string.Empty;
+        source.OwnerNpcId = source.OwnerNpcId?.Trim() ?? string.Empty;
+        source.FactionIds ??= new List<string>();
+        source.Tags ??= new List<string>();
+        source.FullDescription ??= string.Empty;
+        source.Notes ??= string.Empty;
+        return source;
+    }
+
+    private static AdventureModuleItem NormalizeItem(AdventureModuleItem source)
+    {
+        source.ItemId = source.ItemId?.Trim() ?? string.Empty;
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.Rarity ??= string.Empty;
+        source.FullDescription ??= string.Empty;
+        source.Effects ??= string.Empty;
+        source.Placement ??= new List<AdventureModuleItemPlacement>();
+        foreach (var placement in source.Placement)
+        {
+            placement.LocationId = placement.LocationId?.Trim() ?? string.Empty;
+            placement.NpcId = placement.NpcId?.Trim() ?? string.Empty;
+            placement.Notes ??= string.Empty;
+        }
+
+        return source;
+    }
+
+    private static AdventureModuleFaction NormalizeFaction(AdventureModuleFaction source)
+    {
+        source.FactionId = source.FactionId?.Trim() ?? string.Empty;
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.Ideology ??= string.Empty;
+        source.Leaders ??= new List<string>();
+        source.FullDescription ??= string.Empty;
+        source.Relationships ??= new List<AdventureModuleRelationship>();
+        foreach (var relationship in source.Relationships)
+        {
+            relationship.TargetId = relationship.TargetId?.Trim() ?? string.Empty;
+            relationship.Type = relationship.Type?.Trim() ?? string.Empty;
+            relationship.Summary ??= string.Empty;
+        }
+
+        return source;
+    }
+
+    private static AdventureModuleLoreEntry NormalizeLoreEntry(AdventureModuleLoreEntry source)
+    {
+        source.EntryId = source.EntryId?.Trim() ?? string.Empty;
+        source.Category = source.Category?.Trim() ?? string.Empty;
+        source.Title = source.Title?.Trim() ?? string.Empty;
+        source.FullText ??= string.Empty;
+        source.Tags ??= new List<string>();
+        return source;
+    }
+
+    private static AdventureModuleScriptedEvent NormalizeScriptedEvent(AdventureModuleScriptedEvent source)
+    {
+        source.EventId = source.EventId?.Trim() ?? string.Empty;
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.TriggerConditions ??= new List<string>();
+        source.Scenes ??= new List<AdventureModuleScene>();
+        foreach (var scene in source.Scenes)
+        {
+            scene.SceneId = scene.SceneId?.Trim() ?? string.Empty;
+            scene.Description ??= string.Empty;
+            scene.DialogueScripts ??= new List<AdventureModuleDialogueScript>();
+            foreach (var script in scene.DialogueScripts)
+            {
+                script.ScriptId = script.ScriptId?.Trim() ?? string.Empty;
+                script.Context ??= string.Empty;
+                script.Lines ??= new List<AdventureModuleDialogueLine>();
+                foreach (var line in script.Lines)
+                {
+                    line.Speaker = line.Speaker?.Trim() ?? string.Empty;
+                    line.Content ??= string.Empty;
+                    line.Notes ??= string.Empty;
+                }
+            }
+        }
+
+        source.Outcomes ??= new List<AdventureModuleOutcome>();
+        foreach (var outcome in source.Outcomes)
+        {
+            outcome.Description ??= string.Empty;
+            outcome.ResultingChanges ??= new List<AdventureModuleStateChange>();
+            foreach (var change in outcome.ResultingChanges)
+            {
+                change.ChangeType = change.ChangeType?.Trim() ?? string.Empty;
+                change.TargetType = change.TargetType?.Trim() ?? string.Empty;
+                change.TargetId = change.TargetId?.Trim() ?? string.Empty;
+                change.Payload ??= string.Empty;
+            }
+        }
+
+        return source;
+    }
+
+    private static AdventureModuleQuestLine NormalizeQuestLine(AdventureModuleQuestLine source)
+    {
+        source.QuestId = source.QuestId?.Trim() ?? string.Empty;
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.Summary ??= string.Empty;
+        source.Stages ??= new List<AdventureModuleQuestStage>();
+        foreach (var stage in source.Stages)
+        {
+            stage.StageId = stage.StageId?.Trim() ?? string.Empty;
+            stage.Objective ??= string.Empty;
+            stage.Description ??= string.Empty;
+            stage.RecommendedNpcIds ??= new List<string>();
+            stage.RecommendedLocationIds ??= new List<string>();
+            stage.Rewards ??= new List<string>();
+        }
+
+        return source;
+    }
+
+    private static AdventureModuleMove NormalizeMove(AdventureModuleMove source)
+    {
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.Type = source.Type?.Trim() ?? string.Empty;
+        source.Category = source.Category?.Trim() ?? string.Empty;
+        source.DamageDice = source.DamageDice?.Trim() ?? string.Empty;
+        source.Description ??= string.Empty;
+        return source;
+    }
+
+    private static AdventureModuleAbility NormalizeAbility(AdventureModuleAbility source)
+    {
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.Description ??= string.Empty;
+        source.Effects ??= string.Empty;
+        return source;
+    }
+
+    private static AdventureModuleScenarioScript NormalizeScenarioScript(AdventureModuleScenarioScript source)
+    {
+        source.ScriptId = source.ScriptId?.Trim() ?? string.Empty;
+        source.Title = source.Title?.Trim() ?? string.Empty;
+        source.Scope = source.Scope?.Trim() ?? string.Empty;
+        source.Goals ??= new List<string>();
+        source.Summary ??= string.Empty;
+        source.LinkedQuestIds ??= new List<string>();
+        return source;
+    }
+
+    private static AdventureModuleEncounterTable NormalizeEncounterTable(AdventureModuleEncounterTable source)
+    {
+        source.TableId = source.TableId?.Trim() ?? string.Empty;
+        source.Name = source.Name?.Trim() ?? string.Empty;
+        source.LocationId = source.LocationId?.Trim() ?? string.Empty;
+        source.Entries ??= new List<AdventureModuleEncounterTableEntry>();
+        foreach (var entry in source.Entries)
+        {
+            entry.RollRange = entry.RollRange?.Trim() ?? string.Empty;
+            entry.CreatureId = entry.CreatureId?.Trim() ?? string.Empty;
+            entry.Description ??= string.Empty;
+        }
+
+        return source;
+    }
+
+    private static AdventureModuleWeatherProfile NormalizeWeatherProfile(AdventureModuleWeatherProfile source)
+    {
+        source.ProfileId = source.ProfileId?.Trim() ?? string.Empty;
+        source.Description ??= string.Empty;
+        source.Modifiers ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        return source;
+    }
+
+    private static AdventureModuleTravelRule NormalizeTravelRule(AdventureModuleTravelRule source)
+    {
+        source.RuleId = source.RuleId?.Trim() ?? string.Empty;
+        source.Description ??= string.Empty;
+        source.Effects ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        return source;
+    }
+
+    #endregion
+
+    private void LogDebug(string message)
+    {
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] {message}");
+        _logger.LogDebug(message);
+    }
+
+    private void LogError(Exception exception, string message)
+    {
+        Debug.WriteLine($"[WorldGenerationPhasePlugin][Error] {message} :: {exception.Message}");
+        _logger.LogError(exception, message);
+    }
+
+    private void LogOperationStart(string operation, object? payload)
+    {
+        var serialized = SerializeForLog(payload);
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] {operation} input: {serialized}");
+        _logger.LogDebug("{Operation} input: {Payload}", operation, serialized);
+    }
+
+    private void LogOperationResult(string operation, string response)
+    {
+        Debug.WriteLine($"[WorldGenerationPhasePlugin] {operation} output: {response}");
+        _logger.LogDebug("{Operation} output: {Payload}", operation, response);
+    }
+
+    private string SerializeForLog(object? payload)
+    {
+        if (payload is null)
+        {
+            return "null";
+        }
+
+        try
+        {
+            return JsonSerializer.Serialize(payload, _jsonOptions);
+        }
+        catch
+        {
+            return payload.ToString() ?? "<unserializable>";
+        }
+    }
 }
