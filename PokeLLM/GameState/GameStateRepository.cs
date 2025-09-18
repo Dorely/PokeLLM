@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -17,6 +18,7 @@ public interface IGameStateRepository
     Task<IReadOnlyList<AdventureSessionSummary>> ListSessionsAsync();
     void SetActiveSession(string sessionFilePath);
     string? GetActiveSessionPath();
+    string GenerateSessionDisplayName(AdventureSessionState sessionState);
 }
 
 public class GameStateRepository : IGameStateRepository
@@ -58,14 +60,47 @@ public class GameStateRepository : IGameStateRepository
         }
     }
 
+    public string GenerateSessionDisplayName(AdventureSessionState sessionState)
+    {
+        if (sessionState is null)
+        {
+            throw new ArgumentNullException(nameof(sessionState));
+        }
+
+        var sessionId = sessionState.SessionId;
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            sessionId = Guid.NewGuid().ToString("N");
+            sessionState.Metadata.SessionId = sessionId;
+        }
+
+        var shortId = sessionId.Length > 8 ? sessionId[..8] : sessionId;
+        var region = sessionState.Region?.Trim();
+        var playerName = sessionState.Player?.Name?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(playerName) && !string.IsNullOrWhiteSpace(region))
+        {
+            return $"{playerName} - {region} ({shortId})";
+        }
+
+        if (!string.IsNullOrWhiteSpace(playerName))
+        {
+            return $"{playerName} ({shortId})";
+        }
+
+        if (!string.IsNullOrWhiteSpace(region))
+        {
+            return $"{region} ({shortId})";
+        }
+
+        return $"Session {shortId}";
+    }
+
     public async Task<AdventureSessionState> CreateNewGameStateAsync(AdventureSessionState? seedState = null)
     {
         var sessionState = seedState ?? new AdventureSessionState();
 
-        if (string.IsNullOrWhiteSpace(sessionState.SessionName))
-        {
-            sessionState.SessionName = $"Adventure Session {DateTime.UtcNow:yyyyMMddHHmmss}";
-        }
+        sessionState.SessionName = GenerateSessionDisplayName(sessionState);
 
         sessionState.Metadata.SessionStartTime = DateTime.UtcNow;
         sessionState.Metadata.LastUpdatedTime = sessionState.Metadata.SessionStartTime;
@@ -167,9 +202,7 @@ public class GameStateRepository : IGameStateRepository
     private async Task SaveStateInternalAsync(AdventureSessionState sessionState, string targetPath)
     {
         sessionState.Metadata.LastUpdatedTime = DateTime.UtcNow;
-        sessionState.Metadata.SessionName = string.IsNullOrWhiteSpace(sessionState.SessionName)
-            ? sessionState.SessionId
-            : sessionState.SessionName;
+        sessionState.Metadata.SessionName = GenerateSessionDisplayName(sessionState);
 
         var directory = Path.GetDirectoryName(targetPath);
         if (!string.IsNullOrEmpty(directory))

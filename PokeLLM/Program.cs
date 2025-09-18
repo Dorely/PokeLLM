@@ -174,14 +174,7 @@ public class Program
         session.Module.ModuleFileName = Path.GetFileName(moduleFilePath);
         session.Metadata.IsSetupComplete = module.Metadata.IsSetupComplete;
 
-        var suggestedSessionName = string.IsNullOrWhiteSpace(session.SessionName)
-            ? module.Metadata.Title
-            : session.SessionName;
-        var sessionName = PromptForText("Enter a name for this session (leave blank to use the suggested name):", suggestedSessionName);
-        if (!string.IsNullOrWhiteSpace(sessionName))
-        {
-            session.SessionName = sessionName;
-        }
+        session.SessionName = gameStateRepository.GenerateSessionDisplayName(session);
 
         var savedSession = await gameStateRepository.CreateNewGameStateAsync(session);
         Console.WriteLine($"Created new session '{savedSession.SessionName}' linked to module '{module.Metadata.Title}'.");
@@ -204,8 +197,9 @@ public class Program
             for (var i = 0; i < modules.Count; i++)
             {
                 var summary = modules[i];
+                var displayTitle = string.IsNullOrWhiteSpace(summary.Title) ? "(Untitled Module)" : summary.Title;
                 var setupStatus = summary.IsSetupComplete ? "Ready" : "Needs Setup";
-                Console.WriteLine($"  {i + 1}. {summary.Title} (Version {summary.Version}) | {setupStatus} | Updated: {summary.LastModifiedUtc:u}");
+                Console.WriteLine($"  {i + 1}. {displayTitle} (Version {summary.Version}) | {setupStatus} | Updated: {summary.LastModifiedUtc:u}");
             }
             Console.WriteLine("  C. Create a new module");
             Console.Write("> ");
@@ -233,16 +227,13 @@ public class Program
     private static async Task<AdventureModuleSummary> CreateNewModuleAsync(IAdventureModuleRepository moduleRepository)
     {
         Console.WriteLine();
-        Console.WriteLine("Creating a new adventure module.");
+        Console.WriteLine("Creating a new adventure module (details will be authored during setup).");
 
-        var title = PromptForText("Enter a module title:", defaultValue: "Untitled Adventure");
-        var summary = PromptForText("Enter a brief description (optional):", allowEmpty: true);
-
-        var module = moduleRepository.CreateNewModule(title, summary);
+        var module = moduleRepository.CreateNewModule();
         await moduleRepository.SaveAsync(module);
         var fullPath = moduleRepository.GetModuleFilePath(module.Metadata.ModuleId);
 
-        Console.WriteLine($"Created module '{module.Metadata.Title}' with id {module.Metadata.ModuleId}.");
+        Console.WriteLine($"Created module {module.Metadata.ModuleId}. The setup phase will define its details.");
         return new AdventureModuleSummary
         {
             ModuleId = module.Metadata.ModuleId,
@@ -254,30 +245,4 @@ public class Program
         };
     }
 
-    private static string PromptForText(string message, string? defaultValue = null, bool allowEmpty = false)
-    {
-        while (true)
-        {
-            Console.Write(message);
-            if (!string.IsNullOrWhiteSpace(defaultValue))
-            {
-                Console.Write($" [{defaultValue}]");
-            }
-            Console.Write(" ");
-
-            var input = Console.ReadLine();
-            if (string.IsNullOrEmpty(input))
-            {
-                if (!allowEmpty && string.IsNullOrWhiteSpace(defaultValue))
-                {
-                    Console.WriteLine("Value cannot be empty. Please try again.");
-                    continue;
-                }
-
-                return defaultValue ?? string.Empty;
-            }
-
-            return input.Trim();
-        }
-    }
 }

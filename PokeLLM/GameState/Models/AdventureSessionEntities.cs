@@ -20,6 +20,9 @@ public class PlayerState
     [JsonPropertyName("abilities")]
     public List<string> Abilities { get; set; } = new();
 
+    [JsonPropertyName("perks")]
+    public List<string> Perks { get; set; } = new();
+
     [JsonPropertyName("characterDetails")]
     public CharacterDetails CharacterDetails { get; set; } = new();
 
@@ -368,6 +371,9 @@ public class TrainerClass
     [JsonPropertyName("startingAbilities")]
     public List<string> StartingAbilities { get; set; } = new();
 
+    [JsonPropertyName("startingPerks")]
+    public List<string> StartingPerks { get; set; } = new();
+
     [JsonPropertyName("startingMoney")]
     public int StartingMoney { get; set; } = 1000;
 
@@ -379,6 +385,9 @@ public class TrainerClass
 
     [JsonPropertyName("levelUpTable")]
     public Dictionary<int, string> LevelUpTable { get; set; } = new();
+
+    [JsonPropertyName("levelUpPerks")]
+    public Dictionary<int, string> LevelUpPerks { get; set; } = new();
 }
 
 public class CombatState

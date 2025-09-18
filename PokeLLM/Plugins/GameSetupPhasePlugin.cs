@@ -1,4 +1,6 @@
 using Microsoft.SemanticKernel;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.Json;
 using System.IO;
@@ -18,16 +20,22 @@ public class GameSetupPhasePlugin
     private readonly IGameStateRepository _gameStateRepo;
     private readonly IAdventureModuleRepository _moduleRepository;
     private readonly ICharacterManagementService _characterManagementService;
+    private readonly ILogger<GameSetupPhasePlugin> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+
+    private const int MinClassLevel = 1;
+    private const int MaxClassLevel = 20;
 
     public GameSetupPhasePlugin(
         IGameStateRepository gameStateRepo,
         IAdventureModuleRepository moduleRepository,
-        ICharacterManagementService characterManagementService)
+        ICharacterManagementService characterManagementService,
+        ILogger<GameSetupPhasePlugin> logger)
     {
         _gameStateRepo = gameStateRepo;
         _moduleRepository = moduleRepository;
         _characterManagementService = characterManagementService;
+        _logger = logger;
         _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -43,6 +51,8 @@ public class GameSetupPhasePlugin
     [Description("Retrieve the current session, module, and player setup state for planning the next setup step.")]
     public async Task<string> GetSetupState()
     {
+        const string operation = nameof(GetSetupState);
+        _logger.LogDebug("{Operation} invoked", operation);
         try
         {
             var session = await _gameStateRepo.LoadLatestStateAsync();
@@ -92,10 +102,12 @@ public class GameSetupPhasePlugin
                 }
             };
 
+            _logger.LogDebug("{Operation} succeeded", operation);
             return JsonSerializer.Serialize(new { success = true, data = result }, _jsonOptions);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
@@ -108,15 +120,21 @@ public class GameSetupPhasePlugin
     [Description("Update top-level module overview metadata like title, summary, setting, tone, time period, and safety notes.")]
     public async Task<string> UpdateModuleOverview([Description("Overview fields to upsert")] ModuleOverviewUpdate update)
     {
+        const string operation = nameof(UpdateModuleOverview);
+        _logger.LogDebug("{Operation} invoked", operation);
+
         try
         {
             if (update is null)
             {
+                _logger.LogWarning("{Operation} received null update payload", operation);
                 return JsonSerializer.Serialize(new { success = false, error = "Update payload cannot be null" }, _jsonOptions);
             }
 
             var session = await _gameStateRepo.LoadLatestStateAsync();
             var module = await LoadModuleAsync();
+
+            _logger.LogDebug("{Operation} applying updates to module {ModuleId}", operation, module.Metadata.ModuleId);
 
             if (!string.IsNullOrWhiteSpace(update.Title))
             {
@@ -155,7 +173,8 @@ public class GameSetupPhasePlugin
 
             if (update.Themes is not null)
             {
-                module.World.Themes = update.Themes.Where(static t => !string.IsNullOrWhiteSpace(t))
+                module.World.Themes = update.Themes
+                    .Where(static t => !string.IsNullOrWhiteSpace(t))
                     .Select(static t => t.Trim())
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
@@ -163,14 +182,37 @@ public class GameSetupPhasePlugin
 
             if (update.AdventureHooks is not null)
             {
-                module.World.AdventureHooks = update.AdventureHooks.Where(static h => !string.IsNullOrWhiteSpace(h))
+                module.World.AdventureHooks = update.AdventureHooks
+                    .Where(static h => !string.IsNullOrWhiteSpace(h))
                     .Select(static h => h.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+
+            if (update.SafetyConsiderations is not null)
+            {
+                module.World.SafetyConsiderations = update.SafetyConsiderations
+                    .Where(static s => !string.IsNullOrWhiteSpace(s))
+                    .Select(static s => s.Trim())
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
             }
 
             await SaveModuleAsync(module, session);
 
+            if (!string.IsNullOrWhiteSpace(module.World.Setting))
+            {
+                session.Region = module.World.Setting;
+            }
+
+            if (!string.IsNullOrWhiteSpace(module.World.StartingContext))
+            {
+                session.Metadata.CurrentContext = module.World.StartingContext;
+            }
+
+            await SaveSessionAsync(session);
+
+            _logger.LogDebug("{Operation} updated module {ModuleId}", operation, module.Metadata.ModuleId);
 
             return JsonSerializer.Serialize(new
             {
@@ -182,6 +224,76 @@ public class GameSetupPhasePlugin
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    #endregion
+
+    #region Character Classes
+
+    [KernelFunction("upsert_character_class")]
+    [Description("Create or update a character class definition in the module.")]
+    public async Task<string> UpsertCharacterClass([Description("Full class definition")] CharacterClassDefinition definition)
+    {
+        const string operation = nameof(UpsertCharacterClass);
+        _logger.LogDebug("{Operation} invoked for class {ClassId}", operation, definition?.Id);
+
+        try
+        {
+            if (definition is null || string.IsNullOrWhiteSpace(definition.Id))
+            {
+                _logger.LogWarning("{Operation} missing class id", operation);
+                return JsonSerializer.Serialize(new { success = false, error = "Class id is required" }, _jsonOptions);
+            }
+
+            var module = await LoadModuleAsync();
+            var classId = definition.Id.Trim();
+            var isNew = !module.CharacterClasses.ContainsKey(classId);
+
+            module.CharacterClasses[classId] = new AdventureModuleCharacterClass
+            {
+                Name = string.IsNullOrWhiteSpace(definition.Name) ? classId : definition.Name!.Trim(),
+                Description = definition.Description?.Trim() ?? string.Empty,
+                StatModifiers = definition.StatModifiers?.ToDictionary(
+                    static pair => pair.Key,
+                    static pair => pair.Value,
+                    StringComparer.OrdinalIgnoreCase) ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase),
+                StartingAbilities = NormalizeStringList(definition.StartingAbilities),
+                LevelUpAbilities = NormalizeLevelTable(definition.LevelUpAbilities),
+                StartingPerks = NormalizeStringList(definition.StartingPerks),
+                LevelUpPerks = NormalizeLevelTable(definition.LevelUpPerks),
+                Tags = NormalizeStringList(definition.Tags)
+            };
+
+            var persistedClass = module.CharacterClasses[classId];
+            var validationErrors = ValidateCharacterClassStructure(persistedClass);
+
+            await SaveModuleAsync(module);
+
+            _logger.LogDebug("{Operation} {Result} class {ClassId}", operation, isNew ? "created" : "updated", classId);
+            if (validationErrors.Count > 0)
+            {
+                _logger.LogWarning(
+                    "{Operation} detected structural issues for class {ClassId}: {Issues}",
+                    operation,
+                    classId,
+                    string.Join("; ", validationErrors));
+            }
+
+            return JsonSerializer.Serialize(new
+            {
+                success = validationErrors.Count == 0,
+                classId,
+                moduleClassCount = module.CharacterClasses.Count,
+                createdNew = isNew,
+                validationErrors = validationErrors.Count > 0 ? validationErrors : null
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
@@ -190,30 +302,41 @@ public class GameSetupPhasePlugin
     [Description("Remove a character class from the module.")]
     public async Task<string> RemoveCharacterClass([Description("Class id to remove")] string classId)
     {
+        const string operation = nameof(RemoveCharacterClass);
+        _logger.LogDebug("{Operation} invoked for class {ClassId}", operation, classId);
+
         try
         {
             if (string.IsNullOrWhiteSpace(classId))
             {
+                _logger.LogWarning("{Operation} missing class id", operation);
                 return JsonSerializer.Serialize(new { success = false, error = "Class id cannot be empty" }, _jsonOptions);
             }
 
             var module = await LoadModuleAsync();
-            var removed = module.CharacterClasses.Remove(classId.Trim());
+            var trimmedId = classId.Trim();
+            var removed = module.CharacterClasses.Remove(trimmedId);
 
             if (removed)
             {
                 await SaveModuleAsync(module);
+                _logger.LogDebug("{Operation} removed class {ClassId}", operation, trimmedId);
+            }
+            else
+            {
+                _logger.LogDebug("{Operation} found no class {ClassId} to remove", operation, trimmedId);
             }
 
             return JsonSerializer.Serialize(new
             {
                 success = removed,
-                classId,
+                classId = trimmedId,
                 moduleClassCount = module.CharacterClasses.Count
             }, _jsonOptions);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
@@ -222,6 +345,9 @@ public class GameSetupPhasePlugin
     [Description("List all character classes currently defined in the module.")]
     public async Task<string> ListCharacterClasses()
     {
+        const string operation = nameof(ListCharacterClasses);
+        _logger.LogDebug("{Operation} invoked", operation);
+
         try
         {
             var module = await LoadModuleAsync();
@@ -232,13 +358,18 @@ public class GameSetupPhasePlugin
                 pair.Value.Description,
                 statModifiers = pair.Value.StatModifiers,
                 startingAbilities = pair.Value.StartingAbilities,
+                startingPerks = pair.Value.StartingPerks,
+                levelUpAbilities = pair.Value.LevelUpAbilities,
+                levelUpPerks = pair.Value.LevelUpPerks,
                 tags = pair.Value.Tags
             });
 
+            _logger.LogDebug("{Operation} returning {Count} classes", operation, module.CharacterClasses.Count);
             return JsonSerializer.Serialize(new { success = true, classes }, _jsonOptions);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
@@ -247,37 +378,48 @@ public class GameSetupPhasePlugin
     [Description("Assign the player's chosen class based on a module class id and update their trainer data.")]
     public async Task<string> SetPlayerClassChoice([Description("Class id to assign")] string classId)
     {
+        const string operation = nameof(SetPlayerClassChoice);
+        _logger.LogDebug("{Operation} invoked for class {ClassId}", operation, classId);
+
         try
         {
             if (string.IsNullOrWhiteSpace(classId))
             {
+                _logger.LogWarning("{Operation} missing class id", operation);
                 return JsonSerializer.Serialize(new { success = false, error = "Class id cannot be empty" }, _jsonOptions);
             }
 
             var module = await LoadModuleAsync();
-            if (!module.CharacterClasses.TryGetValue(classId.Trim(), out var classData))
+            var trimmedId = classId.Trim();
+            if (!module.CharacterClasses.TryGetValue(trimmedId, out var classData))
             {
+                _logger.LogWarning("{Operation} could not find class {ClassId}", operation, trimmedId);
                 return JsonSerializer.Serialize(new { success = false, error = $"Class '{classId}' not found in module." }, _jsonOptions);
             }
 
             var session = await _gameStateRepo.LoadLatestStateAsync();
-            session.Player.CharacterDetails.Class = classId.Trim();
-            session.Player.TrainerClassData = ConvertModuleClass(classId.Trim(), classData);
+            session.Player.CharacterDetails.Class = trimmedId;
+            session.Player.TrainerClassData = ConvertModuleClass(trimmedId, classData);
             session.Player.Abilities = classData.StartingAbilities?.ToList() ?? new List<string>();
+            session.Player.Perks = classData.StartingPerks?.ToList() ?? new List<string>();
 
-            await _characterManagementService.SetPlayerClass(classId.Trim());
-            await _gameStateRepo.SaveStateAsync(session);
+            await _characterManagementService.SetPlayerClass(trimmedId);
+            await SaveSessionAsync(session);
+
+            _logger.LogDebug("{Operation} assigned class {ClassId} to player", operation, trimmedId);
 
             return JsonSerializer.Serialize(new
             {
                 success = true,
-                classId = classId.Trim(),
+                classId = trimmedId,
                 className = classData.Name,
-                startingAbilities = session.Player.Abilities
+                startingAbilities = session.Player.Abilities,
+                startingPerks = session.Player.Perks
             }, _jsonOptions);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
@@ -286,18 +428,25 @@ public class GameSetupPhasePlugin
 
     #region Player Customization
 
+
     [KernelFunction("set_player_name")]
     [Description("Set the player's trainer name.")]
     public async Task<string> SetPlayerName([Description("Trainer name")] string name)
     {
+        const string operation = nameof(SetPlayerName);
+        _logger.LogDebug("{Operation} invoked with name '{Name}'", operation, name);
+
         try
         {
             await _characterManagementService.SetPlayerName(name);
             var session = await _gameStateRepo.LoadLatestStateAsync();
+            await SaveSessionAsync(session);
+            _logger.LogDebug("{Operation} succeeded", operation);
             return JsonSerializer.Serialize(new { success = true, playerName = session.Player.Name }, _jsonOptions);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = $"Error setting player name: {ex.Message}" }, _jsonOptions);
         }
     }
@@ -306,10 +455,14 @@ public class GameSetupPhasePlugin
     [Description("Set the player's ability scores using the order Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma.")]
     public async Task<string> SetPlayerStats([Description("Array of 6 ability scores")] int[] stats)
     {
+        const string operation = nameof(SetPlayerStats);
+        _logger.LogDebug("{Operation} invoked", operation);
+
         try
         {
             if (stats is null || stats.Length != 6)
             {
+                _logger.LogWarning("{Operation} received invalid stat array length", operation);
                 return JsonSerializer.Serialize(new { success = false, error = "Must provide exactly 6 ability scores" }, _jsonOptions);
             }
 
@@ -317,6 +470,7 @@ public class GameSetupPhasePlugin
             {
                 if (stat < 3 || stat > 20)
                 {
+                    _logger.LogWarning("{Operation} received out of range stat value {Stat}", operation, stat);
                     return JsonSerializer.Serialize(new { success = false, error = $"Ability scores must be between 3 and 20. Invalid value: {stat}" }, _jsonOptions);
                 }
             }
@@ -326,18 +480,23 @@ public class GameSetupPhasePlugin
             var statNames = new[] { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
             var statDict = statNames.Zip(stats, (name, value) => new { name, value }).ToDictionary(x => x.name, x => x.value);
 
+            _logger.LogDebug("{Operation} succeeded", operation);
             return JsonSerializer.Serialize(new { success = true, stats = statDict }, _jsonOptions);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = $"Error setting player stats: {ex.Message}" }, _jsonOptions);
         }
     }
 
     [KernelFunction("generate_random_stats")]
-    [Description("Generate random ability scores using the 4d6 drop lowest method.")]
+    [Description("Provide random ability scores using the 4d6 drop lowest method.")]
     public async Task<string> GenerateRandomStats()
     {
+        const string operation = nameof(GenerateRandomStats);
+        _logger.LogDebug("{Operation} invoked", operation);
+
         try
         {
             var stats = await _characterManagementService.GenerateRandomStats();
@@ -351,10 +510,12 @@ public class GameSetupPhasePlugin
                 description = "Generated using 4d6 drop lowest method"
             };
 
+            _logger.LogDebug("{Operation} succeeded", operation);
             return JsonSerializer.Serialize(result, _jsonOptions);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
@@ -363,6 +524,9 @@ public class GameSetupPhasePlugin
     [Description("Provide the standard ability score array (15, 14, 13, 12, 10, 8).")]
     public async Task<string> GenerateStandardStats()
     {
+        const string operation = nameof(GenerateStandardStats);
+        _logger.LogDebug("{Operation} invoked", operation);
+
         try
         {
             var stats = await _characterManagementService.GenerateStandardStats();
@@ -374,22 +538,23 @@ public class GameSetupPhasePlugin
                 description = "Standard array: 15, 14, 13, 12, 10, 8"
             };
 
+            _logger.LogDebug("{Operation} succeeded", operation);
             return JsonSerializer.Serialize(result, _jsonOptions);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
-
-    #endregion
-
-    #region Setup Completion
 
     [KernelFunction("mark_setup_complete")]
     [Description("Mark setup as complete after confirming the player and module metadata are ready. This transitions to WorldGeneration.")]
     public async Task<string> MarkSetupComplete([Description("Summary of setup choices")] string setupSummary)
     {
+        const string operation = nameof(MarkSetupComplete);
+        _logger.LogDebug("{Operation} invoked", operation);
+
         try
         {
             var session = await _gameStateRepo.LoadLatestStateAsync();
@@ -408,10 +573,36 @@ public class GameSetupPhasePlugin
 
             if (missing.Count > 0)
             {
+                _logger.LogWarning("{Operation} cannot complete setup; missing {Missing}", operation, string.Join(", ", missing));
                 return JsonSerializer.Serialize(new { success = false, error = "Setup incomplete", missing }, _jsonOptions);
             }
 
+            var invalidClasses = module.CharacterClasses
+                .Select(pair => new { pair.Key, Issues = ValidateCharacterClassStructure(pair.Value) })
+                .Where(result => result.Issues.Count > 0)
+                .ToDictionary(result => result.Key, result => (IReadOnlyCollection<string>)result.Issues);
+
+            if (invalidClasses.Count > 0)
+            {
+                _logger.LogWarning(
+                    "{Operation} cannot complete setup; {Count} classes have structural issues",
+                    operation,
+                    invalidClasses.Count);
+
+                return JsonSerializer.Serialize(new
+                {
+                    success = false,
+                    error = "Class definitions must include starting abilities/perks and level 1-20 rewards before completing setup.",
+                    invalidClasses
+                }, _jsonOptions);
+            }
+
             await SaveModuleAsync(module, session);
+
+            if (!string.IsNullOrWhiteSpace(module.World.Setting))
+            {
+                session.Region = module.World.Setting;
+            }
 
             session.IsSetupComplete = true;
             session.Metadata.PhaseChangeSummary = string.IsNullOrWhiteSpace(setupSummary)
@@ -422,7 +613,9 @@ public class GameSetupPhasePlugin
                 ? module.Metadata.Summary
                 : setupSummary;
 
-            await _gameStateRepo.SaveStateAsync(session);
+            await SaveSessionAsync(session);
+
+            _logger.LogDebug("{Operation} succeeded", operation);
 
             return JsonSerializer.Serialize(new
             {
@@ -434,6 +627,7 @@ public class GameSetupPhasePlugin
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Operation} failed", operation);
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
@@ -442,6 +636,17 @@ public class GameSetupPhasePlugin
 
     #region Internal Helpers
 
+    private void ApplySessionDisplayName(AdventureSessionState session)
+    {
+        session.SessionName = _gameStateRepo.GenerateSessionDisplayName(session);
+    }
+
+    private Task SaveSessionAsync(AdventureSessionState session)
+    {
+        ApplySessionDisplayName(session);
+        return _gameStateRepo.SaveStateAsync(session);
+    }
+
     private async Task<AdventureModule> LoadModuleAsync()
     {
         var session = await _gameStateRepo.LoadLatestStateAsync();
@@ -449,7 +654,10 @@ public class GameSetupPhasePlugin
             ? session.Module.ModuleFileName
             : session.Module.ModuleId;
 
-        return await _moduleRepository.LoadByFileNameAsync(moduleFileName);
+        _logger.LogDebug("Loading module from file {ModuleFileName}", moduleFileName);
+        var module = await _moduleRepository.LoadByFileNameAsync(moduleFileName);
+        _logger.LogDebug("Loaded module {ModuleId}", module.Metadata.ModuleId);
+        return module;
     }
 
     private async Task SaveModuleAsync(AdventureModule module, AdventureSessionState? sessionOverride = null)
@@ -459,6 +667,8 @@ public class GameSetupPhasePlugin
             ? session.Module.ModuleFileName
             : module.Metadata.ModuleId;
         var modulePath = _moduleRepository.GetModuleFilePath(moduleFileName);
+
+        _logger.LogDebug("Persisting module {ModuleId} to {ModulePath}", module.Metadata.ModuleId, modulePath);
         await _moduleRepository.SaveAsync(module, modulePath);
 
         var resolvedFileName = Path.GetFileName(modulePath);
@@ -470,6 +680,106 @@ public class GameSetupPhasePlugin
                 await _gameStateRepo.SaveStateAsync(session);
             }
         }
+
+        _logger.LogDebug("Module {ModuleId} persisted", module.Metadata.ModuleId);
+    }
+
+    private static List<string> NormalizeStringList(IEnumerable<string>? source)
+    {
+        return source?
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .Select(static item => item.Trim())
+            .ToList()
+            ?? new List<string>();
+    }
+
+    private static Dictionary<int, List<string>> NormalizeLevelTable(Dictionary<int, List<string>>? source)
+    {
+        if (source is null || source.Count == 0)
+        {
+            return new Dictionary<int, List<string>>();
+        }
+
+        var result = new Dictionary<int, List<string>>();
+        foreach (var entry in source)
+        {
+            result[entry.Key] = NormalizeStringList(entry.Value);
+        }
+
+        return result;
+    }
+
+    private static List<string> ValidateCharacterClassStructure(AdventureModuleCharacterClass classData)
+    {
+        var issues = new List<string>();
+
+        if (classData.StartingAbilities is null || classData.StartingAbilities.Count == 0)
+        {
+            issues.Add("At least one starting ability is required.");
+        }
+
+        if (classData.StartingPerks is null || classData.StartingPerks.Count == 0)
+        {
+            issues.Add("At least one starting perk is required.");
+        }
+
+        var invalidLevels = GetInvalidClassLevels(classData);
+        if (invalidLevels.Count > 0)
+        {
+            issues.Add($"Level-up entries must fall between levels {MinClassLevel}-{MaxClassLevel}; invalid levels: {string.Join(", ", invalidLevels)}.");
+        }
+
+        var missingLevels = Enumerable.Range(MinClassLevel, MaxClassLevel - MinClassLevel + 1)
+            .Where(level => !HasRewardAtLevel(classData, level))
+            .ToList();
+
+        if (missingLevels.Count > 0)
+        {
+            issues.Add($"Level-up table must define abilities or perks for levels {MinClassLevel}-{MaxClassLevel}; missing levels: {string.Join(", ", missingLevels)}.");
+        }
+
+        return issues;
+    }
+
+    private static List<int> GetInvalidClassLevels(AdventureModuleCharacterClass classData)
+    {
+        var invalid = new HashSet<int>();
+
+        static void CaptureInvalid(Dictionary<int, List<string>>? table, HashSet<int> accumulator)
+        {
+            if (table is null)
+            {
+                return;
+            }
+
+            foreach (var level in table.Keys)
+            {
+                if (level < MinClassLevel || level > MaxClassLevel)
+                {
+                    accumulator.Add(level);
+                }
+            }
+        }
+
+        CaptureInvalid(classData.LevelUpAbilities, invalid);
+        CaptureInvalid(classData.LevelUpPerks, invalid);
+
+        return invalid.OrderBy(level => level).ToList();
+    }
+
+    private static bool HasRewardAtLevel(AdventureModuleCharacterClass classData, int level)
+    {
+        return TableHasEntries(classData.LevelUpAbilities, level) || TableHasEntries(classData.LevelUpPerks, level);
+    }
+
+    private static bool TableHasEntries(Dictionary<int, List<string>>? table, int level)
+    {
+        if (table is null)
+        {
+            return false;
+        }
+
+        return table.TryGetValue(level, out var entries) && entries.Any();
     }
 
     private static TrainerClass ConvertModuleClass(string classId, AdventureModuleCharacterClass classData)
@@ -483,9 +793,11 @@ public class GameSetupPhasePlugin
                 ? new Dictionary<string, int>(classData.StatModifiers, StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase),
             StartingAbilities = classData.StartingAbilities?.ToList() ?? new List<string>(),
+            StartingPerks = classData.StartingPerks?.ToList() ?? new List<string>(),
             StartingItems = new List<string>(),
             Tags = classData.Tags?.ToList() ?? new List<string>(),
-            LevelUpTable = ConvertLevelUpTable(classData.LevelUpAbilities)
+            LevelUpTable = ConvertLevelUpTable(classData.LevelUpAbilities),
+            LevelUpPerks = ConvertLevelUpTable(classData.LevelUpPerks)
         };
     }
 
@@ -560,8 +872,15 @@ public class GameSetupPhasePlugin
         [JsonPropertyName("startingAbilities")]
         public List<string>? StartingAbilities { get; set; }
 
+        [JsonPropertyName("startingPerks")]
+        public List<string>? StartingPerks { get; set; }
+
         [JsonPropertyName("levelUpAbilities")]
         public Dictionary<int, List<string>>? LevelUpAbilities { get; set; }
+
+        [JsonPropertyName("levelUpPerks")]
+        public Dictionary<int, List<string>>? LevelUpPerks { get; set; }
+
 
         [JsonPropertyName("tags")]
         public List<string>? Tags { get; set; }

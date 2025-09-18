@@ -48,6 +48,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.61.0" />

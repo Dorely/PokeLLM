@@ -617,6 +617,12 @@ public class AdventureModuleCharacterClass
     [JsonPropertyName("levelUpAbilities")]
     public Dictionary<int, List<string>> LevelUpAbilities { get; set; } = new();
 
+    [JsonPropertyName("startingPerks")]
+    public List<string> StartingPerks { get; set; } = new();
+
+    [JsonPropertyName("levelUpPerks")]
+    public Dictionary<int, List<string>> LevelUpPerks { get; set; } = new();
+
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = new();
 }

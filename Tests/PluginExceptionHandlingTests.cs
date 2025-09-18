@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using PokeLLM.Game.GameLogic;
+using Microsoft.Extensions.Logging.Abstractions;
 using PokeLLM.Game.Plugins;
 using PokeLLM.GameState;
 using PokeLLM.GameState.Models;
@@ -16,6 +17,7 @@ public class PluginExceptionHandlingTests
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly Mock<IGameStateRepository> _mockGameStateRepo;
+
     private readonly Mock<IInformationManagementService> _mockInfoService;
     private readonly Mock<IWorldManagementService> _mockWorldService;
     private readonly Mock<IAdventureModuleRepository> _mockModuleRepository;
@@ -31,9 +33,15 @@ public class PluginExceptionHandlingTests
 
         // Create mocks
         _mockGameStateRepo = new Mock<IGameStateRepository>();
+        _mockGameStateRepo.Setup(x => x.GenerateSessionDisplayName(It.IsAny<AdventureSessionState>()))
+            .Returns<AdventureSessionState>(state => "Session");
         _mockInfoService = new Mock<IInformationManagementService>();
         _mockWorldService = new Mock<IWorldManagementService>();
         _mockModuleRepository = new Mock<IAdventureModuleRepository>();
+        _mockModuleRepository
+            .Setup(x => x.ApplyModuleBaseline(It.IsAny<AdventureModule>(), It.IsAny<AdventureSessionState>(), It.IsAny<bool>()))
+            .Returns((AdventureModule module, AdventureSessionState session, bool _) => session);
+
         _mockNpcService = new Mock<INpcManagementService>();
         _mockPokemonService = new Mock<IPokemonManagementService>();
         _mockPlayerPokemonService = new Mock<IPlayerPokemonManagementService>();
@@ -53,7 +61,6 @@ public class PluginExceptionHandlingTests
 
         _serviceProvider = services.BuildServiceProvider();
     }
-
     #region UnifiedContextPlugin Tests
 
     [Fact]
@@ -135,7 +142,8 @@ public class PluginExceptionHandlingTests
         var plugin = new GameSetupPhasePlugin(
             _mockGameStateRepo.Object,
             _mockModuleRepository.Object,
-            _mockCharacterService.Object);
+            _mockCharacterService.Object,
+            NullLogger<GameSetupPhasePlugin>.Instance);
 
         var result = await plugin.UpdateModuleOverview(new GameSetupPhasePlugin.ModuleOverviewUpdate
         {
@@ -158,7 +166,8 @@ public class PluginExceptionHandlingTests
         var plugin = new GameSetupPhasePlugin(
             _mockGameStateRepo.Object,
             _mockModuleRepository.Object,
-            _mockCharacterService.Object);
+            _mockCharacterService.Object,
+            NullLogger<GameSetupPhasePlugin>.Instance);
 
         // Act
         var result = await plugin.SetPlayerName("TestName");

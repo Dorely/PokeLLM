@@ -132,12 +132,12 @@ public class AdventureModuleRepository : IAdventureModuleRepository
         PopulateBaselineFromModule(module, session.Baseline);
 
         session.Metadata.IsSetupComplete = module.Metadata.IsSetupComplete;
-        if (!string.IsNullOrWhiteSpace(module.World.StartingContext))
+        if (!string.IsNullOrWhiteSpace(module.World.StartingContext) && string.IsNullOrWhiteSpace(session.Metadata.CurrentContext))
         {
             session.Metadata.CurrentContext = module.World.StartingContext;
         }
 
-        if (!string.IsNullOrWhiteSpace(module.Metadata.Summary))
+        if (!string.IsNullOrWhiteSpace(module.Metadata.Summary) && string.IsNullOrWhiteSpace(session.AdventureSummary))
         {
             session.AdventureSummary = module.Metadata.Summary;
         }
@@ -331,10 +331,13 @@ public class AdventureModuleRepository : IAdventureModuleRepository
                 ? new Dictionary<string, int>(classData.StatModifiers, StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase),
             StartingAbilities = classData.StartingAbilities?.ToList() ?? new List<string>(),
+            StartingPerks = classData.StartingPerks?.ToList() ?? new List<string>(),
             StartingItems = new List<string>(),
             Tags = classData.Tags?.ToList() ?? new List<string>(),
-            LevelUpTable = ConvertLevelUpTable(classData.LevelUpAbilities)
+            LevelUpTable = ConvertLevelUpTable(classData.LevelUpAbilities),
+            LevelUpPerks = ConvertLevelUpTable(classData.LevelUpPerks)
         };
+
 
         var abilityNames = classData.StartingAbilities?
             .Select(id => moduleAbilities.TryGetValue(id, out var ability) ? ability.Name : id)
@@ -342,6 +345,7 @@ public class AdventureModuleRepository : IAdventureModuleRepository
             .ToList() ?? new List<string>();
 
         player.Abilities = abilityNames;
+        player.Perks = classData.StartingPerks?.ToList() ?? new List<string>();
         player.CharacterDetails.Class = classId;
         player.CharacterDetails.Inventory = new List<ItemInstance>();
 

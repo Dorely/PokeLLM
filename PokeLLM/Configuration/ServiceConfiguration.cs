@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using PokeLLM.Game.GameLogic;
@@ -19,6 +20,7 @@ public static class ServiceConfiguration
     public static IServiceCollection ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton(configuration);
+        services.AddLogging();
 
         var providerSelection = configuration.GetSection("Provider");
         var selectedLlmProvider = providerSelection["LLM"] ?? DefaultProvider;

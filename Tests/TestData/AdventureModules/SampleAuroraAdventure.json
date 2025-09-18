@@ -4427,75 +4427,726 @@
     }
   },
   "characterClasses": {
-    "class_solar_scout": {
-      "name": "Solar Scout",
-      "description": "Light-guiding navigators who chart safe routes and rally evac teams across the archipelago.",
-      "statModifiers": {
-        "Dexterity": 1,
-        "Wisdom": 1,
-        "Charisma": 1
+      "class_solar_scout": {
+          "name": "Solar Scout",
+          "description": "Light-guiding navigators who chart safe routes and rally evac teams across the archipelago.",
+          "statModifiers": {
+              "Dexterity": 1,
+              "Wisdom": 1,
+              "Charisma": 1
+          },
+          "startingAbilities": [
+              "ability_signal_beacon",
+              "ability_rescue_coordination"
+          ],
+          "startingPerks": [
+              "perk_scout_lightstep",
+              "perk_scout_command_channel"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_solar_scout_rank_01"
+              ],
+              "2": [
+                  "perk_class_solar_scout_rank_02"
+              ],
+              "3": [
+                  "perk_class_solar_scout_rank_03"
+              ],
+              "4": [
+                  "perk_class_solar_scout_rank_04"
+              ],
+              "5": [
+                  "perk_class_solar_scout_rank_05"
+              ],
+              "6": [
+                  "perk_class_solar_scout_rank_06"
+              ],
+              "7": [
+                  "perk_class_solar_scout_rank_07"
+              ],
+              "8": [
+                  "perk_class_solar_scout_rank_08"
+              ],
+              "9": [
+                  "perk_class_solar_scout_rank_09"
+              ],
+              "10": [
+                  "perk_class_solar_scout_rank_10"
+              ],
+              "11": [
+                  "perk_class_solar_scout_rank_11"
+              ],
+              "12": [
+                  "perk_class_solar_scout_rank_12"
+              ],
+              "13": [
+                  "perk_class_solar_scout_rank_13"
+              ],
+              "14": [
+                  "perk_class_solar_scout_rank_14"
+              ],
+              "15": [
+                  "perk_class_solar_scout_rank_15"
+              ],
+              "16": [
+                  "perk_class_solar_scout_rank_16"
+              ],
+              "17": [
+                  "perk_class_solar_scout_rank_17"
+              ],
+              "18": [
+                  "perk_class_solar_scout_rank_18"
+              ],
+              "19": [
+                  "perk_class_solar_scout_rank_19"
+              ],
+              "20": [
+                  "perk_class_solar_scout_rank_20"
+              ]
+          },
+          "tags": [
+              "support",
+              "exploration"
+          ]
       },
-      "startingAbilities": [
-        "ability_signal_beacon"
-      ],
-      "levelUpAbilities": {
-        "4": [
-          "ability_rescue_coordination"
-        ],
-        "6": [
-          "ability_solar_insight"
-        ]
+      "class_tide_channeler": {
+          "name": "Tide Channeler",
+          "description": "Mystics who weave restorative tides and shield crews from the Shadow Cartel's sabotage.",
+          "statModifiers": {
+              "Constitution": 1,
+              "Wisdom": 2
+          },
+          "startingAbilities": [
+              "ability_tidal_guardian",
+              "ability_currents_embrace"
+          ],
+          "startingPerks": [
+              "perk_channeler_tidal_focus",
+              "perk_channeler_ebbshield"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_tide_channeler_rank_01"
+              ],
+              "2": [
+                  "perk_class_tide_channeler_rank_02"
+              ],
+              "3": [
+                  "perk_class_tide_channeler_rank_03"
+              ],
+              "4": [
+                  "perk_class_tide_channeler_rank_04"
+              ],
+              "5": [
+                  "perk_class_tide_channeler_rank_05"
+              ],
+              "6": [
+                  "perk_class_tide_channeler_rank_06"
+              ],
+              "7": [
+                  "perk_class_tide_channeler_rank_07"
+              ],
+              "8": [
+                  "perk_class_tide_channeler_rank_08"
+              ],
+              "9": [
+                  "perk_class_tide_channeler_rank_09"
+              ],
+              "10": [
+                  "perk_class_tide_channeler_rank_10"
+              ],
+              "11": [
+                  "perk_class_tide_channeler_rank_11"
+              ],
+              "12": [
+                  "perk_class_tide_channeler_rank_12"
+              ],
+              "13": [
+                  "perk_class_tide_channeler_rank_13"
+              ],
+              "14": [
+                  "perk_class_tide_channeler_rank_14"
+              ],
+              "15": [
+                  "perk_class_tide_channeler_rank_15"
+              ],
+              "16": [
+                  "perk_class_tide_channeler_rank_16"
+              ],
+              "17": [
+                  "perk_class_tide_channeler_rank_17"
+              ],
+              "18": [
+                  "perk_class_tide_channeler_rank_18"
+              ],
+              "19": [
+                  "perk_class_tide_channeler_rank_19"
+              ],
+              "20": [
+                  "perk_class_tide_channeler_rank_20"
+              ]
+          },
+          "tags": [
+              "support",
+              "defender"
+          ]
       },
-      "tags": [
-        "support",
-        "exploration"
-      ]
-    },
-    "class_tide_channeler": {
-      "name": "Tide Channeler",
-      "description": "Mystics who weave restorative tides and shield crews from the Shadow Cartel\u2019s sabotage.",
-      "statModifiers": {
-        "Constitution": 1,
-        "Wisdom": 2
+      "class_storm_rider": {
+          "name": "Storm Rider",
+          "description": "Aerial tacticians who master wind lanes and strike with precision during volatile weather.",
+          "statModifiers": {
+              "Dexterity": 2,
+              "Strength": 1
+          },
+          "startingAbilities": [
+              "ability_wind_reader",
+              "ability_tempest_drive"
+          ],
+          "startingPerks": [
+              "perk_rider_gale_dancer",
+              "perk_rider_sky_anchor"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_storm_rider_rank_01"
+              ],
+              "2": [
+                  "perk_class_storm_rider_rank_02"
+              ],
+              "3": [
+                  "perk_class_storm_rider_rank_03"
+              ],
+              "4": [
+                  "perk_class_storm_rider_rank_04"
+              ],
+              "5": [
+                  "perk_class_storm_rider_rank_05"
+              ],
+              "6": [
+                  "perk_class_storm_rider_rank_06"
+              ],
+              "7": [
+                  "perk_class_storm_rider_rank_07"
+              ],
+              "8": [
+                  "perk_class_storm_rider_rank_08"
+              ],
+              "9": [
+                  "perk_class_storm_rider_rank_09"
+              ],
+              "10": [
+                  "perk_class_storm_rider_rank_10"
+              ],
+              "11": [
+                  "perk_class_storm_rider_rank_11"
+              ],
+              "12": [
+                  "perk_class_storm_rider_rank_12"
+              ],
+              "13": [
+                  "perk_class_storm_rider_rank_13"
+              ],
+              "14": [
+                  "perk_class_storm_rider_rank_14"
+              ],
+              "15": [
+                  "perk_class_storm_rider_rank_15"
+              ],
+              "16": [
+                  "perk_class_storm_rider_rank_16"
+              ],
+              "17": [
+                  "perk_class_storm_rider_rank_17"
+              ],
+              "18": [
+                  "perk_class_storm_rider_rank_18"
+              ],
+              "19": [
+                  "perk_class_storm_rider_rank_19"
+              ],
+              "20": [
+                  "perk_class_storm_rider_rank_20"
+              ]
+          },
+          "tags": [
+              "offense",
+              "mobility"
+          ]
       },
-      "startingAbilities": [
-        "ability_tidal_guardian"
-      ],
-      "levelUpAbilities": {
-        "4": [
-          "ability_currents_embrace"
-        ],
-        "7": [
-          "ability_oceanic_resolve"
-        ]
+      "class_ember_guardian": {
+          "name": "Ember Guardian",
+          "description": "Shield-bearing frontliners who stabilize geothermal forges and hold the line against cartel incursions.",
+          "statModifiers": {
+              "Strength": 2,
+              "Constitution": 1
+          },
+          "startingAbilities": [
+              "ability_flame_body",
+              "ability_sturdy"
+          ],
+          "startingPerks": [
+              "perk_guardian_forgeplate",
+              "perk_guardian_heat_reserve"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_ember_guardian_rank_01"
+              ],
+              "2": [
+                  "perk_class_ember_guardian_rank_02"
+              ],
+              "3": [
+                  "perk_class_ember_guardian_rank_03"
+              ],
+              "4": [
+                  "perk_class_ember_guardian_rank_04"
+              ],
+              "5": [
+                  "perk_class_ember_guardian_rank_05"
+              ],
+              "6": [
+                  "perk_class_ember_guardian_rank_06"
+              ],
+              "7": [
+                  "perk_class_ember_guardian_rank_07"
+              ],
+              "8": [
+                  "perk_class_ember_guardian_rank_08"
+              ],
+              "9": [
+                  "perk_class_ember_guardian_rank_09"
+              ],
+              "10": [
+                  "perk_class_ember_guardian_rank_10"
+              ],
+              "11": [
+                  "perk_class_ember_guardian_rank_11"
+              ],
+              "12": [
+                  "perk_class_ember_guardian_rank_12"
+              ],
+              "13": [
+                  "perk_class_ember_guardian_rank_13"
+              ],
+              "14": [
+                  "perk_class_ember_guardian_rank_14"
+              ],
+              "15": [
+                  "perk_class_ember_guardian_rank_15"
+              ],
+              "16": [
+                  "perk_class_ember_guardian_rank_16"
+              ],
+              "17": [
+                  "perk_class_ember_guardian_rank_17"
+              ],
+              "18": [
+                  "perk_class_ember_guardian_rank_18"
+              ],
+              "19": [
+                  "perk_class_ember_guardian_rank_19"
+              ],
+              "20": [
+                  "perk_class_ember_guardian_rank_20"
+              ]
+          },
+          "tags": [
+              "defender",
+              "industrial"
+          ]
       },
-      "tags": [
-        "support",
-        "defender"
-      ]
-    },
-    "class_storm_rider": {
-      "name": "Storm Rider",
-      "description": "Aerial tacticians who master wind lanes and strike with precision during volatile weather.",
-      "statModifiers": {
-        "Dexterity": 2,
-        "Strength": 1
-      },
-      "startingAbilities": [
-        "ability_wind_reader"
-      ],
-      "levelUpAbilities": {
-        "5": [
-          "ability_tempest_drive"
-        ],
-        "8": [
-          "ability_eye_of_the_storm"
-        ]
-      },
-      "tags": [
-        "offense",
-        "mobility"
-      ]
-    }
+      "class_horizon_vanguard": {
+          "name": "Horizon Vanguard",
+          "description": "Radiant trailblazers who balance solar arrays and inspire allies with luminous tactics.",
+          "statModifiers": {
+              "Charisma": 2,
+              "Wisdom": 1
+          },
+          "startingAbilities": [
+              "ability_radiant_harmony",
+              "ability_resonance_pulse"
+          ],
+          "startingPerks": [
+              "perk_vanguard_solar_aegis",
+              "perk_vanguard_compass_of_light"
+          ],
+          "levelUpAbilities": {
+              "1": [
+                  "ability_signal_beacon"
+              ],
+              "2": [
+                  "ability_rescue_coordination"
+              ],
+              "3": [
+                  "ability_solar_insight"
+              ],
+              "4": [
+                  "ability_currents_embrace"
+              ],
+              "5": [
+                  "ability_oceanic_resolve"
+              ],
+              "6": [
+                  "ability_wind_reader"
+              ],
+              "7": [
+                  "ability_tempest_drive"
+              ],
+              "8": [
+                  "ability_eye_of_the_storm"
+              ],
+              "9": [
+                  "ability_flame_body"
+              ],
+              "10": [
+                  "ability_marvel_scale"
+              ],
+              "11": [
+                  "ability_harvest"
+              ],
+              "12": [
+                  "ability_sturdy"
+              ],
+              "13": [
+                  "ability_gale_wings"
+              ],
+              "14": [
+                  "ability_trace"
+              ],
+              "15": [
+                  "ability_sand_veil"
+              ],
+              "16": [
+                  "ability_magnet_pull"
+              ],
+              "17": [
+                  "ability_prism_cloak"
+              ],
+              "18": [
+                  "ability_resonance_pulse"
+              ],
+              "19": [
+                  "ability_radiant_harmony"
+              ],
+              "20": [
+                  "ability_tidal_guardian"
+              ]
+          },
+          "levelUpPerks": {
+              "1": [
+                  "perk_class_horizon_vanguard_rank_01"
+              ],
+              "2": [
+                  "perk_class_horizon_vanguard_rank_02"
+              ],
+              "3": [
+                  "perk_class_horizon_vanguard_rank_03"
+              ],
+              "4": [
+                  "perk_class_horizon_vanguard_rank_04"
+              ],
+              "5": [
+                  "perk_class_horizon_vanguard_rank_05"
+              ],
+              "6": [
+                  "perk_class_horizon_vanguard_rank_06"
+              ],
+              "7": [
+                  "perk_class_horizon_vanguard_rank_07"
+              ],
+              "8": [
+                  "perk_class_horizon_vanguard_rank_08"
+              ],
+              "9": [
+                  "perk_class_horizon_vanguard_rank_09"
+              ],
+              "10": [
+                  "perk_class_horizon_vanguard_rank_10"
+              ],
+              "11": [
+                  "perk_class_horizon_vanguard_rank_11"
+              ],
+              "12": [
+                  "perk_class_horizon_vanguard_rank_12"
+              ],
+              "13": [
+                  "perk_class_horizon_vanguard_rank_13"
+              ],
+              "14": [
+                  "perk_class_horizon_vanguard_rank_14"
+              ],
+              "15": [
+                  "perk_class_horizon_vanguard_rank_15"
+              ],
+              "16": [
+                  "perk_class_horizon_vanguard_rank_16"
+              ],
+              "17": [
+                  "perk_class_horizon_vanguard_rank_17"
+              ],
+              "18": [
+                  "perk_class_horizon_vanguard_rank_18"
+              ],
+              "19": [
+                  "perk_class_horizon_vanguard_rank_19"
+              ],
+              "20": [
+                  "perk_class_horizon_vanguard_rank_20"
+              ]
+          },
+          "tags": [
+              "support",
+              "leadership"
+          ]
+      }
   }
 }

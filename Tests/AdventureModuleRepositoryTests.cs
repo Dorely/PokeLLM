@@ -195,6 +195,46 @@ public class AdventureModuleRepositoryTests : IDisposable
         Assert.Empty(session.Player.CharacterDetails.Inventory);
     }
 
+    [Fact]
+    public void ApplyModuleBaseline_PreservesPlayerWhenRequested()
+    {
+        var repository = CreateRepository();
+        var module = repository.CreateNewModule("Test Module", "Summary");
+        module.Metadata.IsSetupComplete = true;
+        module.Metadata.Summary = "Adventure Summary";
+        module.World.Setting = "Test Region";
+        module.World.StartingContext = "Starting point";
+        module.CharacterClasses["class_ranger"] = new AdventureModuleCharacterClass
+        {
+            Name = "Ranger",
+            Description = "Wilderness expert"
+        };
+
+        var session = new AdventureSessionState
+        {
+            Module =
+            {
+                ModuleFileName = "module.json"
+            },
+            Metadata =
+            {
+                CurrentPhase = GamePhase.GameSetup
+            }
+        };
+
+        session.Player.Name = "Ash";
+        session.Player.CharacterDetails.Class = "CustomClass";
+
+        repository.ApplyModuleBaseline(module, session, preservePlayer: true);
+
+        Assert.Equal(module.Metadata.ModuleId, session.Module.ModuleId);
+        Assert.Equal("Ash", session.Player.Name);
+        Assert.Equal("CustomClass", session.Player.CharacterDetails.Class);
+        Assert.Equal("Test Region", session.Region);
+        Assert.Equal("Starting point", session.Metadata.CurrentContext);
+        Assert.Equal("Adventure Summary", session.AdventureSummary);
+    }
+
     public void Dispose()
     {
         try
