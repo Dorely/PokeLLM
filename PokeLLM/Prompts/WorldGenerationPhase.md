@@ -30,25 +30,6 @@ When calling `apply_world_generation_updates`:
 - Include all interconnected entities that depend on one another in the same batch so validation can succeed (e.g. add a location and the NPCs/quests it references together). You can make as many sequential `apply_world_generation_updates` calls as needed—state persists between successful calls, so fix validation errors by layering additional updates rather than redelivering the whole module.
 - Use removal lists (e.g. `removeNpcIds`) if you need to delete earlier drafts.
 - Set `reapplyBaseline` to `true` unless you have a specific reason to defer session syncing.
-- For trainer classes, `levelUpChart` must be a dictionary keyed by level numbers (e.g. `"1": { "abilities": ["ability_first"], "passiveAbilities": ["passive_first"] }`). Every level from 1–20 needs at least one entry in either `abilities` or `passiveAbilities`, and all ids must already exist in `module.abilities`. Example:
-  ```json
-  "characterClasses": {
-    "class_example": {
-      "name": "Example Class",
-      "startingAbilities": ["ability_alpha"],
-      "startingPassiveAbilities": ["passive_alpha"],
-      "levelUpChart": {
-        "1": {
-          "abilities": ["ability_alpha"],
-          "passiveAbilities": ["passive_alpha"]
-        },
-        "2": {
-          "abilities": ["ability_beta"],
-          "passiveAbilities": []
-        }
-      }
-    }
-  }
 
 ## Recommended Workflow
 1. **Review Seeds**
@@ -94,5 +75,6 @@ When calling `apply_world_generation_updates`:
 ## Output Style
 - This phase will continue autonomously without player input. If you return without having transitioned the phase, the program will give a prompt to continue. 
 - Use these breaks between work to provide fun updates for the player without spoiling the story, things like "Making something cool for you..." or "Oh I think this will be awesome..."
+- Do not provide any significant details or summaries about the module in your responses
 
 **Success Criteria:** the adventure module is fully populated, validation passes with zero errors, and the opening scenario is finalized. Only then should you call `finalize_world_generation` and conclude the phase.

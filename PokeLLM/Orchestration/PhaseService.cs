@@ -124,11 +124,9 @@ public class PhaseService : IPhaseService
         // Add new user message
         freshHistory.AddUserMessage(inputMessage);
         
-        // Update the stored history
-        _chatHistory = freshHistory;
 
         // Pre-validate and clean the history if needed
-        var historyToUse = await ValidateAndCleanHistory(_chatHistory, cancellationToken);
+        //var historyToUse = await ValidateAndCleanHistory(_chatHistory, cancellationToken);
 
         var chatService = _kernel.GetRequiredService<IChatCompletionService>();
         var executionSettings = _llmProvider.GetExecutionSettings(
@@ -137,7 +135,7 @@ public class PhaseService : IPhaseService
             enableFunctionCalling: true);
 
         // Stream the response
-        await foreach (var chunk in chatService.GetStreamingChatMessageContentsAsync(historyToUse, executionSettings, _kernel, cancellationToken))
+        await foreach (var chunk in chatService.GetStreamingChatMessageContentsAsync(freshHistory, executionSettings, _kernel, cancellationToken))
         {
             var content = chunk.Content ?? string.Empty;
             responseBuilder.Append(content);
@@ -146,6 +144,8 @@ public class PhaseService : IPhaseService
 
         // Add assistant response to history
         var fullResponse = responseBuilder.ToString();
+        // Update the stored history
+        _chatHistory = freshHistory;
         _chatHistory.AddAssistantMessage(fullResponse);
 
         Debug.WriteLine($"[{_phase}PhaseService] Processed input. Response length: {fullResponse.Length}");
