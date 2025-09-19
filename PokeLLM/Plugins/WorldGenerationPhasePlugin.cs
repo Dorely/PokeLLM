@@ -137,21 +137,18 @@ public class WorldGenerationPhasePlugin
             }
 
             var (session, module) = await LoadSessionAndModuleAsync();
-            var originalModuleJson = JsonSerializer.Serialize(module, _jsonOptions);
 
             _moduleRepository.ApplyChanges(module, m => ApplyModuleUpdates(m, updates));
 
             var validation = _validator.Validate(module);
             if (!validation.IsValid)
             {
-                // Reload module from original snapshot to discard invalid mutations
-                module = JsonSerializer.Deserialize<AdventureModule>(originalModuleJson, _jsonOptions)
-                          ?? throw new InvalidOperationException("Failed to revert module after validation failure.");
+                await SaveModuleAsync(module, session);
 
                 var invalidResponse = JsonSerializer.Serialize(new
                 {
                     success = false,
-                    error = "Module updates failed validation.",
+                    error = "Module updates were saved, but validation failed. Review the errors and submit follow-up updates.",
                     validation = new
                     {
                         validation.IsValid,

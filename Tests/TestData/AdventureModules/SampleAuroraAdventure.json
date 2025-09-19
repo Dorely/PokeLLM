@@ -3400,6 +3400,138 @@
       "notes": "Operates beneath the festival stalls during cartel raids.",
       "fullDescription": "A Shadow Cartel Lurantis wielding stolen prism tech to cloak raids along the Coral Causeway."
     },
+    "inst_aggron_bastion_enforcer": {
+      "speciesId": "creature_aggron",
+      "nickname": "Bastion",
+      "level": 38,
+      "heldItem": "item_bastion_cog",
+      "moves": [
+        "move_iron_tail",
+        "move_heavy_slam",
+        "move_stone_edge",
+        "move_ancient_power"
+      ],
+      "locationId": "loc_slate_bastion",
+      "ownerNpcId": "npc_gym_leader_onyx",
+      "factionIds": [
+        "faction_archipelago_guard"
+      ],
+      "tags": [
+        "gym_signature"
+      ],
+      "notes": "Onyx's ace defender, stationed in the Bastion's forge corridors.",
+      "fullDescription": "Leader Onyx's Aggron braces the Bastion Hammer Gym, channeling seismic data through its armor to shield challengers when drills surge."
+    },
+    "inst_talonflame_zephyr_ace": {
+      "speciesId": "creature_talonflame",
+      "nickname": "Windlash",
+      "level": 36,
+      "heldItem": "item_zephyr_wing",
+      "moves": [
+        "move_acrobatics",
+        "move_brave_bird",
+        "move_tailwind",
+        "move_flame_charge"
+      ],
+      "locationId": "loc_zephyr_haven",
+      "ownerNpcId": "npc_gym_leader_aeris",
+      "factionIds": [
+        "faction_luminance_league"
+      ],
+      "tags": [
+        "gym_signature"
+      ],
+      "notes": "Sweeps the aerial circuit during Aeris's cyclone drills.",
+      "fullDescription": "Aeris's Talonflame darts through Zephyr Haven's wind tunnels, teaching challengers to read shifting air currents mid-battle."
+    },
+    "inst_gardevoir_mirage_oracle": {
+      "speciesId": "creature_gardevoir",
+      "nickname": "Scry",
+      "level": 35,
+      "heldItem": "item_mirage_charm",
+      "moves": [
+        "move_psychic",
+        "move_moonblast",
+        "move_light_screen",
+        "move_reflect"
+      ],
+      "locationId": "loc_luminous_mirage",
+      "ownerNpcId": "npc_gym_leader_mirage",
+      "factionIds": [
+        "faction_research_coalition"
+      ],
+      "tags": [
+        "gym_signature"
+      ],
+      "notes": "Guides challengers through the refraction maze with mirrored illusions.",
+      "fullDescription": "Mirage's Gardevoir projects refracted futures across the gym floor, rewarding challengers who embrace empathy over fear."
+    },
+    "inst_magnezone_stellar_conduit": {
+      "speciesId": "creature_magnezone",
+      "nickname": "Auriflux",
+      "level": 37,
+      "heldItem": "item_nova_circuit",
+      "moves": [
+        "move_thunder",
+        "move_flash_cannon",
+        "move_magnet_rise",
+        "move_photon_burst"
+      ],
+      "locationId": "loc_starfall_observatory",
+      "ownerNpcId": "npc_gym_leader_nova",
+      "factionIds": [
+        "faction_research_coalition"
+      ],
+      "tags": [
+        "gym_signature"
+      ],
+      "notes": "Regulates the aurora array during Nova's starfall concerts.",
+      "fullDescription": "Nova's Magnezone harmonizes cosmic frequencies, firing photon bursts in sync with the gym's orchestral light show."
+    },
+    "inst_solaryn_fragment_set": {
+      "speciesId": "creature_solaryn_fragment",
+      "nickname": "Fluxcore",
+      "level": 33,
+      "heldItem": "item_ultra_ball",
+      "moves": [
+        "move_ancient_power",
+        "move_guard_split",
+        "move_light_screen",
+        "move_spark"
+      ],
+      "locationId": "loc_sunspire_city",
+      "ownerNpcId": "npc_rival_set",
+      "factionIds": [
+        "faction_companion_network"
+      ],
+      "tags": [
+        "prototype"
+      ],
+      "notes": "Set's experimental partner calibrated to interface with solar conduits.",
+      "fullDescription": "Set's customized Solaryn Fragment channels their inventions, throwing up light screens while unleashing experimental spark arrays."
+    },
+    "inst_shadow_lurantis_boss": {
+      "speciesId": "creature_shadow_lurantis",
+      "nickname": "Nightbloom",
+      "level": 38,
+      "heldItem": "item_shadow_cipher",
+      "moves": [
+        "move_leaf_blade",
+        "move_night_slash",
+        "move_solar_blade",
+        "move_poison_jab"
+      ],
+      "locationId": "loc_eclipsed_sanctum",
+      "ownerNpcId": "npc_shadow_cartel_boss",
+      "factionIds": [
+        "faction_shadow_cartel"
+      ],
+      "tags": [
+        "boss_signature"
+      ],
+      "notes": "Noctis deploys Nightbloom to siphon aurora conduits during raids.",
+      "fullDescription": "Nightbloom's petals shimmer with stolen aurora light, striking with venomous precision whenever Noctis calls the shots."
+    },
     "inst_solaryn_radiant_core": {
       "speciesId": "creature_legend_solaryn",
       "nickname": "Solaryn",

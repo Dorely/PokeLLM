@@ -405,7 +405,7 @@ public class GameSetupPhasePlugin
     #endregion
 
     [KernelFunction("upsert_character_class")]
-    [Description("Create or update a character class definition in the module. Only supplied fields are modified.")]
+    [Description("Create or update a character class definition in the module. Supply levelUpChart entries keyed by 1-20 with `abilities` and `passiveAbilities` lists (empty lists if nothing new unlocks). Only supplied fields are modified.")]
     public async Task<string> UpsertCharacterClass([Description("Partial or complete class details")] CharacterClassDefinition definition)
     {
         const string operation = nameof(UpsertCharacterClass);
@@ -1276,9 +1276,11 @@ public class GameSetupPhasePlugin
     public class CharacterClassLevelEntry
     {
         [JsonPropertyName("abilities")]
+        [Description("Ability ids granted at this level. Reference ids created via the ability catalog functions.")]
         public List<string>? Abilities { get; set; }
 
         [JsonPropertyName("passiveAbilities")]
+        [Description("Passive ability ids granted at this level. Use empty lists when no new passives unlock.")]
         public List<string>? PassiveAbilities { get; set; }
     }
 

@@ -47,6 +47,11 @@ public sealed class AdventureModuleValidator
             {
                 errors.Add("Module metadata must include a non-empty title.");
             }
+
+            if (string.IsNullOrWhiteSpace(module.Metadata.Summary))
+            {
+                errors.Add("Module metadata must include a non-empty summary.");
+            }
         }
 
         var locationIds = CollectIds(module.Locations, errors, "locations", l => l.LocationId, "locationId");
@@ -203,6 +208,86 @@ public sealed class AdventureModuleValidator
             return;
         }
 
+        var locationsWithEncounterTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (module.MechanicalReferences?.EncounterTables is not null)
+        {
+            foreach (var table in module.MechanicalReferences.EncounterTables)
+            {
+                if (table is null || string.IsNullOrWhiteSpace(table.LocationId))
+                {
+                    continue;
+                }
+
+                locationsWithEncounterTables.Add(table.LocationId.Trim());
+            }
+        }
+
+        var locationsWithItemPlacements = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (module.Items is not null)
+        {
+            foreach (var item in module.Items.Values)
+            {
+                if (item?.Placement is null)
+                {
+                    continue;
+                }
+
+                foreach (var placement in item.Placement)
+                {
+                    if (placement is null || string.IsNullOrWhiteSpace(placement.LocationId))
+                    {
+                        continue;
+                    }
+
+                    locationsWithItemPlacements.Add(placement.LocationId.Trim());
+                }
+            }
+        }
+
+        var locationsWithCreatureInstances = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (module.CreatureInstances is not null)
+        {
+            foreach (var creature in module.CreatureInstances.Values)
+            {
+                if (creature is null || string.IsNullOrWhiteSpace(creature.LocationId))
+                {
+                    continue;
+                }
+
+                locationsWithCreatureInstances.Add(creature.LocationId.Trim());
+            }
+        }
+
+        var locationsReferencedByQuests = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (module.QuestLines is not null)
+        {
+            foreach (var quest in module.QuestLines.Values)
+            {
+                if (quest?.Stages is null)
+                {
+                    continue;
+                }
+
+                foreach (var stage in quest.Stages)
+                {
+                    if (stage?.RecommendedLocationIds is null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var recommendedLocationId in stage.RecommendedLocationIds)
+                    {
+                        if (string.IsNullOrWhiteSpace(recommendedLocationId))
+                        {
+                            continue;
+                        }
+
+                        locationsReferencedByQuests.Add(recommendedLocationId.Trim());
+                    }
+                }
+            }
+        }
+
         foreach (var (locationId, location) in module.Locations)
         {
             if (location is null)
@@ -210,33 +295,104 @@ public sealed class AdventureModuleValidator
                 continue;
             }
 
-            if (!string.Equals(location.LocationId?.Trim(), locationId, StringComparison.OrdinalIgnoreCase))
+            var normalizedLocationId = locationId?.Trim() ?? string.Empty;
+            if (!string.Equals(location.LocationId?.Trim(), normalizedLocationId, StringComparison.OrdinalIgnoreCase))
             {
                 errors.Add($"Location key '{locationId}' does not match locationId '{location.LocationId}'.");
             }
 
+            if (string.IsNullOrWhiteSpace(location.Name))
+            {
+                errors.Add($"Location '{locationId}' must define a name.");
+            }
+
+            if (string.IsNullOrWhiteSpace(location.Summary))
+            {
+                errors.Add($"Location '{locationId}' must define a summary.");
+            }
+
+            if (string.IsNullOrWhiteSpace(location.FullDescription))
+            {
+                errors.Add($"Location '{locationId}' must define a fullDescription.");
+            }
+
+            var poiIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var hasPoiWithDescription = false;
             if (location.PointsOfInterest is not null)
             {
                 foreach (var poi in location.PointsOfInterest)
                 {
+                    if (poi is null)
+                    {
+                        continue;
+                    }
+
                     var poiId = poi.Id?.Trim() ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(poiId))
+                    {
+                        errors.Add($"locations.{locationId}.pointsOfInterest entry is missing id.");
+                    }
+                    else if (!poiIds.Add(poiId))
+                    {
+                        errors.Add($"locations.{locationId}.pointsOfInterest contains duplicate id '{poiId}'.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(poi.Name))
+                    {
+                        errors.Add($"locations.{locationId}.pointsOfInterest.{poiId} must define a name.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(poi.Description))
+                    {
+                        errors.Add($"locations.{locationId}.pointsOfInterest.{poiId} must define a description.");
+                    }
+                    else
+                    {
+                        hasPoiWithDescription = true;
+                    }
+
                     EnsureAllExist(poi.RelatedNpcIds, $"locations.{locationId}.pointsOfInterest.{poiId}.relatedNpcIds", errors, npcIds);
                     EnsureAllExist(poi.RelatedItemIds, $"locations.{locationId}.pointsOfInterest.{poiId}.relatedItemIds", errors, itemIds);
                 }
             }
 
+            var hasEncounterWithNarrative = false;
             if (location.Encounters is not null)
             {
                 foreach (var encounter in location.Encounters)
                 {
+                    if (encounter is null)
+                    {
+                        continue;
+                    }
+
                     var encounterId = encounter.EncounterId?.Trim() ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(encounterId))
+                    {
+                        errors.Add($"locations.{locationId}.encounters entry is missing encounterId.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(encounter.Trigger))
+                    {
+                        errors.Add($"locations.{locationId}.encounters.{encounterId} must define a trigger.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(encounter.Narrative))
+                    {
+                        errors.Add($"locations.{locationId}.encounters.{encounterId} must define a narrative.");
+                    }
+                    else
+                    {
+                        hasEncounterWithNarrative = true;
+                    }
+
                     EnsureParticipants(encounter.Participants, $"locations.{locationId}.encounters.{encounterId}.participants", errors, npcIds, creatureInstanceIds, speciesIds, factionIds);
 
                     if (encounter.Outcomes is not null)
                     {
                         foreach (var outcome in encounter.Outcomes)
                         {
-                            if (outcome.ResultingChanges is null)
+                            if (outcome?.ResultingChanges is null)
                             {
                                 continue;
                             }
@@ -269,8 +425,45 @@ public sealed class AdventureModuleValidator
             {
                 foreach (var connection in location.ConnectedLocations)
                 {
+                    if (connection is null)
+                    {
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(connection.TargetLocationId))
+                    {
+                        errors.Add($"locations.{locationId}.connectedLocations entry is missing targetLocationId.");
+                        continue;
+                    }
+
+                    if (string.Equals(connection.TargetLocationId.Trim(), normalizedLocationId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        errors.Add($"Location '{locationId}' cannot reference itself in connectedLocations.");
+                    }
+
                     EnsureExists(connection.TargetLocationId, locationIds, $"locations.{locationId}.connectedLocations -> {connection.TargetLocationId}", "location", errors);
                 }
+            }
+
+            var hasValidConnection = location.ConnectedLocations is not null &&
+                                     location.ConnectedLocations.Any(connection =>
+                                         connection is not null &&
+                                         !string.IsNullOrWhiteSpace(connection.TargetLocationId) &&
+                                         !string.Equals(connection.TargetLocationId.Trim(), normalizedLocationId, StringComparison.OrdinalIgnoreCase));
+            if (!hasValidConnection)
+            {
+                errors.Add($"Location '{locationId}' must define at least one connectedLocations entry pointing to another location.");
+            }
+
+            var hasEncounterTable = locationsWithEncounterTables.Contains(normalizedLocationId);
+            var hasItemPlacement = locationsWithItemPlacements.Contains(normalizedLocationId);
+            var hasCreatureInstance = locationsWithCreatureInstances.Contains(normalizedLocationId);
+            var hasQuestReference = locationsReferencedByQuests.Contains(normalizedLocationId);
+
+            var hasLocationContent = hasPoiWithDescription || hasEncounterWithNarrative || hasEncounterTable || hasItemPlacement || hasCreatureInstance || hasQuestReference;
+            if (!hasLocationContent)
+            {
+                errors.Add($"Location '{locationId}' must include at least one interactive gameplay element (point of interest, encounter, quest, creature, item placement, or encounter table).");
             }
         }
     }
@@ -289,6 +482,58 @@ public sealed class AdventureModuleValidator
             return;
         }
 
+        var creaturesOwnedByNpc = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (module.CreatureInstances is not null)
+        {
+            foreach (var creature in module.CreatureInstances.Values)
+            {
+                if (creature is null || string.IsNullOrWhiteSpace(creature.OwnerNpcId))
+                {
+                    continue;
+                }
+
+                var ownerId = creature.OwnerNpcId.Trim();
+                if (creaturesOwnedByNpc.TryGetValue(ownerId, out var count))
+                {
+                    creaturesOwnedByNpc[ownerId] = count + 1;
+                }
+                else
+                {
+                    creaturesOwnedByNpc[ownerId] = 1;
+                }
+            }
+        }
+
+        static bool IsTrainerRole(string? role)
+        {
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                return false;
+            }
+
+            var normalized = role.Trim().ToLowerInvariant();
+            if (normalized.Contains("trainer") ||
+                normalized.Contains("rival") ||
+                normalized.Contains("champion") ||
+                normalized.Contains("elite") ||
+                normalized.Contains("league"))
+            {
+                return true;
+            }
+
+            if (normalized.Contains("gym") || normalized.Contains("battle") || normalized.Contains("dojo"))
+            {
+                return true;
+            }
+
+            if (normalized.Contains("team ") || normalized.Contains("boss") || normalized.Contains("grunt"))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         foreach (var (npcId, npc) in module.Npcs)
         {
             if (npc is null)
@@ -296,9 +541,35 @@ public sealed class AdventureModuleValidator
                 continue;
             }
 
-            if (!string.Equals(npc.NpcId?.Trim(), npcId, StringComparison.OrdinalIgnoreCase))
+            var normalizedNpcId = npcId?.Trim() ?? string.Empty;
+
+            if (!string.Equals(npc.NpcId?.Trim(), normalizedNpcId, StringComparison.OrdinalIgnoreCase))
             {
                 errors.Add($"NPC key '{npcId}' does not match npcId '{npc.NpcId}'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(npc.Name))
+            {
+                errors.Add($"NPC '{npcId}' must define a name.");
+            }
+
+            if (string.IsNullOrWhiteSpace(npc.Motivation))
+            {
+                errors.Add($"NPC '{npcId}' must define a motivation.");
+            }
+
+            if (string.IsNullOrWhiteSpace(npc.FullDescription))
+            {
+                errors.Add($"NPC '{npcId}' must define a fullDescription.");
+            }
+
+            if (IsTrainerRole(npc.Role))
+            {
+                var ownedCount = creaturesOwnedByNpc.TryGetValue(normalizedNpcId, out var count) ? count : 0;
+                if (ownedCount == 0)
+                {
+                    errors.Add($"NPC '{npcId}' has a trainer role ('{npc.Role}') but no Pokémon team. Create creatureInstances with ownerNpcId '{normalizedNpcId}'.");
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(npc.CharacterDetails?.Class) && !classIds.Contains(npc.CharacterDetails.Class.Trim()))
@@ -339,7 +610,7 @@ public sealed class AdventureModuleValidator
             {
                 foreach (var script in npc.DialogueScripts)
                 {
-                    if (script.Lines is null)
+                    if (script?.Lines is null)
                     {
                         continue;
                     }
