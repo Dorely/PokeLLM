@@ -10,6 +10,7 @@ using PokeLLM.Game.Orchestration;
 using PokeLLM.Game.Plugins;
 using PokeLLM.Game.VectorStore.Interfaces;
 using PokeLLM.Game.VectorStore;
+using System.Net.Http;
 
 namespace PokeLLM.Game.Configuration;
 
@@ -42,6 +43,7 @@ public static class ServiceConfiguration
             ApplyLlmConfig(llm, configuration, selectedLlmProvider);
             config.ApiKey = llm.ApiKey;
             config.ModelId = llm.ModelId;
+            config.RequestTimeoutSeconds = llm.RequestTimeoutSeconds;
 
             var embedding = new EmbeddingConfig();
             ApplyEmbeddingConfig(embedding, configuration, selectedEmbeddingProvider);
@@ -114,12 +116,20 @@ public static class ServiceConfiguration
                 }
                 target.ModelId = openAi["ModelId"] ?? "gpt-4.1-mini";
                 target.Endpoint = openAi["Endpoint"];
+                if (int.TryParse(openAi["RequestTimeoutSeconds"], out var oaTimeout))
+                {
+                    target.RequestTimeoutSeconds = oaTimeout;
+                }
                 break;
             case "ollama":
                 var ollama = configuration.GetSection("Ollama");
                 target.Provider = "Ollama";
                 target.Endpoint = ollama["Endpoint"] ?? "http://localhost:11434";
                 target.ModelId = ollama["ModelId"] ?? "llama3.1";
+                if (int.TryParse(ollama["RequestTimeoutSeconds"], out var olTimeout))
+                {
+                    target.RequestTimeoutSeconds = olTimeout;
+                }
                 break;
             case "gemini":
                 var gemini = configuration.GetSection("Gemini");
@@ -130,6 +140,10 @@ public static class ServiceConfiguration
                     target.ApiKey = "test-api-key";
                 }
                 target.ModelId = gemini["ModelId"] ?? "gemini-2.5-flash";
+                if (int.TryParse(gemini["RequestTimeoutSeconds"], out var gmTimeout))
+                {
+                    target.RequestTimeoutSeconds = gmTimeout;
+                }
                 break;
             default:
                 throw new InvalidOperationException($"Unknown LLM provider: {provider}");
@@ -146,6 +160,10 @@ public static class ServiceConfiguration
                 target.ApiKey = openAi["ApiKey"];
                 target.ModelId = openAi["EmbeddingModelId"] ?? "text-embedding-3-small";
                 target.Dimensions = int.TryParse(openAi["EmbeddingDimensions"], out var openAiDims) ? openAiDims : 1536;
+                if (int.TryParse(openAi["RequestTimeoutSeconds"], out var oaTimeout))
+                {
+                    target.RequestTimeoutSeconds = oaTimeout;
+                }
                 break;
             case "ollama":
                 var ollama = configuration.GetSection("Ollama");
@@ -153,6 +171,10 @@ public static class ServiceConfiguration
                 target.Endpoint = ollama["Endpoint"] ?? "http://localhost:11434";
                 target.ModelId = ollama["EmbeddingModelId"] ?? "nomic-embed-text";
                 target.Dimensions = int.TryParse(ollama["EmbeddingDimensions"], out var ollamaDims) ? ollamaDims : 768;
+                if (int.TryParse(ollama["RequestTimeoutSeconds"], out var olTimeout))
+                {
+                    target.RequestTimeoutSeconds = olTimeout;
+                }
                 break;
             default:
                 throw new InvalidOperationException($"Unknown embedding provider: {provider}");
@@ -164,15 +186,20 @@ public static class ServiceConfiguration
         var config = options.Value;
         var kernelBuilder = Kernel.CreateBuilder();
 
+        HttpClient CreateHttpClient(int? seconds, int defaultSeconds)
+            => new HttpClient { Timeout = TimeSpan.FromSeconds(seconds ?? defaultSeconds) };
+
         switch (config.Embedding.Provider.ToLower())
         {
             case "openai":
                 var apiKey = !string.IsNullOrWhiteSpace(config.Embedding.ApiKey) ? config.Embedding.ApiKey : "test-api-key";
                 var embeddingModelId = !string.IsNullOrWhiteSpace(config.Embedding.ModelId) ? config.Embedding.ModelId : "text-embedding-3-small";
+                var oaClient = CreateHttpClient(config.Embedding.RequestTimeoutSeconds, 600);
 #pragma warning disable SKEXP0010
                 kernelBuilder.AddOpenAIEmbeddingGenerator(
                     modelId: embeddingModelId,
-                    apiKey: apiKey);
+                    apiKey: apiKey,
+                    httpClient: oaClient);
 #pragma warning restore SKEXP0010
                 break;
             case "ollama":

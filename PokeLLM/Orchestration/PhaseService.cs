@@ -134,12 +134,46 @@ public class PhaseService : IPhaseService
             temperature: 0.7f,
             enableFunctionCalling: true);
 
-        // Stream the response
+        const int emptyChunkThreshold = 256;
+        var emptyChunkStreak = 0;
+        var streamedTokens = false;
+
         await foreach (var chunk in chatService.GetStreamingChatMessageContentsAsync(freshHistory, executionSettings, _kernel, cancellationToken))
         {
             var content = chunk.Content ?? string.Empty;
-            responseBuilder.Append(content);
-            yield return content;
+            if (content.Length > 0)
+            {
+                streamedTokens = true;
+                emptyChunkStreak = 0;
+                responseBuilder.Append(content);
+                yield return content;
+            }
+            else
+            {
+                emptyChunkStreak++;
+                if (emptyChunkStreak >= emptyChunkThreshold)
+                {
+                    Debug.WriteLine($"[{_phase}PhaseService] Aborting streaming response after {emptyChunkStreak} empty chunks.");
+                    break;
+                }
+            }
+        }
+
+        if (!streamedTokens)
+        {
+            Debug.WriteLine($"[{_phase}PhaseService] Streaming produced no content; falling back to non-streaming completion.");
+            var fallbackResult = await chatService.GetChatMessageContentAsync(
+                freshHistory,
+                executionSettings,
+                _kernel,
+                cancellationToken);
+
+            var fallbackContent = fallbackResult?.Content ?? fallbackResult?.ToString() ?? string.Empty;
+            if (!string.IsNullOrEmpty(fallbackContent))
+            {
+                responseBuilder.Append(fallbackContent);
+                yield return fallbackContent;
+            }
         }
 
         // Add assistant response to history

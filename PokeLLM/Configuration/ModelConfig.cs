@@ -6,6 +6,8 @@ public class ModelConfig
     public string ModelId { get; set; }
     public string EmbeddingModelId { get; set; }
     public int EmbeddingDimensions { get; set; }
+    // New: Request timeout in seconds for LLM/embedding HTTP calls
+    public int? RequestTimeoutSeconds { get; set; }
 }
 
 public class HybridConfig
@@ -20,6 +22,8 @@ public class LLMConfig
     public string ApiKey { get; set; }
     public string ModelId { get; set; }
     public string Endpoint { get; set; } // For Ollama
+    // New: Request timeout in seconds for chat calls
+    public int? RequestTimeoutSeconds { get; set; }
 }
 
 public class EmbeddingConfig
@@ -29,6 +33,8 @@ public class EmbeddingConfig
     public string ModelId { get; set; }
     public string Endpoint { get; set; } // For Ollama
     public int Dimensions { get; set; }
+    // New: Request timeout in seconds for embedding calls
+    public int? RequestTimeoutSeconds { get; set; }
 }
 
 /// <summary>

@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PokeLLM.Game.Configuration;
+using System.Net.Http;
 
 namespace PokeLLM.Game.LLM;
 
@@ -24,6 +25,15 @@ public class OllamaLLMProvider : ILLMProvider
         _endpoint = string.IsNullOrEmpty(_config.ApiKey) 
             ? new Uri("http://localhost:11434")
             : new Uri(_config.ApiKey);
+    }
+
+    private HttpClient CreateHttpClient()
+    {
+        var timeoutSeconds = _config.RequestTimeoutSeconds ?? 1800; // default 30 minutes for local models
+        return new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+        };
     }
 
     public async Task<Kernel> CreateKernelAsync()

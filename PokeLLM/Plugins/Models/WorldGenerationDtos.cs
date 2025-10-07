@@ -61,6 +61,28 @@ public class MechanicalReferencesUpdateDto
     public List<AdventureModuleTravelRule>? TravelRules { get; set; }
 }
 
+public class WorldDictionaryBatch<T>
+{
+    [Description("Entries keyed by unique identifier.")]
+    public Dictionary<string, T>? Entries { get; set; }
+
+    [Description("Set true to treat the entries as removals instead of upserts.")]
+    public bool IsRemoval { get; set; }
+
+    public bool HasContent() => Entries is not null && Entries.Count > 0;
+}
+
+public class WorldListBatch<T>
+{
+    [Description("Entries in the batch.")]
+    public List<T>? Entries { get; set; }
+
+    [Description("Set true to treat the entries as removals instead of upserts.")]
+    public bool IsRemoval { get; set; }
+
+    public bool HasContent() => Entries is not null && Entries.Count > 0;
+}
+
 public class WorldGenerationUpdateBatch
 {
     [Description("Optional metadata updates to apply.")]
@@ -69,80 +91,44 @@ public class WorldGenerationUpdateBatch
     [Description("Optional world overview updates to apply.")]
     public WorldOverviewUpdateDto? World { get; set; }
 
-    [Description("Locations to upsert, keyed by locationId.")]
-    public Dictionary<string, AdventureModuleLocation>? Locations { get; set; }
+    [Description("Locations batch keyed by locationId.")]
+    public WorldDictionaryBatch<AdventureModuleLocation>? Locations { get; set; }
 
-    [Description("NPCs to upsert, keyed by npcId.")]
-    public Dictionary<string, AdventureModuleNpc>? Npcs { get; set; }
+    [Description("NPCs batch keyed by npcId.")]
+    public WorldDictionaryBatch<AdventureModuleNpc>? Npcs { get; set; }
 
-    [Description("Creature species to upsert, keyed by speciesId.")]
-    public Dictionary<string, AdventureModuleCreatureSpecies>? CreatureSpecies { get; set; }
+    [Description("Creature species batch keyed by speciesId.")]
+    public WorldDictionaryBatch<AdventureModuleCreatureSpecies>? CreatureSpecies { get; set; }
 
-    [Description("Creature instances to upsert, keyed by instanceId.")]
-    public Dictionary<string, AdventureModuleCreatureInstance>? CreatureInstances { get; set; }
+    [Description("Creature instances batch keyed by instanceId.")]
+    public WorldDictionaryBatch<AdventureModuleCreatureInstance>? CreatureInstances { get; set; }
 
-    [Description("Items to upsert, keyed by itemId.")]
-    public Dictionary<string, AdventureModuleItem>? Items { get; set; }
+    [Description("Items batch keyed by itemId.")]
+    public WorldDictionaryBatch<AdventureModuleItem>? Items { get; set; }
 
-    [Description("Factions to upsert, keyed by factionId.")]
-    public Dictionary<string, AdventureModuleFaction>? Factions { get; set; }
+    [Description("Factions batch keyed by factionId.")]
+    public WorldDictionaryBatch<AdventureModuleFaction>? Factions { get; set; }
 
-    [Description("Lore entries to upsert, keyed by loreId.")]
-    public Dictionary<string, AdventureModuleLoreEntry>? LoreEntries { get; set; }
+    [Description("Lore entries batch keyed by loreId.")]
+    public WorldDictionaryBatch<AdventureModuleLoreEntry>? LoreEntries { get; set; }
 
-    [Description("Scripted events to upsert, keyed by eventId.")]
-    public Dictionary<string, AdventureModuleScriptedEvent>? ScriptedEvents { get; set; }
+    [Description("Scripted events batch keyed by eventId.")]
+    public WorldDictionaryBatch<AdventureModuleScriptedEvent>? ScriptedEvents { get; set; }
 
-    [Description("Quest lines to upsert, keyed by questId.")]
-    public Dictionary<string, AdventureModuleQuestLine>? QuestLines { get; set; }
+    [Description("Quest lines batch keyed by questId.")]
+    public WorldDictionaryBatch<AdventureModuleQuestLine>? QuestLines { get; set; }
 
-    [Description("Moves to upsert, keyed by moveId.")]
-    public Dictionary<string, AdventureModuleMove>? Moves { get; set; }
+    [Description("Moves batch keyed by moveId.")]
+    public WorldDictionaryBatch<AdventureModuleMove>? Moves { get; set; }
 
-    [Description("Abilities to upsert, keyed by abilityId.")]
-    public Dictionary<string, AdventureModuleAbility>? Abilities { get; set; }
+    [Description("Abilities batch keyed by abilityId.")]
+    public WorldDictionaryBatch<AdventureModuleAbility>? Abilities { get; set; }
 
-    [Description("Scenario script records to upsert.")]
-    public List<AdventureModuleScenarioScript>? ScenarioScripts { get; set; }
+    [Description("Scenario script batch.")]
+    public WorldListBatch<AdventureModuleScenarioScript>? ScenarioScripts { get; set; }
 
     [Description("Mechanical reference updates to merge.")]
     public MechanicalReferencesUpdateDto? MechanicalReferences { get; set; }
-
-    [Description("IDs of locations to remove from the module.")]
-    public List<string>? RemoveLocationIds { get; set; }
-
-    [Description("IDs of NPCs to remove from the module.")]
-    public List<string>? RemoveNpcIds { get; set; }
-
-    [Description("IDs of species to remove from the module.")]
-    public List<string>? RemoveSpeciesIds { get; set; }
-
-    [Description("IDs of creature instances to remove from the module.")]
-    public List<string>? RemoveCreatureInstanceIds { get; set; }
-
-    [Description("IDs of items to remove from the module.")]
-    public List<string>? RemoveItemIds { get; set; }
-
-    [Description("IDs of factions to remove from the module.")]
-    public List<string>? RemoveFactionIds { get; set; }
-
-    [Description("IDs of lore entries to remove from the module.")]
-    public List<string>? RemoveLoreEntryIds { get; set; }
-
-    [Description("IDs of scripted events to remove from the module.")]
-    public List<string>? RemoveScriptedEventIds { get; set; }
-
-    [Description("IDs of quests to remove from the module.")]
-    public List<string>? RemoveQuestIds { get; set; }
-
-    [Description("IDs of moves to remove from the module.")]
-    public List<string>? RemoveMoveIds { get; set; }
-
-    [Description("IDs of abilities to remove from the module.")]
-    public List<string>? RemoveAbilityIds { get; set; }
-
-    [Description("IDs of scenario scripts to remove from the module.")]
-    public List<string>? RemoveScenarioScriptIds { get; set; }
 
     [Description("Whether to reapply the module baseline to the active session after saving.")]
     public bool ReapplyBaseline { get; set; } = true;
@@ -151,39 +137,30 @@ public class WorldGenerationUpdateBatch
     {
         return Metadata is not null
             || World is not null
-            || HasDictionaryContent(Locations)
-            || HasDictionaryContent(Npcs)
-            || HasDictionaryContent(CreatureSpecies)
-            || HasDictionaryContent(CreatureInstances)
-            || HasDictionaryContent(Items)
-            || HasDictionaryContent(Factions)
-            || HasDictionaryContent(LoreEntries)
-            || HasDictionaryContent(ScriptedEvents)
-            || HasDictionaryContent(QuestLines)
-            || HasDictionaryContent(Moves)
-            || HasDictionaryContent(Abilities)
-            || (ScenarioScripts is not null && ScenarioScripts.Count > 0)
-            || (MechanicalReferences is not null && (
-                (MechanicalReferences.EncounterTables?.Count ?? 0) > 0 ||
-                (MechanicalReferences.WeatherProfiles?.Count ?? 0) > 0 ||
-                (MechanicalReferences.TravelRules?.Count ?? 0) > 0))
-            || HasListContent(RemoveLocationIds)
-            || HasListContent(RemoveNpcIds)
-            || HasListContent(RemoveSpeciesIds)
-            || HasListContent(RemoveCreatureInstanceIds)
-            || HasListContent(RemoveItemIds)
-            || HasListContent(RemoveFactionIds)
-            || HasListContent(RemoveLoreEntryIds)
-            || HasListContent(RemoveScriptedEventIds)
-            || HasListContent(RemoveQuestIds)
-            || HasListContent(RemoveMoveIds)
-            || HasListContent(RemoveAbilityIds)
-            || HasListContent(RemoveScenarioScriptIds);
+            || Locations?.HasContent() == true
+            || Npcs?.HasContent() == true
+            || CreatureSpecies?.HasContent() == true
+            || CreatureInstances?.HasContent() == true
+            || Items?.HasContent() == true
+            || Factions?.HasContent() == true
+            || LoreEntries?.HasContent() == true
+            || ScriptedEvents?.HasContent() == true
+            || QuestLines?.HasContent() == true
+            || Moves?.HasContent() == true
+            || Abilities?.HasContent() == true
+            || ScenarioScripts?.HasContent() == true
+            || HasMechanicalReferenceContent(MechanicalReferences);
     }
 
-    private static bool HasDictionaryContent<T>(Dictionary<string, T>? dictionary)
-        => dictionary is not null && dictionary.Count > 0;
+    private static bool HasMechanicalReferenceContent(MechanicalReferencesUpdateDto? references)
+    {
+        if (references is null)
+        {
+            return false;
+        }
 
-    private static bool HasListContent(List<string>? list)
-        => list is not null && list.Count > 0;
+        return (references.EncounterTables?.Count ?? 0) > 0
+            || (references.WeatherProfiles?.Count ?? 0) > 0
+            || (references.TravelRules?.Count ?? 0) > 0;
+    }
 }

@@ -48,23 +48,41 @@ public class GameController : IGameController
                 
             case GamePhase.WorldGeneration:
                 // World generation runs autonomously - adjust input for continuation
-                string worldGenInput = input == "Begin world generation based on setup." || string.IsNullOrEmpty(input) ? 
-                    "Begin comprehensive world generation based on the completed setup. Create a rich, detailed world with multiple locations, NPCs, wild Pokemon, and lore. Provide engaging updates about your progress." : 
-                    input;
-                    
+                const string worldGenKickoff = "Begin comprehensive world generation based on the completed setup. Create a rich, detailed world with multiple locations, NPCs, wild Pokemon, and lore. Provide engaging updates about your progress.";
+                const string worldGenContinuation = "Continue with world generation. Create more content or finalize when you have created a complete world ready for adventure.";
+                var nextWorldGenInput = input == "Begin world generation based on setup." || string.IsNullOrEmpty(input)
+                    ? worldGenKickoff
+                    : input;
+
                 var worldGenPhaseService = _phaseServiceProvider.GetPhaseService(GamePhase.WorldGeneration);
-                await foreach (var chunk in worldGenPhaseService.ProcessPhaseAsync(worldGenInput, cancellationToken))
-                    yield return chunk;
-                
-                // If still in WorldGeneration phase, continue autonomously
-                var gameState = await _gameStateRepository.LoadLatestStateAsync();
-                if (gameState.CurrentPhase == GamePhase.WorldGeneration)
+
+                while (true)
                 {
-                    yield return "\n\n";
-                    await foreach (var chunk in ProcessInputAsync("Continue with world generation. Create more content or finalize when you have created a complete world ready for adventure.", cancellationToken))
+                    var emittedOutput = false;
+
+                    await foreach (var chunk in worldGenPhaseService.ProcessPhaseAsync(nextWorldGenInput, cancellationToken))
+                    {
+                        emittedOutput = true;
                         yield return chunk;
-                    yield break;
+                    }
+
+                    var gameState = await _gameStateRepository.LoadLatestStateAsync();
+                    if (gameState.CurrentPhase != GamePhase.WorldGeneration)
+                    {
+                        break;
+                    }
+
+                    if (!emittedOutput)
+                    {
+                        // Avoid a tight self-recursive loop when no content was produced.
+                        yield return "\n\n[World generation paused awaiting further updates.]\n\n";
+                        break;
+                    }
+
+                    yield return "\n\n";
+                    nextWorldGenInput = worldGenContinuation;
                 }
+
                 break;
                 
             case GamePhase.Exploration:

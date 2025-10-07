@@ -326,23 +326,26 @@ public class PluginExceptionHandlingTests
 
         var updates = new WorldGenerationUpdateBatch
         {
-            Locations = new Dictionary<string, AdventureModuleLocation>
+            Locations = new WorldDictionaryBatch<AdventureModuleLocation>
             {
-                ["loc_new"] = new AdventureModuleLocation
+                Entries = new Dictionary<string, AdventureModuleLocation>
                 {
-                    LocationId = "loc_new",
-                    Name = "New Location",
-                    Summary = "Summary",
-                    FullDescription = "Description",
-                    Region = "Test Region",
-                    PointsOfInterest = new List<AdventureModulePointOfInterest>
+                    ["loc_new"] = new AdventureModuleLocation
                     {
-                        new AdventureModulePointOfInterest
+                        LocationId = "loc_new",
+                        Name = "New Location",
+                        Summary = "Summary",
+                        FullDescription = "Description",
+                        Region = "Test Region",
+                        PointsOfInterest = new List<AdventureModulePointOfInterest>
                         {
-                            Id = "poi_missing",
-                            Name = "Missing NPC Hook",
-                            Description = "References an undefined NPC",
-                            RelatedNpcIds = new List<string> { "npc_missing" }
+                            new AdventureModulePointOfInterest
+                            {
+                                Id = "poi_missing",
+                                Name = "Missing NPC Hook",
+                                Description = "References an undefined NPC",
+                                RelatedNpcIds = new List<string> { "npc_missing" }
+                            }
                         }
                     }
                 }
@@ -355,10 +358,10 @@ public class PluginExceptionHandlingTests
         // Assert
         var json = JsonSerializer.Deserialize<JsonElement>(result);
         Assert.False(json.GetProperty("success").GetBoolean());
-        Assert.Contains("Module updates failed validation", json.GetProperty("error").GetString());
+        Assert.Contains("Module updates were saved, but validation failed", json.GetProperty("error").GetString());
         var errors = json.GetProperty("validation").GetProperty("errors").EnumerateArray().Select(e => e.GetString()).ToList();
         Assert.Contains(errors, e => e != null && e.Contains("npc_missing", StringComparison.OrdinalIgnoreCase));
-        _mockModuleRepository.Verify(x => x.SaveAsync(It.IsAny<AdventureModule>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockModuleRepository.Verify(x => x.SaveAsync(It.IsAny<AdventureModule>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

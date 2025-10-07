@@ -202,79 +202,168 @@ public class WorldGenerationPhasePlugin
     {
         NormalizeModule(module);
 
-        if (updates.Metadata is not null)
+        ApplyMetadataBatch(module, updates.Metadata);
+        ApplyWorldOverviewBatch(module, updates.World);
+        ApplyLocationBatch(module, updates.Locations);
+        ApplyNpcBatch(module, updates.Npcs);
+        ApplySpeciesBatch(module, updates.CreatureSpecies);
+        ApplyCreatureInstanceBatch(module, updates.CreatureInstances);
+        ApplyItemBatch(module, updates.Items);
+        ApplyFactionBatch(module, updates.Factions);
+        ApplyLoreBatch(module, updates.LoreEntries);
+        ApplyScriptedEventBatch(module, updates.ScriptedEvents);
+        ApplyQuestBatch(module, updates.QuestLines);
+        ApplyMoveBatch(module, updates.Moves);
+        ApplyAbilityBatch(module, updates.Abilities);
+        ApplyScenarioScriptBatch(module, updates.ScenarioScripts);
+        ApplyMechanicalReferenceBatch(module, updates.MechanicalReferences);
+
+        NormalizeModule(module);
+    }
+
+    private void ApplyMetadataBatch(AdventureModule module, ModuleMetadataUpdateDto? metadataUpdates)
+    {
+        if (metadataUpdates is null)
         {
-            ApplyMetadataUpdates(module.Metadata, updates.Metadata);
+            return;
         }
 
-        if (updates.World is not null)
+        ApplyMetadataUpdates(module.Metadata, metadataUpdates);
+    }
+
+    private void ApplyWorldOverviewBatch(AdventureModule module, WorldOverviewUpdateDto? worldUpdates)
+    {
+        if (worldUpdates is null)
         {
-            ApplyWorldOverviewUpdates(module.World, updates.World);
+            return;
         }
 
-        ApplyDictionaryUpdates(module.Locations, updates.Locations, NormalizeLocation);
-        ApplyDictionaryUpdates(module.Npcs, updates.Npcs, NormalizeNpc);
-        ApplyDictionaryUpdates(module.Bestiary, updates.CreatureSpecies, NormalizeSpecies);
-        ApplyDictionaryUpdates(module.CreatureInstances, updates.CreatureInstances, NormalizeCreatureInstance);
-        ApplyDictionaryUpdates(module.Items, updates.Items, NormalizeItem);
-        ApplyDictionaryUpdates(module.Factions, updates.Factions, NormalizeFaction);
-        ApplyDictionaryUpdates(module.LoreEntries, updates.LoreEntries, NormalizeLoreEntry);
-        ApplyDictionaryUpdates(module.ScriptedEvents, updates.ScriptedEvents, NormalizeScriptedEvent);
-        ApplyDictionaryUpdates(module.QuestLines, updates.QuestLines, NormalizeQuestLine);
-        ApplyDictionaryUpdates(module.Moves, updates.Moves, NormalizeMove);
-        ApplyDictionaryUpdates(module.Abilities, updates.Abilities, NormalizeAbility);
+        ApplyWorldOverviewUpdates(module.World, worldUpdates);
+    }
 
-        if (updates.ScenarioScripts is not null)
+    private void ApplyLocationBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleLocation>? batch)
+        => ApplyDictionaryBatch(module.Locations, batch, NormalizeLocation);
+
+    private void ApplyNpcBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleNpc>? batch)
+        => ApplyDictionaryBatch(module.Npcs, batch, NormalizeNpc);
+
+    private void ApplySpeciesBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleCreatureSpecies>? batch)
+        => ApplyDictionaryBatch(module.Bestiary, batch, NormalizeSpecies);
+
+    private void ApplyCreatureInstanceBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleCreatureInstance>? batch)
+        => ApplyDictionaryBatch(module.CreatureInstances, batch, NormalizeCreatureInstance);
+
+    private void ApplyItemBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleItem>? batch)
+        => ApplyDictionaryBatch(module.Items, batch, NormalizeItem);
+
+    private void ApplyFactionBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleFaction>? batch)
+        => ApplyDictionaryBatch(module.Factions, batch, NormalizeFaction);
+
+    private void ApplyLoreBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleLoreEntry>? batch)
+        => ApplyDictionaryBatch(module.LoreEntries, batch, NormalizeLoreEntry);
+
+    private void ApplyScriptedEventBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleScriptedEvent>? batch)
+        => ApplyDictionaryBatch(module.ScriptedEvents, batch, NormalizeScriptedEvent);
+
+    private void ApplyQuestBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleQuestLine>? batch)
+        => ApplyDictionaryBatch(module.QuestLines, batch, NormalizeQuestLine);
+
+    private void ApplyMoveBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleMove>? batch)
+        => ApplyDictionaryBatch(module.Moves, batch, NormalizeMove);
+
+    private void ApplyAbilityBatch(AdventureModule module, WorldDictionaryBatch<AdventureModuleAbility>? batch)
+        => ApplyDictionaryBatch(module.Abilities, batch, NormalizeAbility);
+
+    private void ApplyScenarioScriptBatch(AdventureModule module, WorldListBatch<AdventureModuleScenarioScript>? batch)
+    {
+        var entries = batch?.Entries;
+        if (entries is null || entries.Count == 0)
         {
-            module.ScenarioScripts ??= new List<AdventureModuleScenarioScript>();
-            foreach (var script in updates.ScenarioScripts)
+            return;
+        }
+
+        module.ScenarioScripts ??= new List<AdventureModuleScenarioScript>();
+
+        if (batch.IsRemoval)
+        {
+            var removals = entries
+                .Select(script => script?.ScriptId?.Trim())
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (removals.Count == 0)
             {
-                if (string.IsNullOrWhiteSpace(script.ScriptId))
+                return;
+            }
+
+            module.ScenarioScripts.RemoveAll(script => removals.Contains(script.ScriptId));
+            return;
+        }
+
+        foreach (var script in entries)
+        {
+            if (string.IsNullOrWhiteSpace(script?.ScriptId))
+            {
+                continue;
+            }
+
+            var normalized = NormalizeScenarioScript(script);
+            var index = module.ScenarioScripts.FindIndex(s => string.Equals(s.ScriptId, normalized.ScriptId, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0)
+            {
+                module.ScenarioScripts[index] = normalized;
+            }
+            else
+            {
+                module.ScenarioScripts.Add(normalized);
+            }
+        }
+    }
+
+    private void ApplyMechanicalReferenceBatch(AdventureModule module, MechanicalReferencesUpdateDto? references)
+    {
+        if (references is null)
+        {
+            return;
+        }
+
+        module.MechanicalReferences ??= new AdventureModuleMechanicalReferences();
+        ApplyMechanicalReferenceUpdates(module.MechanicalReferences, references);
+    }
+
+    private static void ApplyDictionaryBatch<T>(Dictionary<string, T> target, WorldDictionaryBatch<T>? batch, Func<T, T> normalizer)
+    {
+        if (batch?.Entries is null || batch.Entries.Count == 0)
+        {
+            return;
+        }
+
+        if (batch.IsRemoval)
+        {
+            foreach (var key in batch.Entries.Keys)
+            {
+                var normalizedKey = key?.Trim();
+                if (string.IsNullOrWhiteSpace(normalizedKey))
                 {
                     continue;
                 }
 
-                var existingIndex = module.ScenarioScripts.FindIndex(s => string.Equals(s.ScriptId, script.ScriptId, StringComparison.OrdinalIgnoreCase));
-                var normalized = NormalizeScenarioScript(script);
-                if (existingIndex >= 0)
-                {
-                    module.ScenarioScripts[existingIndex] = normalized;
-                }
-                else
-                {
-                    module.ScenarioScripts.Add(normalized);
-                }
+                target.Remove(normalizedKey);
             }
+
+            return;
         }
 
-        RemoveDictionaryEntries(module.Locations, updates.RemoveLocationIds);
-        RemoveDictionaryEntries(module.Npcs, updates.RemoveNpcIds);
-        RemoveDictionaryEntries(module.Bestiary, updates.RemoveSpeciesIds);
-        RemoveDictionaryEntries(module.CreatureInstances, updates.RemoveCreatureInstanceIds);
-        RemoveDictionaryEntries(module.Items, updates.RemoveItemIds);
-        RemoveDictionaryEntries(module.Factions, updates.RemoveFactionIds);
-        RemoveDictionaryEntries(module.LoreEntries, updates.RemoveLoreEntryIds);
-        RemoveDictionaryEntries(module.ScriptedEvents, updates.RemoveScriptedEventIds);
-        RemoveDictionaryEntries(module.QuestLines, updates.RemoveQuestIds);
-        RemoveDictionaryEntries(module.Moves, updates.RemoveMoveIds);
-        RemoveDictionaryEntries(module.Abilities, updates.RemoveAbilityIds);
-
-        if (updates.RemoveScenarioScriptIds is not null && updates.RemoveScenarioScriptIds.Count > 0 && module.ScenarioScripts is not null)
+        foreach (var (key, value) in batch.Entries)
         {
-            var removals = updates.RemoveScenarioScriptIds
-                .Select(id => id.Trim())
-                .Where(id => !string.IsNullOrWhiteSpace(id))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            module.ScenarioScripts.RemoveAll(script => removals.Contains(script.ScriptId));
-        }
+            var normalizedKey = key?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedKey) || value is null)
+            {
+                continue;
+            }
 
-        if (updates.MechanicalReferences is not null)
-        {
-            module.MechanicalReferences ??= new AdventureModuleMechanicalReferences();
-            ApplyMechanicalReferenceUpdates(module.MechanicalReferences, updates.MechanicalReferences);
+            target[normalizedKey] = normalizer(value);
         }
-
-        NormalizeModule(module);
     }
 
     #endregion
